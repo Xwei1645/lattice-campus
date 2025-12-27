@@ -1,6 +1,10 @@
 import { db } from '../../utils/prisma'
+import { requireAdmin } from '../../utils/auth'
 
 export default defineEventHandler(async (event) => {
+    // 只有管理员可以更新组织
+    await requireAdmin(event)
+    
     const body = await readBody(event)
     const { id, name, description, userIds } = body
 
@@ -12,18 +16,28 @@ export default defineEventHandler(async (event) => {
     }
 
     try {
+        // 检查组织是否存在
+        const existingOrg = await db.organization.findUnique({
+            where: { id }
+        })
+
+        if (!existingOrg) {
+            throw createError({
+                statusCode: 404,
+                statusMessage: 'Organization not found'
+            })
+        }
+
         // Check if name exists for other organizations
-        if (name) {
-            const existingOrg = await db.organization.findFirst({
+        if (name && name !== existingOrg.name) {
+            const duplicateOrg = await db.organization.findFirst({
                 where: {
                     name,
-                    NOT: {
-                        id
-                    }
+                    NOT: { id }
                 }
             })
 
-            if (existingOrg) {
+            if (duplicateOrg) {
                 throw createError({
                     statusCode: 400,
                     statusMessage: 'Organization name already exists'
@@ -39,6 +53,21 @@ export default defineEventHandler(async (event) => {
                 users: userIds ? {
                     set: userIds.map((uid: number) => ({ id: uid }))
                 } : undefined
+            },
+            include: {
+                users: {
+                    select: {
+                        id: true,
+                        name: true,
+                        account: true
+                    }
+                },
+                _count: {
+                    select: {
+                        users: true,
+                        bookings: true
+                    }
+                }
             }
         })
 

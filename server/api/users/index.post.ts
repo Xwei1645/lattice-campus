@@ -1,7 +1,11 @@
 import { db } from '../../utils/prisma'
+import { requireAdmin } from '../../utils/auth'
 import bcrypt from 'bcryptjs'
 
 export default defineEventHandler(async (event) => {
+    // 只有管理员可以创建用户
+    const currentUser = await requireAdmin(event)
+    
     const body = await readBody(event)
     const { account, password, name, role, organizationIds } = body
 
@@ -9,6 +13,18 @@ export default defineEventHandler(async (event) => {
         throw createError({
             statusCode: 400,
             statusMessage: 'Missing required fields'
+        })
+    }
+
+    // 权限控制：不能创建比自己权限更高的用户
+    const roleHierarchy = ['user', 'admin', 'super_admin', 'root']
+    const currentRoleIndex = roleHierarchy.indexOf(currentUser.role)
+    const targetRoleIndex = roleHierarchy.indexOf(role || 'user')
+    
+    if (targetRoleIndex >= currentRoleIndex && currentUser.role !== 'root') {
+        throw createError({
+            statusCode: 403,
+            statusMessage: 'Cannot create user with higher or equal role'
         })
     }
 
@@ -38,6 +54,14 @@ export default defineEventHandler(async (event) => {
                 organizations: {
                     connect: organizationIds?.map((id: number) => ({ id })) || []
                 }
+            },
+            include: {
+                organizations: {
+                    select: {
+                        id: true,
+                        name: true
+                    }
+                }
             }
         })
 
@@ -47,9 +71,11 @@ export default defineEventHandler(async (event) => {
             name: user.name,
             role: user.role,
             status: user.status,
-            createTime: user.createTime
+            createTime: user.createTime,
+            organizations: user.organizations
         }
     } catch (error: any) {
+        if (error.statusCode) throw error
         throw createError({
             statusCode: 500,
             statusMessage: error.message

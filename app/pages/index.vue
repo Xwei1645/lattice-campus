@@ -275,9 +275,9 @@ const handleView = (row: any) => {
 
 const handleCancel = async (row: any) => {
   try {
-    await $fetch(`/api/bookings/${row.id}`, {
-      method: 'PUT',
-      body: { status: 'cancelled' }
+    await $fetch('/api/bookings/update', {
+      method: 'POST',
+      body: { id: row.id, status: 'cancelled' }
     });
     MessagePlugin.success(`已取消预约: ${row.id}`);
     refreshBookings();

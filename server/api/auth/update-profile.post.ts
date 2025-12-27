@@ -1,20 +1,17 @@
 import { db } from '../../utils/prisma'
+import { requireAuth } from '../../utils/auth'
 import bcrypt from 'bcryptjs'
 
 export default defineEventHandler(async (event) => {
+    // 验证用户已登录
+    const currentUser = await requireAuth(event)
+    
     const body = await readBody(event)
-    const { id, name, oldPassword, newPassword } = body
-
-    if (!id) {
-        throw createError({
-            statusCode: 400,
-            statusMessage: 'Missing user ID'
-        })
-    }
+    const { name, oldPassword, newPassword } = body
 
     try {
         const user = await db.user.findUnique({
-            where: { id: parseInt(id) }
+            where: { id: currentUser.id }
         })
 
         if (!user) {
@@ -47,7 +44,7 @@ export default defineEventHandler(async (event) => {
         }
 
         const updatedUser = await db.user.update({
-            where: { id: parseInt(id) },
+            where: { id: currentUser.id },
             data: updateData
         })
 

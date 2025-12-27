@@ -1,4 +1,5 @@
 import { db } from '../../utils/prisma'
+import { createSession, setSessionCookie } from '../../utils/auth'
 import bcrypt from 'bcryptjs'
 
 export default defineEventHandler(async (event) => {
@@ -48,8 +49,10 @@ export default defineEventHandler(async (event) => {
             })
         }
 
-        // In a real app, you would set a session or JWT here.
-        // For now, we'll just return the user info.
+        // 创建session并设置httpOnly cookie
+        const sessionToken = createSession(user.id)
+        setSessionCookie(event, sessionToken)
+
         return {
             id: user.id,
             account: user.account,

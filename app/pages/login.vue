@@ -98,9 +98,7 @@ const onSubmit = async ({ validateResult, firstError }: any) => {
       });
       
       MessagePlugin.success('登录成功');
-      // 存储用户信息
-      const userInfo = useCookie<any>('userInfo', { maxAge: 60 * 60 * 24 * 7 });
-      userInfo.value = response;
+      // 存储用户信息用于前端显示（session token已通过httpOnly cookie自动设置）
       localStorage.setItem('user', JSON.stringify(response));
       navigateTo('/');
     } catch (error: any) {

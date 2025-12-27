@@ -113,7 +113,20 @@ import { HomeIcon, UserSettingIcon, LogoutIcon, UsergroupIcon } from 'tdesign-ic
 const route = useRoute();
 const router = useRouter();
 
-const userInfo = useCookie<any>('userInfo');
+// 使用响应式对象存储用户信息
+const userInfo = ref<any>(null);
+
+// 在客户端从localStorage加载用户信息
+onMounted(() => {
+  const userStr = localStorage.getItem('user');
+  if (userStr) {
+    try {
+      userInfo.value = JSON.parse(userStr);
+    } catch {
+      userInfo.value = null;
+    }
+  }
+});
 
 const isAdmin = computed(() => {
   const role = userInfo.value?.role;
@@ -182,17 +195,24 @@ const handleDropdownClick = async (data: any) => {
         role: user.role,
         organizations: user.organizations || [],
       });
+      // 同步更新本地存储
+      localStorage.setItem('user', JSON.stringify(user));
+      userInfo.value = user;
       profileVisible.value = true;
     } catch (error) {
-      // 如果获取失败，使用 cookie 数据
-      Object.assign(profileData, {
-        id: userInfo.value.id,
-        account: userInfo.value.account,
-        name: userInfo.value.name,
-        role: userInfo.value.role,
-        organizations: userInfo.value.organizations || [],
-      });
-      profileVisible.value = true;
+      // 如果获取失败，使用缓存数据
+      if (userInfo.value) {
+        Object.assign(profileData, {
+          id: userInfo.value.id,
+          account: userInfo.value.account,
+          name: userInfo.value.name,
+          role: userInfo.value.role,
+          organizations: userInfo.value.organizations || [],
+        });
+        profileVisible.value = true;
+      } else {
+        MessagePlugin.error('获取用户信息失败');
+      }
     }
   }
 };
@@ -204,7 +224,6 @@ const onPasswordSubmit = async ({ validateResult, firstError }: any) => {
       await $fetch('/api/auth/update-profile', {
         method: 'POST',
         body: {
-          id: userInfo.value.id,
           oldPassword: passwordData.oldPassword,
           newPassword: passwordData.newPassword
         }
@@ -226,7 +245,12 @@ const onPasswordSubmit = async ({ validateResult, firstError }: any) => {
   }
 };
 
-const handleLogout = () => {
+const handleLogout = async () => {
+  try {
+    await $fetch('/api/auth/logout', { method: 'POST' });
+  } catch {
+    // 即使logout API失败也继续清理本地状态
+  }
   userInfo.value = null;
   localStorage.removeItem('user');
   navigateTo('/login');
