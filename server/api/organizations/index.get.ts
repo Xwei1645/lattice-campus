@@ -8,7 +8,7 @@ export default defineEventHandler(async (event) => {
     try {
         // 管理员可以查看所有组织，普通用户只能看自己所属的组织
         const isAdmin = ['root', 'super_admin', 'admin'].includes(user.role)
-        
+
         const organizations = await db.organization.findMany({
             where: isAdmin ? undefined : {
                 users: {
@@ -36,7 +36,7 @@ export default defineEventHandler(async (event) => {
                 }
             }
         })
-        
+
         return organizations
     } catch (error: any) {
         throw createError({

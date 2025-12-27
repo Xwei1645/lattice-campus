@@ -3,7 +3,7 @@ import { requireAuth } from '../../utils/auth'
 
 export default defineEventHandler(async (event) => {
     const user = await requireAuth(event)
-    
+
     const body = await readBody(event)
     const { id, status } = body
 
@@ -33,12 +33,12 @@ export default defineEventHandler(async (event) => {
             if (booking.userId !== user.id) {
                 throw createError({ statusCode: 403, statusMessage: 'Forbidden' })
             }
-            
+
             // 普通用户只能取消预订
             if (status !== 'cancelled') {
-                throw createError({ 
-                    statusCode: 403, 
-                    statusMessage: 'You can only cancel your own bookings' 
+                throw createError({
+                    statusCode: 403,
+                    statusMessage: 'You can only cancel your own bookings'
                 })
             }
         }

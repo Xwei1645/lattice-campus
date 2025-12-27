@@ -4,7 +4,7 @@ import { requireAdmin } from '../../utils/auth'
 export default defineEventHandler(async (event) => {
     // 只有管理员可以更新组织
     await requireAdmin(event)
-    
+
     const body = await readBody(event)
     const { id, name, description, userIds } = body
 

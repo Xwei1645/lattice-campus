@@ -5,7 +5,7 @@ import bcrypt from 'bcryptjs'
 export default defineEventHandler(async (event) => {
     // 只有管理员可以创建用户
     const currentUser = await requireAdmin(event)
-    
+
     const body = await readBody(event)
     const { account, password, name, role, organizationIds } = body
 
@@ -20,7 +20,7 @@ export default defineEventHandler(async (event) => {
     const roleHierarchy = ['user', 'admin', 'super_admin', 'root']
     const currentRoleIndex = roleHierarchy.indexOf(currentUser.role)
     const targetRoleIndex = roleHierarchy.indexOf(role || 'user')
-    
+
     if (targetRoleIndex >= currentRoleIndex && currentUser.role !== 'root') {
         throw createError({
             statusCode: 403,

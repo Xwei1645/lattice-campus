@@ -27,7 +27,7 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
 
         try {
             const user = JSON.parse(userStr)
-            
+
             // 权限控制：用户管理和组织管理仅限管理员
             const adminRoutes = ['/account-management', '/organization-management']
             if (adminRoutes.includes(to.path)) {

@@ -5,7 +5,7 @@ import bcrypt from 'bcryptjs'
 export default defineEventHandler(async (event) => {
     // 只有管理员可以重置密码
     const currentUser = await requireAdmin(event)
-    
+
     const id = getRouterParam(event, 'id')
     const body = await readBody(event)
     const { password } = body
@@ -33,7 +33,7 @@ export default defineEventHandler(async (event) => {
         const roleHierarchy = ['user', 'admin', 'super_admin', 'root']
         const currentRoleIndex = roleHierarchy.indexOf(currentUser.role)
         const targetUserRoleIndex = roleHierarchy.indexOf(user.role)
-        
+
         if (targetUserRoleIndex >= currentRoleIndex && currentUser.role !== 'root') {
             throw createError({
                 statusCode: 403,

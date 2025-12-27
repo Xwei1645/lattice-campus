@@ -3,7 +3,7 @@ import { requireAuth, isUserInOrganization } from '../../utils/auth'
 
 export default defineEventHandler(async (event) => {
     const user = await requireAuth(event)
-    
+
     const body = await readBody(event)
     const { roomName, organizationId, date, timeRange, purpose, remark } = body
 

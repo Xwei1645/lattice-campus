@@ -4,7 +4,7 @@ import { requireAdmin } from '../../utils/auth'
 export default defineEventHandler(async (event) => {
     // 只有管理员可以创建组织
     await requireAdmin(event)
-    
+
     const body = await readBody(event)
     const { name, description, userIds } = body
 

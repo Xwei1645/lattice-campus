@@ -5,7 +5,7 @@ import bcrypt from 'bcryptjs'
 export default defineEventHandler(async (event) => {
     // 验证用户已登录
     const currentUser = await requireAuth(event)
-    
+
     const body = await readBody(event)
     const { name, oldPassword, newPassword } = body
 

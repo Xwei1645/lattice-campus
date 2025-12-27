@@ -4,7 +4,7 @@ import { requireAdmin } from '../../utils/auth'
 export default defineEventHandler(async (event) => {
     // 只有管理员可以更新用户
     const currentUser = await requireAdmin(event)
-    
+
     const body = await readBody(event)
     const { id, name, role, status, organizationIds } = body
 
@@ -39,7 +39,7 @@ export default defineEventHandler(async (event) => {
         const roleHierarchy = ['user', 'admin', 'super_admin', 'root']
         const currentRoleIndex = roleHierarchy.indexOf(currentUser.role)
         const targetUserRoleIndex = roleHierarchy.indexOf(existingUser.role)
-        
+
         if (targetUserRoleIndex >= currentRoleIndex && currentUser.role !== 'root') {
             throw createError({
                 statusCode: 403,
