@@ -16,7 +16,7 @@
         <t-form-item name="account">
           <t-input
             v-model="formData.account"
-            placeholder="请输入账户"
+            placeholder="请输入用户名"
             size="large"
           >
             <template #prefix-icon>
@@ -56,7 +56,7 @@
       </t-form>
 
       <div class="login-footer">
-        <p class="contact-admin">注册账户或重置密码请联系校管理员</p>
+        <p class="contact-admin">注册用户或重置密码请联系校管理员</p>
       </div>
     </div>
   </div>
@@ -81,7 +81,7 @@ const formData = reactive({
 });
 
 const rules: FormRules = {
-  account: [{ required: true, message: '账户不能为空', trigger: 'blur' }],
+  account: [{ required: true, message: '用户名不能为空', trigger: 'blur' }],
   password: [{ required: true, message: '密码不能为空', trigger: 'blur' }],
 };
 
@@ -98,13 +98,13 @@ const onSubmit = async ({ validateResult, firstError }: any) => {
       });
       
       MessagePlugin.success('登录成功');
-      // 存储账户信息
+      // 存储用户信息
       const userInfo = useCookie<any>('userInfo', { maxAge: 60 * 60 * 24 * 7 });
       userInfo.value = response;
       localStorage.setItem('user', JSON.stringify(response));
       navigateTo('/');
     } catch (error: any) {
-      MessagePlugin.error(error.data?.statusMessage || '登录失败，请检查账户密码');
+      MessagePlugin.error(error.data?.statusMessage || '登录失败，请检查用户名或密码');
     } finally {
       loading.value = false;
     }

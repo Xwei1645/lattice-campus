@@ -1,14 +1,14 @@
 <template>
-  <div class="account-management-page">
-    <t-card title="账户管理" :bordered="false" class="management-card">
+  <div class="page-container">
+    <t-card title="用户管理" :bordered="false" class="content-card">
       <template #actions>
         <div class="header-actions">
           <t-input-adornment>
-            <t-input v-model="searchQuery" placeholder="搜索账户/姓名" clearable />
+            <t-input v-model="searchQuery" placeholder="搜索用户名/姓名" clearable />
             <template #append>
               <t-button theme="primary" @click="handleAddUser">
                 <template #icon><add-icon /></template>
-                新增账户
+                新增用户
               </t-button>
             </template>
           </t-input-adornment>
@@ -53,8 +53,8 @@
       width="500px"
     >
       <t-form :data="formData" :rules="rules" label-align="top" @submit="onFormSubmit">
-        <t-form-item label="账户" name="account">
-          <t-input v-model="formData.account" placeholder="请输入登录账户" :disabled="isEdit" />
+        <t-form-item label="用户名" name="account">
+          <t-input v-model="formData.account" placeholder="请输入登录用户名" :disabled="isEdit" />
         </t-form-item>
         <t-form-item label="姓名" name="name">
           <t-input v-model="formData.name" placeholder="请输入真实姓名" />
@@ -64,7 +64,7 @@
         </t-form-item>
         <t-form-item label="角色权限" name="role">
           <t-select v-model="formData.role" placeholder="请选择角色" :disabled="isSuperAdminRole">
-            <t-option label="普通账户" value="user" />
+            <t-option label="普通用户" value="user" />
             <t-option label="管理员" value="admin" />
             <t-option label="超级管理员" value="super_admin" />
           </t-select>
@@ -139,7 +139,7 @@ const filteredUserData = computed(() => {
 
 const columns: PrimaryTableCol[] = [
   { colKey: 'id', title: 'ID', width: 80 },
-  { colKey: 'account', title: '账户', width: 150 },
+  { colKey: 'account', title: '用户名', width: 150 },
   { colKey: 'name', title: '姓名', width: 120 },
   { colKey: 'organizations', title: '所属组织', width: 200, cell: 'organizations' },
   { colKey: 'role', title: '角色', width: 150, cell: 'role' },
@@ -158,7 +158,7 @@ const getRoleName = (role: string) => {
   const map: Record<string, string> = {
     super_admin: '超级管理员',
     admin: '管理员',
-    user: '普通账户',
+    user: '普通用户',
   };
   return map[role] || role;
 };
@@ -172,7 +172,7 @@ const getRoleTheme = (role: string) => {
 // 表单逻辑
 const dialogVisible = ref(false);
 const isEdit = ref(false);
-const dialogTitle = computed(() => isEdit.value ? '编辑账户' : '新增账户');
+const dialogTitle = computed(() => isEdit.value ? '编辑用户' : '新增用户');
 const isSuperAdminRole = computed(() => isEdit.value && formData.role === 'super_admin');
 const formData = reactive({
   id: null as number | null,
@@ -184,7 +184,7 @@ const formData = reactive({
 });
 
 const rules: FormRules = {
-  account: [{ required: true, message: '账户不能为空', trigger: 'blur' }],
+  account: [{ required: true, message: '用户名不能为空', trigger: 'blur' }],
   name: [{ required: true, message: '姓名不能为空', trigger: 'blur' }],
   password: [{ required: !isEdit.value, message: '初始密码不能为空', trigger: 'blur' }],
   role: [{ required: true, message: '请选择角色', trigger: 'change' }],
@@ -261,7 +261,7 @@ const handleStatusChange = async (row: any, val: any) => {
         status: val
       }
     });
-    MessagePlugin.success(`账户 ${row.account} 已${val ? '启用' : '禁用'}`);
+    MessagePlugin.success(`用户 ${row.account} 已${val ? '启用' : '禁用'}`);
     await refresh();
   } catch (error: any) {
     MessagePlugin.error('状态更新失败');
@@ -283,7 +283,7 @@ const onResetSubmit = async ({ validateResult, firstError }: any) => {
         method: 'POST',
         body: { password: resetData.newPassword }
       });
-      MessagePlugin.success(`账户 ${resetData.account} 的密码已成功重置`);
+      MessagePlugin.success(`用户 ${resetData.account} 的密码已成功重置`);
       resetVisible.value = false;
     } catch (error: any) {
       MessagePlugin.error('重置失败');
@@ -300,7 +300,7 @@ const handleDelete = async (row: any) => {
   }
   const confirmDialog = DialogPlugin.confirm({
     header: '确认删除',
-    body: `确定删除账户 ${row.account} 吗？删除后无法恢复。`,
+    body: `确定删除用户 ${row.account} 吗？删除后无法恢复。`,
     onConfirm: async () => {
       try {
         await $fetch('/api/users/delete', { 
@@ -319,14 +319,6 @@ const handleDelete = async (row: any) => {
 </script>
 
 <style scoped>
-.account-management-page {
-  padding: 24px;
-}
-
-.management-card {
-  background-color: var(--td-bg-color-container);
-}
-
 .header-actions {
   display: flex;
   gap: 16px;

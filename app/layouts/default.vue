@@ -13,8 +13,8 @@
                 <span class="user-name-text">{{ userInfo?.name }} ({{ userInfo?.account }})</span>
               </t-link>
               <t-dropdown-menu>
-                <t-dropdown-item value="edit-name">修改姓名</t-dropdown-item>
-                <t-dropdown-item value="edit-password">修改密码</t-dropdown-item>
+                <t-dropdown-item value="profile">个人信息</t-dropdown-item>
+                <t-dropdown-item value="password">修改密码</t-dropdown-item>
                 <t-dropdown-item value="logout">退出登录</t-dropdown-item>
               </t-dropdown-menu>
             </t-dropdown>
@@ -31,7 +31,7 @@
           </t-menu-item>
           <t-menu-item v-if="isAdmin" value="/account-management" to="/account-management">
             <template #icon><user-setting-icon /></template>
-            账户管理
+            用户管理
           </t-menu-item>
           <t-menu-item v-if="isAdmin" value="/organization-management" to="/organization-management">
             <template #icon><usergroup-icon /></template>
@@ -49,24 +49,31 @@
       </t-layout>
     </t-layout>
 
-    <!-- 修改姓名对话框 -->
+    <!-- 个人信息对话框 -->
     <t-dialog
-      v-model:visible="nameVisible"
-      header="修改姓名"
+      v-model:visible="profileVisible"
+      header="个人信息"
       :footer="false"
-      width="450px"
+      width="500px"
     >
-      <t-form :data="nameData" :rules="nameRules" label-align="top" @submit="onNameSubmit">
-        <t-form-item label="姓名" name="name">
-          <t-input v-model="nameData.name" placeholder="请输入新姓名" />
-        </t-form-item>
-        <t-form-item style="margin-top: 24px">
-          <div style="display: flex; justify-content: flex-end; width: 100%; gap: 12px">
-            <t-button variant="outline" @click="nameVisible = false">取消</t-button>
-            <t-button theme="primary" type="submit">保存修改</t-button>
-          </div>
-        </t-form-item>
-      </t-form>
+      <div style="padding: 10px 0">
+        <t-descriptions :column="1" bordered>
+          <t-descriptions-item label="用户 ID">{{ profileData.id }}</t-descriptions-item>
+          <t-descriptions-item label="用户名">{{ profileData.account }}</t-descriptions-item>
+          <t-descriptions-item label="姓名">{{ profileData.name }}</t-descriptions-item>
+          <t-descriptions-item label="角色">
+            <t-tag theme="primary" variant="light">{{ getRoleName(profileData.role) }}</t-tag>
+          </t-descriptions-item>
+          <t-descriptions-item label="所属组织">
+            <div v-if="profileData.organizations && profileData.organizations.length > 0" class="org-tags">
+              <t-tag v-for="org in profileData.organizations" :key="org.id" variant="outline">
+                {{ org.name }}
+              </t-tag>
+            </div>
+            <span v-else style="color: var(--td-text-color-placeholder)">暂无所属组织</span>
+          </t-descriptions-item>
+        </t-descriptions>
+      </div>
     </t-dialog>
 
     <!-- 修改密码对话框 -->
@@ -76,23 +83,24 @@
       :footer="false"
       width="450px"
     >
-      <t-form :data="passwordData" :rules="passwordRules" label-align="top" @submit="onPasswordSubmit">
-        <t-form-item label="旧密码" name="oldPassword">
-          <t-input v-model="passwordData.oldPassword" type="password" placeholder="请输入旧密码" />
-        </t-form-item>
-        <t-form-item label="新密码" name="newPassword">
-          <t-input v-model="passwordData.newPassword" type="password" placeholder="请输入新密码" />
-        </t-form-item>
-        <t-form-item label="确认新密码" name="confirmPassword">
-          <t-input v-model="passwordData.confirmPassword" type="password" placeholder="请再次输入新密码" />
-        </t-form-item>
-        <t-form-item style="margin-top: 24px">
-          <div style="display: flex; justify-content: flex-end; width: 100%; gap: 12px">
-            <t-button variant="outline" @click="passwordVisible = false">取消</t-button>
-            <t-button theme="primary" type="submit">修改密码</t-button>
-          </div>
-        </t-form-item>
-      </t-form>
+      <div style="padding: 10px 0">
+        <t-form :data="passwordData" :rules="passwordRules" label-align="top" @submit="onPasswordSubmit">
+          <t-form-item label="旧密码" name="oldPassword">
+            <t-input v-model="passwordData.oldPassword" type="password" placeholder="请输入旧密码" />
+          </t-form-item>
+          <t-form-item label="新密码" name="newPassword">
+            <t-input v-model="passwordData.newPassword" type="password" placeholder="请输入新密码" />
+          </t-form-item>
+          <t-form-item label="确认新密码" name="confirmPassword">
+            <t-input v-model="passwordData.confirmPassword" type="password" placeholder="请再次输入新密码" />
+          </t-form-item>
+          <t-form-item style="margin-top: 24px">
+            <div style="display: flex; justify-content: flex-end; width: 100%">
+              <t-button theme="primary" type="submit" :loading="passwordLoading">确认修改</t-button>
+            </div>
+          </t-form-item>
+        </t-form>
+      </div>
     </t-dialog>
   </t-layout>
 </template>
@@ -112,18 +120,20 @@ const isAdmin = computed(() => {
   return role === 'admin' || role === 'super_admin';
 });
 
-// 修改姓名逻辑
-const nameVisible = ref(false);
-const nameData = reactive({
+// 个人信息逻辑
+const profileVisible = ref(false);
+const passwordVisible = ref(false);
+const passwordLoading = ref(false);
+
+const profileData = reactive({
+  id: null as number | null,
+  account: '',
   name: '',
+  role: '',
+  organizations: [] as any[],
 });
 
-const nameRules: any = {
-  name: [{ required: true, message: '姓名不能为空', trigger: 'blur' }],
-};
-
 // 修改密码逻辑
-const passwordVisible = ref(false);
 const passwordData = reactive({
   oldPassword: '',
   newPassword: '',
@@ -150,52 +160,45 @@ const getRoleName = (role: string) => {
   const map: Record<string, string> = {
     super_admin: '超级管理员',
     admin: '管理员',
-    user: '普通账户',
+    user: '普通用户',
   };
   return map[role] || role;
 };
 
-const handleDropdownClick = (data: any) => {
+const handleDropdownClick = async (data: any) => {
   if (data.value === 'logout') {
     handleLogout();
-  } else if (data.value === 'edit-name') {
-    nameData.name = userInfo.value.name;
-    nameVisible.value = true;
-  } else if (data.value === 'edit-password') {
-    passwordData.oldPassword = '';
-    passwordData.newPassword = '';
-    passwordData.confirmPassword = '';
+  } else if (data.value === 'password') {
     passwordVisible.value = true;
-  }
-};
-
-const onNameSubmit = async ({ validateResult, firstError }: any) => {
-  if (validateResult === true) {
+  } else if (data.value === 'profile') {
+    // 打开个人信息前，先获取最新数据
     try {
-      const response: any = await $fetch('/api/auth/update-profile', {
-        method: 'POST',
-        body: {
-          id: userInfo.value.id,
-          name: nameData.name,
-        }
+      const user: any = await $fetch('/api/auth/me');
+      Object.assign(profileData, {
+        id: user.id,
+        account: user.account,
+        name: user.name,
+        role: user.role,
+        organizations: user.organizations || [],
       });
-
-      const updatedUser = { ...userInfo.value, name: response.name };
-      userInfo.value = updatedUser;
-      localStorage.setItem('user', JSON.stringify(updatedUser));
-
-      MessagePlugin.success('姓名修改成功');
-      nameVisible.value = false;
-    } catch (error: any) {
-      MessagePlugin.error(error.data?.statusMessage || '修改失败');
+      profileVisible.value = true;
+    } catch (error) {
+      // 如果获取失败，使用 cookie 数据
+      Object.assign(profileData, {
+        id: userInfo.value.id,
+        account: userInfo.value.account,
+        name: userInfo.value.name,
+        role: userInfo.value.role,
+        organizations: userInfo.value.organizations || [],
+      });
+      profileVisible.value = true;
     }
-  } else {
-    MessagePlugin.error(firstError);
   }
 };
 
 const onPasswordSubmit = async ({ validateResult, firstError }: any) => {
   if (validateResult === true) {
+    passwordLoading.value = true;
     try {
       await $fetch('/api/auth/update-profile', {
         method: 'POST',
@@ -207,9 +210,15 @@ const onPasswordSubmit = async ({ validateResult, firstError }: any) => {
       });
 
       MessagePlugin.success('密码修改成功');
+      // 重置密码表单并关闭对话框
+      passwordData.oldPassword = '';
+      passwordData.newPassword = '';
+      passwordData.confirmPassword = '';
       passwordVisible.value = false;
     } catch (error: any) {
       MessagePlugin.error(error.data?.statusMessage || '修改失败');
+    } finally {
+      passwordLoading.value = false;
     }
   } else {
     MessagePlugin.error(firstError);
@@ -268,6 +277,13 @@ const handleMenuClick = (value: any) => {
   color: var(--td-text-color-primary);
 }
 
+.org-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+
 .app-aside {
   border-right: 1px solid var(--td-component-border);
 }
@@ -290,6 +306,22 @@ const handleMenuClick = (value: any) => {
   color: var(--td-text-color-placeholder);
   background-color: var(--td-bg-color-page);
   font-size: 12px;
+}
+
+/* 全局卡片样式统一 */
+.page-container {
+  padding: 24px;
+}
+
+.content-card {
+  border-radius: var(--td-radius-medium);
+  box-shadow: 0 1px 10px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+  background-color: var(--td-bg-color-container);
+}
+
+.content-card:hover {
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
 }
 
 /* 移除默认 margin */

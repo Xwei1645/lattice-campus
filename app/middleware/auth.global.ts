@@ -1,7 +1,7 @@
 export default defineNuxtRouteMiddleware((to, from) => {
     const userInfo = useCookie<any>('userInfo')
 
-    // 如果访问的不是登录页，且没有账户信息，则跳转到登录页
+    // 如果访问的不是登录页，且没有用户信息，则跳转到登录页
     if (to.path !== '/login' && !userInfo.value) {
         return navigateTo('/login')
     }
@@ -11,7 +11,7 @@ export default defineNuxtRouteMiddleware((to, from) => {
         return navigateTo('/')
     }
 
-    // 权限控制：账号管理和组织管理仅限管理员和超级管理员
+    // 权限控制：用户管理和组织管理仅限管理员和超级管理员
     const adminRoutes = ['/account-management', '/organization-management']
     if (adminRoutes.includes(to.path)) {
         const role = userInfo.value?.role

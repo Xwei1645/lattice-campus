@@ -1,6 +1,6 @@
 <template>
-  <div class="organization-management">
-    <t-card title="组织管理" :bordered="false" class="management-card">
+  <div class="page-container">
+    <t-card title="组织管理" :bordered="false" class="content-card">
       <template #actions>
         <div class="header-actions">
           <t-input-adornment>
@@ -204,9 +204,6 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.organization-management {
-  padding: 20px;
-}
 .header-actions {
   margin-bottom: 16px;
 }

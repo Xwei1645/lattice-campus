@@ -1,14 +1,14 @@
 <template>
-  <div class="my-booking-page">
-    <!-- 卡片 1: 每日一言 -->
-    <t-card title="每日一言" :bordered="false" class="mb-4 quote-card">
+  <div class="page-container">
+    <!-- 卡片 1: 一言 -->
+    <t-card title="一言" :bordered="false" class="content-card quote-card mb-4">
       <div class="daily-quote">
-        “生活不是等待风暴过去，而是学会了在雨中翩翩起舞。”
+        『万千孤单焰火 让这虚构灵魂鲜活』
       </div>
     </t-card>
 
     <!-- 卡片 2: 我的预约 -->
-    <t-card title="我的预约" :bordered="false" class="booking-card">
+    <t-card title="我的预约" :bordered="false" class="content-card">
       <template #actions>
         <t-button theme="primary" @click="handleCreateBooking">
           新建预约
@@ -288,24 +288,12 @@ const handleCancel = async (row: any) => {
 </script>
 
 <style scoped>
-.my-booking-page {
-  padding: 24px;
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-}
-
 .quote-card {
-  background-color: var(--td-brand-color-light);
   border-left: 4px solid var(--td-brand-color);
 }
 
 :deep(.quote-card .t-card__body) {
   padding-top: 0;
-}
-
-.booking-card {
-  background-color: var(--td-bg-color-container);
 }
 
 .daily-quote {
