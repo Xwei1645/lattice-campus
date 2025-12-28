@@ -14,13 +14,13 @@ export default defineNitroPlugin(async (nitroApp) => {
                 data: {
                     account: 'system',
                     password: hashedPassword,
-                    name: '根管理员',
-                    role: 'root',
+                    name: '超级管理员',
+                    role: 'super_admin',
                     status: true
                 }
             })
 
-            console.log('Default root admin created: system / admin123456')
+            console.log('Default super admin created: system / admin123456')
         }
     } catch (error) {
         console.error('Failed to initialize database:', error)

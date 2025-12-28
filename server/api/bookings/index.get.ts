@@ -5,7 +5,7 @@ export default defineEventHandler(async (event) => {
     const user = await requireAuth(event)
 
     try {
-        const isAdmin = ['root', 'super_admin', 'admin'].includes(user.role)
+        const isAdmin = ['super_admin', 'admin'].includes(user.role)
 
         const bookings = await db.booking.findMany({
             where: isAdmin ? undefined : {

@@ -27,20 +27,20 @@ export default defineEventHandler(async (event) => {
             })
         }
 
-        // 不能修改root管理员的角色
-        if (existingUser.account === 'system' && role !== 'root') {
+        // 不能修改ID为1的超级管理员的角色
+        if (existingUser.id === 1 && role !== 'super_admin') {
             throw createError({
                 statusCode: 403,
-                statusMessage: 'Cannot change root administrator role'
+                statusMessage: 'Cannot change the primary super administrator role'
             })
         }
 
         // 权限控制：不能修改比自己权限更高的用户
-        const roleHierarchy = ['user', 'admin', 'super_admin', 'root']
+        const roleHierarchy = ['user', 'admin', 'super_admin']
         const currentRoleIndex = roleHierarchy.indexOf(currentUser.role)
         const targetUserRoleIndex = roleHierarchy.indexOf(existingUser.role)
 
-        if (targetUserRoleIndex >= currentRoleIndex && currentUser.role !== 'root') {
+        if (targetUserRoleIndex >= currentRoleIndex && currentUser.role !== 'super_admin') {
             throw createError({
                 statusCode: 403,
                 statusMessage: 'Cannot modify user with higher or equal role'
@@ -50,7 +50,7 @@ export default defineEventHandler(async (event) => {
         // 不能将用户提升到比自己更高的角色
         if (role) {
             const newRoleIndex = roleHierarchy.indexOf(role)
-            if (newRoleIndex >= currentRoleIndex && currentUser.role !== 'root') {
+            if (newRoleIndex >= currentRoleIndex && currentUser.role !== 'super_admin') {
                 throw createError({
                     statusCode: 403,
                     statusMessage: 'Cannot assign role higher than or equal to your own'

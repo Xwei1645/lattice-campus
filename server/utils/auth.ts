@@ -192,7 +192,7 @@ export async function requireAuth(event: H3Event): Promise<AuthUser> {
 export async function requireAdmin(event: H3Event): Promise<AuthUser> {
     const user = await requireAuth(event)
 
-    if (!['root', 'super_admin', 'admin'].includes(user.role)) {
+    if (!['super_admin', 'admin'].includes(user.role)) {
         throw createError({
             statusCode: 403,
             statusMessage: 'Forbidden - Admin access required'
@@ -208,26 +208,10 @@ export async function requireAdmin(event: H3Event): Promise<AuthUser> {
 export async function requireSuperAdmin(event: H3Event): Promise<AuthUser> {
     const user = await requireAuth(event)
 
-    if (!['root', 'super_admin'].includes(user.role)) {
+    if (user.role !== 'super_admin') {
         throw createError({
             statusCode: 403,
             statusMessage: 'Forbidden - Super admin access required'
-        })
-    }
-
-    return user
-}
-
-/**
- * 要求根管理员权限
- */
-export async function requireRoot(event: H3Event): Promise<AuthUser> {
-    const user = await requireAuth(event)
-
-    if (user.role !== 'root') {
-        throw createError({
-            statusCode: 403,
-            statusMessage: 'Forbidden - Root admin access required'
         })
     }
 
@@ -248,7 +232,7 @@ export async function requireOrganizationAccess(event: H3Event, organizationId: 
     const user = await requireAuth(event)
 
     // 管理员可以访问所有组织
-    if (['root', 'super_admin', 'admin'].includes(user.role)) {
+    if (['super_admin', 'admin'].includes(user.role)) {
         return user
     }
 

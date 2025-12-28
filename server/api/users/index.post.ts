@@ -17,11 +17,11 @@ export default defineEventHandler(async (event) => {
     }
 
     // 权限控制：不能创建比自己权限更高的用户
-    const roleHierarchy = ['user', 'admin', 'super_admin', 'root']
+    const roleHierarchy = ['user', 'admin', 'super_admin']
     const currentRoleIndex = roleHierarchy.indexOf(currentUser.role)
     const targetRoleIndex = roleHierarchy.indexOf(role || 'user')
 
-    if (targetRoleIndex >= currentRoleIndex && currentUser.role !== 'root') {
+    if (targetRoleIndex >= currentRoleIndex && currentUser.role !== 'super_admin') {
         throw createError({
             statusCode: 403,
             statusMessage: 'Cannot create user with higher or equal role'

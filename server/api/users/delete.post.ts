@@ -27,11 +27,11 @@ export default defineEventHandler(async (event) => {
             })
         }
 
-        // 不能删除root管理员
-        if (user.account === 'system') {
+        // 不能删除ID为1的超级管理员
+        if (user.id === 1) {
             throw createError({
                 statusCode: 403,
-                statusMessage: 'Cannot delete root administrator'
+                statusMessage: 'Cannot delete the primary super administrator'
             })
         }
 
@@ -44,11 +44,11 @@ export default defineEventHandler(async (event) => {
         }
 
         // 权限控制：不能删除比自己权限更高的用户
-        const roleHierarchy = ['user', 'admin', 'super_admin', 'root']
+        const roleHierarchy = ['user', 'admin', 'super_admin']
         const currentRoleIndex = roleHierarchy.indexOf(currentUser.role)
         const targetUserRoleIndex = roleHierarchy.indexOf(user.role)
 
-        if (targetUserRoleIndex >= currentRoleIndex && currentUser.role !== 'root') {
+        if (targetUserRoleIndex >= currentRoleIndex && currentUser.role !== 'super_admin') {
             throw createError({
                 statusCode: 403,
                 statusMessage: 'Cannot delete user with higher or equal role'

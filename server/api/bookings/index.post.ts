@@ -12,7 +12,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // 验证用户是否属于该组织（管理员可以跳过此检查）
-    const isAdmin = ['root', 'super_admin', 'admin'].includes(user.role)
+    const isAdmin = ['super_admin', 'admin'].includes(user.role)
     if (!isAdmin && !isUserInOrganization(user, Number(organizationId))) {
         throw createError({
             statusCode: 403,

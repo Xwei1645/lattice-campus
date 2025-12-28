@@ -15,7 +15,7 @@ model User {
   account    String   @unique
   password   String
   name       String
-  role       String   @default("user") // root, super_admin, admin, user
+  role       String   @default("user") // super_admin, admin, user
   status     Boolean  @default(true)
   createTime DateTime @default(now())
   updatedAt  DateTime @updatedAt

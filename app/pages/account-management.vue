@@ -40,7 +40,14 @@
         <template #op="{ row }">
           <t-link theme="primary" hover="color" style="margin-right: 16px" @click="handleEdit(row)">编辑</t-link>
           <t-link theme="warning" hover="color" style="margin-right: 16px" @click="handleResetPassword(row)">重置密码</t-link>
-          <t-link theme="danger" hover="color" @click="handleDelete(row)">删除</t-link>
+          <t-link 
+            v-if="currentUser && row.id !== 1 && row.id !== currentUser.id" 
+            theme="danger" 
+            hover="color" 
+            @click="handleDelete(row)"
+          >
+            删除
+          </t-link>
         </template>
       </t-table>
     </t-card>
@@ -63,11 +70,10 @@
           <t-input v-model="formData.password" type="password" placeholder="请输入初始密码" />
         </t-form-item>
         <t-form-item label="角色权限" name="role">
-          <t-select v-model="formData.role" placeholder="请选择角色" :disabled="isRootUser">
+          <t-select v-model="formData.role" placeholder="请选择角色">
             <t-option label="普通用户" value="user" />
             <t-option label="管理员" value="admin" />
             <t-option label="超级管理员" value="super_admin" />
-            <t-option v-if="isRootUser" label="根管理员" value="root" />
           </t-select>
         </t-form-item>
         <t-form-item label="所属组织" name="organizationIds">
@@ -107,7 +113,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed } from 'vue';
+import { ref, reactive, computed, onMounted } from 'vue';
 import { MessagePlugin, DialogPlugin, type PrimaryTableCol, type FormRules } from 'tdesign-vue-next';
 import { AddIcon } from 'tdesign-icons-vue-next';
 
@@ -120,6 +126,19 @@ interface User {
   createTime: string;
   password?: string;
 }
+
+// 获取当前用户信息
+const currentUser = ref<any>(null);
+onMounted(() => {
+  try {
+    const userStr = localStorage.getItem('user');
+    if (userStr) {
+      currentUser.value = JSON.parse(userStr);
+    }
+  } catch (e) {
+    console.error('Failed to parse user info', e);
+  }
+});
 
 // 获取后端数据
 const { data: users, refresh } = await useFetch<User[]>('/api/users');
@@ -154,7 +173,6 @@ const pagination = reactive({
 
 const getRoleName = (role: string) => {
   const map: Record<string, string> = {
-    root: '根管理员',
     super_admin: '超级管理员',
     admin: '管理员',
     user: '普通用户',
@@ -163,7 +181,6 @@ const getRoleName = (role: string) => {
 };
 
 const getRoleTheme = (role: string) => {
-  if (role === 'root') return 'primary';
   if (role === 'super_admin') return 'danger';
   if (role === 'admin') return 'warning';
   return 'default';
@@ -173,7 +190,6 @@ const getRoleTheme = (role: string) => {
 const dialogVisible = ref(false);
 const isEdit = ref(false);
 const dialogTitle = computed(() => isEdit.value ? '编辑用户' : '新增用户');
-const isRootUser = computed(() => isEdit.value && formData.account === 'system');
 const formData = reactive({
   id: null as number | null,
   account: '',
@@ -294,10 +310,6 @@ const onResetSubmit = async ({ validateResult, firstError }: any) => {
 };
 
 const handleDelete = async (row: any) => {
-  if (row.account === 'system') {
-    MessagePlugin.warning('根管理员不能删除');
-    return;
-  }
   const confirmDialog = DialogPlugin.confirm({
     header: '确认删除',
     body: `确定删除用户 ${row.account} 吗？删除后无法恢复。`,
