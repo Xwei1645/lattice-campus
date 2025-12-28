@@ -5,14 +5,14 @@ export default defineEventHandler(async (event) => {
     const user = await requireAuth(event)
 
     const body = await readBody(event)
-    const { roomName, organizationId, date, timeRange, purpose, remark } = body
+    const { roomId, organizationId, date, timeRange, purpose, remark } = body
 
-    if (!roomName || !organizationId || !date || !timeRange || timeRange.length !== 2 || !purpose) {
+    if (!roomId || !organizationId || !date || !timeRange || timeRange.length !== 2 || !purpose) {
         throw createError({ statusCode: 400, statusMessage: 'Missing required fields' })
     }
 
     // 验证用户是否属于该组织（管理员可以跳过此检查）
-    const isAdmin = ['super_admin', 'admin'].includes(user.role)
+    const isAdmin = ['root', 'super_admin', 'admin'].includes(user.role)
     if (!isAdmin && !isUserInOrganization(user, Number(organizationId))) {
         throw createError({
             statusCode: 403,
@@ -32,11 +32,23 @@ export default defineEventHandler(async (event) => {
     }
 
     try {
+        // 检查场地是否存在且可用
+        const room = await db.room.findUnique({
+            where: { id: Number(roomId) }
+        })
+
+        if (!room || !room.status) {
+            throw createError({
+                statusCode: 400,
+                statusMessage: 'Room not found or unavailable'
+            })
+        }
+
         // 检查时间冲突
         const conflict = await db.booking.findFirst({
             where: {
-                roomName,
-                status: { not: 'cancelled' },
+                roomId: Number(roomId),
+                status: { notIn: ['cancelled', 'rejected'] },
                 OR: [
                     {
                         startTime: { lt: endTime },
@@ -55,7 +67,7 @@ export default defineEventHandler(async (event) => {
 
         const booking = await db.booking.create({
             data: {
-                roomName,
+                roomId: Number(roomId),
                 organizationId: Number(organizationId),
                 userId: user.id,
                 startTime,
@@ -70,13 +82,18 @@ export default defineEventHandler(async (event) => {
                         id: true,
                         name: true
                     }
+                },
+                room: {
+                    select: {
+                        name: true
+                    }
                 }
             }
         })
 
         return {
             id: booking.id,
-            roomName: booking.roomName,
+            roomName: booking.room.name,
             organizationId: booking.organization.id,
             orgName: booking.organization.name,
             startTime: booking.startTime,

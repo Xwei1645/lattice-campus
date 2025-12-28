@@ -24,10 +24,18 @@
     </t-header>
     <t-layout>
       <t-aside class="app-aside">
-        <t-menu theme="light" :value="$route.path" collapsed @change="handleMenuClick">
+        <t-menu theme="light" :value="$route.path" @change="handleMenuClick">
           <t-menu-item value="/" to="/">
             <template #icon><home-icon /></template>
             首页
+          </t-menu-item>
+          <t-menu-item v-if="isAdmin" value="/booking-management" to="/booking-management">
+            <template #icon><assignment-icon /></template>
+            预约审批
+          </t-menu-item>
+          <t-menu-item v-if="isAdmin" value="/room-management" to="/room-management">
+            <template #icon><layers-icon /></template>
+            场地管理
           </t-menu-item>
           <t-menu-item v-if="isAdmin" value="/account-management" to="/account-management">
             <template #icon><user-setting-icon /></template>
@@ -36,10 +44,6 @@
           <t-menu-item v-if="isAdmin" value="/organization-management" to="/organization-management">
             <template #icon><usergroup-icon /></template>
             组织管理
-          </t-menu-item>
-          <t-menu-item v-if="isAdmin" value="/booking-management" to="/booking-management">
-            <template #icon><assignment-icon /></template>
-            预约审批
           </t-menu-item>
         </t-menu>
       </t-aside>
@@ -112,7 +116,7 @@
 <script setup lang="ts">
 import { onMounted, ref, reactive } from 'vue';
 import { MessagePlugin } from 'tdesign-vue-next';
-import { HomeIcon, UserSettingIcon, LogoutIcon, UsergroupIcon, AssignmentIcon } from 'tdesign-icons-vue-next';
+import { HomeIcon, UserSettingIcon, LogoutIcon, UsergroupIcon, AssignmentIcon, LayersIcon } from 'tdesign-icons-vue-next';
 
 const route = useRoute();
 const router = useRouter();

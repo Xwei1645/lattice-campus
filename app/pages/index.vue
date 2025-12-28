@@ -52,9 +52,9 @@
         label-align="top"
         @submit="onSubmit"
       >
-        <t-form-item label="预约场地" name="roomName">
-          <t-select v-model="formData.roomName" placeholder="请选择场地">
-            <t-option v-for="item in roomOptions" :key="item.value" :value="item.value" :label="item.label" />
+        <t-form-item label="预约场地" name="roomId">
+          <t-select v-model="formData.roomId" placeholder="请选择场地">
+            <t-option v-for="item in roomOptions" :key="item.id" :value="item.id" :label="item.name" :disabled="!item.status" />
           </t-select>
         </t-form-item>
 
@@ -206,7 +206,7 @@ const viewVisible = ref(false);
 const currentBooking = ref<any>(null);
 
 const formData = reactive({
-  roomName: '',
+  roomId: undefined as number | undefined,
   organizationId: undefined as number | undefined,
   date: '',
   timeRange: [] as string[],
@@ -215,19 +215,15 @@ const formData = reactive({
 });
 
 const rules: FormRules = {
-  roomName: [{ required: true, message: '请选择场地', trigger: 'change' }],
+  roomId: [{ required: true, message: '请选择场地', trigger: 'change' }],
   organizationId: [{ required: true, message: '请选择使用组织', trigger: 'change' }],
   date: [{ required: true, message: '请选择日期', trigger: 'change' }],
   timeRange: [{ required: true, message: '请选择时间范围', trigger: 'change' }],
   purpose: [{ required: true, message: '请输入使用说明', trigger: 'blur' }],
 };
 
-const roomOptions = [
-  { label: '研讨室 A101', value: '研讨室 A101' },
-  { label: '研讨室 A102', value: '研讨室 A102' },
-  { label: '多媒体教室 B205', value: '多媒体教室 B205' },
-  { label: '录音棚 C303', value: '录音棚 C303' },
-];
+const { data: roomsData } = await useFetch<any[]>('/api/rooms');
+const roomOptions = computed(() => roomsData.value || []);
 
 
 // 方法
@@ -245,7 +241,7 @@ const onSubmit = async ({ validateResult, firstError }: any) => {
       await $fetch('/api/bookings', {
         method: 'POST',
         body: {
-          roomName: formData.roomName,
+          roomId: formData.roomId,
           organizationId: formData.organizationId,
           date: formData.date,
           timeRange: formData.timeRange,
@@ -260,7 +256,7 @@ const onSubmit = async ({ validateResult, firstError }: any) => {
       
       // 重置表单
       Object.assign(formData, {
-        roomName: '',
+        roomId: undefined,
         organizationId: undefined,
         date: '',
         timeRange: [],

@@ -18,6 +18,12 @@ export default defineEventHandler(async (event) => {
                         name: true
                     }
                 },
+                room: {
+                    select: {
+                        id: true,
+                        name: true
+                    }
+                },
                 user: {
                     select: {
                         id: true,
@@ -33,7 +39,8 @@ export default defineEventHandler(async (event) => {
 
         return bookings.map(b => ({
             id: b.id,
-            roomName: b.roomName,
+            roomId: b.room.id,
+            roomName: b.room.name,
             organizationId: b.organization.id,
             orgName: b.organization.name,
             userId: b.user.id,

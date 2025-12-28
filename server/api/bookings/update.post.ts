@@ -56,6 +56,11 @@ export default defineEventHandler(async (event) => {
                         name: true
                     }
                 },
+                room: {
+                    select: {
+                        name: true
+                    }
+                },
                 user: {
                     select: {
                         id: true,
@@ -67,7 +72,7 @@ export default defineEventHandler(async (event) => {
 
         return {
             id: updatedBooking.id,
-            roomName: updatedBooking.roomName,
+            roomName: updatedBooking.room.name,
             organizationId: updatedBooking.organization.id,
             orgName: updatedBooking.organization.name,
             userId: updatedBooking.user.id,
