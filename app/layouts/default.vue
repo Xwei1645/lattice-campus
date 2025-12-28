@@ -34,7 +34,7 @@
             预约审批
           </t-menu-item>
           <t-menu-item v-if="isAdmin" value="/room-management" to="/room-management">
-            <template #icon><layers-icon /></template>
+            <template #icon><location-icon /></template>
             场地管理
           </t-menu-item>
           <t-menu-item v-if="isAdmin" value="/account-management" to="/account-management">
@@ -44,6 +44,10 @@
           <t-menu-item v-if="isAdmin" value="/organization-management" to="/organization-management">
             <template #icon><usergroup-icon /></template>
             组织管理
+          </t-menu-item>
+          <t-menu-item value="/about" to="/about">
+            <template #icon><info-circle-icon /></template>
+            关于
           </t-menu-item>
         </t-menu>
       </t-aside>
@@ -116,7 +120,7 @@
 <script setup lang="ts">
 import { onMounted, ref, reactive } from 'vue';
 import { MessagePlugin } from 'tdesign-vue-next';
-import { HomeIcon, UserSettingIcon, LogoutIcon, UsergroupIcon, AssignmentIcon, LayersIcon } from 'tdesign-icons-vue-next';
+import { HomeIcon, UserSettingIcon, LogoutIcon, UsergroupIcon, AssignmentIcon, LocationIcon, InfoCircleIcon } from 'tdesign-icons-vue-next';
 
 const route = useRoute();
 const router = useRouter();
