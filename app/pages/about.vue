@@ -36,6 +36,13 @@
             感谢 <t-link href="https://github.com/education" target="_blank" theme="primary" hover="color">GitHub Education</t-link> Benefits 提供的 Copilot Pro。
           </p>
         </div>
+
+        <div class="section">
+          <div class="section-title">帮助</div>
+          <p class="section-text">
+            如需帮助请联系校管理员。
+          </p>
+        </div>
       </div>
     </t-card>
   </div>
