@@ -375,10 +375,6 @@ const handleMenuClick = (value: any) => {
   box-sizing: border-box;
 }
 
-.content-card:not(.quote-card) {
-  min-width: 600px;
-}
-
 .content-card:hover {
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
 }
