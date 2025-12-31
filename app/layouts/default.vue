@@ -29,6 +29,10 @@
             <template #icon><home-icon /></template>
             首页
           </t-menu-item>
+          <t-menu-item value="/overview" to="/overview">
+            <template #icon><calendar-icon /></template>
+            总览
+          </t-menu-item>
           <t-menu-item v-if="isAdmin" value="/booking-management" to="/booking-management">
             <template #icon><assignment-icon /></template>
             预约审批

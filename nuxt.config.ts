@@ -25,6 +25,8 @@ export default defineNuxtConfig({
         'tdesign-vue-next/es/time-picker/index',
         'tdesign-vue-next/es/textarea/index',
         'tdesign-vue-next/es/popconfirm/index',
+        'tdesign-vue-next/es/loading/index',
+        'tdesign-vue-next/es/descriptions/index',
         'tdesign-icons-vue-next',
       ]
     }
