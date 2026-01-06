@@ -39,7 +39,7 @@
           </t-space>
         </template>
         <template #status="{ row }">
-          <t-switch v-model="row.status" :label="['启用', '禁用']" @change="(val) => handleStatusChange(row, val)" />
+          <t-switch v-model="row.status" :label="['启用', '禁用']" @change="(val: boolean) => handleStatusChange(row, val)" />
         </template>
         <template #op="{ row }">
           <t-link theme="primary" hover="color" style="margin-right: 16px" @click="handleEdit(row)">编辑</t-link>
