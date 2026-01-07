@@ -43,6 +43,21 @@ npm install -g pm2
 </details>
 
 <details>
+<summary><b>设置 PM2 开机自启 (可选)</b></summary>
+
+1. **生成自启脚本**:
+   ```bash
+   pm2 startup
+   ```
+2. **执行指令**:
+   根据上一步命令输出的提示，复制并执行以 `sudo env PATH=...` 开头的指令。
+3. **保存当前进程列表**:
+   ```bash
+   pm2 save
+   ```
+</details>
+
+<details>
 <summary><b>PostgreSQL</b></summary>
 
 1. **安装 PostgreSQL (Ubuntu/Debian)**:
@@ -63,11 +78,12 @@ npm install -g pm2
    GRANT ALL PRIVILEGES ON DATABASE wzhs_booking TO dbuser;
    ```
 
-   **针对 PostgreSQL 15+ 版本** (还需额外授权 schema):
-   ```sql
-   \c wzhs_booking
-   GRANT ALL ON SCHEMA public TO dbuser;
-   ```
+   > [!TIP]
+   > **针对 PostgreSQL 15+ 版本** (还需额外授权 schema):
+   > ```sql
+   > \c wzhs_booking
+   > GRANT ALL ON SCHEMA public TO dbuser;
+   > ```
 
    退出终端：
    ```sql
@@ -125,5 +141,21 @@ node seed.js
   ```
   或者使用 PM2 启动 (推荐)：
   ```bash
+  # 首次启动
   pm2 start pnpm --name "wzhs-booking" -- start
   ```
+
+  > [!IMPORTANT]
+  > `pm2 start` 仅需在首次运行时执行。后续更新代码（执行 `pnpm build` 后）或重启服务，请使用 `pm2 restart wzhs-booking`，避免产生重复进程。
+
+<details>
+<summary><b>PM2 常用命令</b></summary>
+
+- **查看服务状态**: `pm2 list`
+- **查看实时日志**: `pm2 logs wzhs-booking`
+- **重启服务**: `pm2 restart wzhs-booking`
+- **停止服务**: `pm2 stop wzhs-booking`
+- **删除服务**: `pm2 delete wzhs-booking`
+- **保存当前列表**: `pm2 save` (用于机器重启后自动恢复)
+- **监控界面**: `pm2 monit`
+</details>
