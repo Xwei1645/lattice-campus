@@ -52,5 +52,5 @@ node seed.js
   ```
   然后使用 PM2 启动（推荐）：
   ```bash
-  pm2 start .output/server/index.mjs --name lattice-campus
+  pm2 start .output/server/index.mjs --name wzhs-booking
   ```
