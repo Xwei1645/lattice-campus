@@ -27,3 +27,8 @@ export const formatDateTime = (dateStr: string | Date) => {
     if (!dateStr) return '-'
     return dayjs(dateStr).format('YYYY-MM-DD HH:mm')
 }
+
+export const formatDate = (dateStr: string | Date) => {
+    if (!dateStr) return '-'
+    return dayjs(dateStr).format('YYYY-MM-DD')
+}

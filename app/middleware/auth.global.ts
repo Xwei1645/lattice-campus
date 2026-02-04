@@ -33,7 +33,8 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
                 '/room-management', 
                 '/booking-management', 
                 '/auto-approval',
-                '/feedback-management'
+                '/feedback-management',
+                '/notice-management'
             ]
             if (adminRoutes.includes(to.path)) {
                 if (!['root', 'super_admin', 'admin'].includes(user.role)) {

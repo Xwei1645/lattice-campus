@@ -1,6 +1,29 @@
+import { execSync } from 'child_process';
+import { version as vueVersion } from 'vue';
+import pkg from './package.json';
+
+const getGitHash = () => {
+  try {
+    return execSync('git rev-parse --short HEAD').toString().trim();
+  } catch (e) {
+    return 'unknown';
+  }
+};
+
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
+  runtimeConfig: {
+    public: {
+      buildInfo: {
+        version: pkg.version || '1.0.0',
+        gitHash: getGitHash(),
+        buildTime: new Date().toISOString(),
+        nuxtVersion: pkg.dependencies?.nuxt?.replace('^', '') || 'unknown',
+        vueVersion: vueVersion || pkg.dependencies?.vue?.replace('^', '') || 'unknown',
+      }
+    }
+  },
   app: {
     head: {
       title: 'WZHS Booking',

@@ -1,302 +1,317 @@
 <template>
-  <div class="page-container">
+  <div class="page-container dashboard-container">
     <div class="page-header">
-      <h2 class="page-title">我的预约</h2>
-      <div class="header-actions">
-        <t-button theme="primary" @click="handleCreateBooking">
-          <template #icon><t-icon name="add" /></template>
-          新建预约
-        </t-button>
-      </div>
+      <h2 class="page-title">首页</h2>
     </div>
-      
-    <t-card :bordered="false" class="content-card">
-      <t-table
-        row-key="id"
-        :data="bookingData"
-        :columns="columns"
-        :hover="true"
-        :pagination="pagination"
-      >
-        <template #status="{ row }">
-          <t-tag v-if="row.status === 'approved'" theme="success" variant="light">已通过</t-tag>
-          <t-tag v-else-if="row.status === 'pending'" theme="warning" variant="light">待审批</t-tag>
-          <t-tag v-else-if="row.status === 'rejected'" theme="danger" variant="light">已驳回</t-tag>
-          <t-tag v-else theme="default" variant="light">已取消</t-tag>
-        </template>
-        <template #action="{ row }">
-          <t-link theme="primary" hover="color" style="margin-right: 8px" @click="handleView(row)">
-            查看
-          </t-link>
-          <t-popconfirm content="确认取消该预约吗？" @confirm="handleCancel(row)">
-            <t-link theme="danger" hover="color">取消</t-link>
-          </t-popconfirm>
-        </template>
-      </t-table>
-    </t-card>
 
-    <!-- 新建预约对话框 -->
+    <t-row :gutter="[24, 24]">
+      <!-- 最近预约卡片 -->
+      <t-col :xs="12" :md="6" :lg="4">
+        <t-card title="最近预约" :bordered="false" class="dashboard-card shadow-card">
+          <template #actions>
+            <t-link theme="primary" @click="$router.push('/my-bookings')">
+              更多 <t-icon name="chevron-right" />
+            </t-link>
+          </template>
+          <div v-if="loading" class="loading-container">
+            <t-loading size="small" text="加载中..." />
+          </div>
+          <div v-else-if="latestBooking" class="booking-info">
+            <div class="booking-room">
+              <t-icon name="location" class="info-icon" />
+              {{ latestBooking.room?.name }}
+            </div>
+            <div class="booking-time">
+              <t-icon name="time" class="info-icon" />
+              {{ formatDateTime(latestBooking.startTime) }}
+            </div>
+            <div class="booking-status">
+              <t-tag :theme="getStatusTheme(latestBooking.status)" variant="light">
+                {{ getStatusText(latestBooking.status) }}
+              </t-tag>
+            </div>
+            <t-divider dashed />
+            <div class="booking-purpose">
+              <span class="label">用途：</span>
+              <span class="value ellipsis">{{ latestBooking.purpose }}</span>
+            </div>
+          </div>
+          <div v-else class="empty-state">
+            <t-icon name="info-circle" size="32px" />
+            <p>最近暂无预约</p>
+            <t-button variant="outline" size="small" @click="$router.push('/my-bookings')">去预约</t-button>
+          </div>
+        </t-card>
+      </t-col>
+
+      <!-- 通知列表卡片 -->
+      <t-col :xs="12" :md="6" :lg="8">
+        <t-card title="通知" :bordered="false" class="dashboard-card shadow-card">
+          <t-list v-if="notices.length > 0" :split="true">
+            <t-list-item v-for="notice in notices.slice(0, 5)" :key="notice.id" class="notice-list-item">
+              <template #content>
+                <div class="notice-item-content">
+                  <t-tag :theme="getTypeTheme(notice.type)" variant="light-outline" size="small" class="notice-tag">
+                    {{ getTypeText(notice.type) }}
+                  </t-tag>
+                  <span class="notice-title" @click="showNoticeDetail(notice)">{{ notice.title }}</span>
+                </div>
+              </template>
+              <template #action>
+                <span class="notice-time">{{ formatDate(notice.createTime) }}</span>
+              </template>
+            </t-list-item>
+          </t-list>
+          <div v-else class="empty-state">
+            <t-icon name="notification" size="32px" />
+            <p>暂无通知</p>
+          </div>
+        </t-card>
+      </t-col>
+    </t-row>
+
+    <!-- 通知详情对话框 -->
     <t-dialog
-      v-model:visible="visible"
-      header="新建预约"
-      :confirm-btn="{ content: '提交预约', loading: submitLoading }"
+      v-model:visible="noticeVisible"
+      :header="selectedNotice?.title"
+      :footer="false"
       width="min(600px, 95%)"
-      @confirm="() => form?.submit()"
     >
-      <t-form
-        ref="form"
-        :data="formData"
-        :rules="rules"
-        label-align="top"
-        @submit="onSubmit"
-      >
-        <t-form-item label="预约场地" name="roomId">
-          <t-select v-model="formData.roomId" placeholder="请选择场地" variant="filled">
-            <t-option v-for="item in roomOptions" :key="item.id" :value="item.id" :label="item.name" :disabled="!item.status" />
-          </t-select>
-        </t-form-item>
-
-        <t-form-item label="使用组织" name="organizationId">
-          <t-select v-model="formData.organizationId" placeholder="请选择使用组织" variant="filled">
-            <t-option v-for="org in userOrganizations" :key="org.id" :value="org.id" :label="org.name" />
-          </t-select>
-        </t-form-item>
-
-        <div style="display: flex; gap: 16px">
-          <t-form-item label="使用日期" name="date" style="flex: 1">
-            <t-date-picker 
-              v-model="formData.date" 
-              style="width: 100%" 
-              :disable-date="{ before: new Date().toISOString().split('T')[0] }"
-              variant="filled"
-            />
-          </t-form-item>
-          <t-form-item label="开始/结束时间" name="timeRange" style="flex: 1">
-            <t-time-range-picker
-              v-model="formData.timeRange"
-              format="HH:mm"
-              :steps="[1, 5]"
-              style="width: 100%"
-              clearable
-              variant="filled"
-            />
-          </t-form-item>
+      <div v-if="selectedNotice" class="notice-detail">
+        <div class="notice-detail-meta">
+          <t-tag :theme="getTypeTheme(selectedNotice.type)" variant="light" size="small">
+            {{ getTypeText(selectedNotice.type) }}
+          </t-tag>
+          <span class="meta-item">发布人：{{ selectedNotice.creator?.name }}</span>
+          <span class="meta-item">时间：{{ formatDateTime(selectedNotice.createTime) }}</span>
         </div>
-
-        <t-form-item label="使用说明" name="purpose">
-          <t-textarea
-            v-model="formData.purpose"
-            placeholder="请用简洁说明场地用途"
-            :autosize="{ minRows: 3, maxRows: 5 }"
-            variant="filled"
-          />
-        </t-form-item>
-
-        <t-form-item label="备注" name="remark">
-          <t-input v-model="formData.remark" placeholder="请填写备注（如有）" variant="filled" />
-        </t-form-item>
-      </t-form>
-    </t-dialog>
-
-    <!-- 查看预约详情对话框 -->
-    <t-dialog
-      v-model:visible="viewVisible"
-      header="预约详情"
-      :confirm-btn="{ content: '确定', variant: 'base' }"
-      :cancel-btn="null"
-      width="min(500px, 95%)"
-      @confirm="viewVisible = false"
-    >
-      <t-descriptions :column="1" bordered v-if="currentBooking">
-        <t-descriptions-item label="编号">{{ currentBooking.id }}</t-descriptions-item>
-        <t-descriptions-item label="预约地点">{{ currentBooking.roomName }}</t-descriptions-item>
-        <t-descriptions-item label="使用组织">{{ currentBooking.organizationName }}</t-descriptions-item>
-        <t-descriptions-item label="预约时间">{{ currentBooking.time }}</t-descriptions-item>
-        <t-descriptions-item label="预约事项">{{ currentBooking.purpose }}</t-descriptions-item>
-        <t-descriptions-item label="状态">
-          <t-tag v-if="currentBooking.status === 'approved'" theme="success" variant="light">已通过</t-tag>
-          <t-tag v-else-if="currentBooking.status === 'pending'" theme="warning" variant="light">待审批</t-tag>
-          <t-tag v-else-if="currentBooking.status === 'rejected'" theme="danger" variant="light">已驳回</t-tag>
-          <t-tag v-else theme="default" variant="light">已取消</t-tag>
-        </t-descriptions-item>
-        <t-descriptions-item label="备注">{{ currentBooking.remark || '-' }}</t-descriptions-item>
-      </t-descriptions>
+        <t-divider />
+        <div class="notice-detail-content">
+          {{ selectedNotice.content }}
+        </div>
+      </div>
     </t-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, watch, onMounted } from 'vue';
-import type { PrimaryTableCol, FormRules } from 'tdesign-vue-next';
-import { formatBookingTime, formatDateTime } from '~/utils/format';
+import { ref, onMounted } from 'vue'
+import { formatDateTime, formatDate } from '~/utils/format'
 
-useHead({ title: '我的预约' })
+useHead({ title: '首页' })
 
-// 表格列定义
-const columns: PrimaryTableCol[] = [
-  { colKey: 'id', title: '编号', width: 80 },
-  { colKey: 'roomName', title: '预约地点' },
-  { colKey: 'organizationName', title: '使用组织' },
-  { colKey: 'formattedTime', title: '预约时间', width: 300 },
-  { colKey: 'purpose', title: '预约事项' },
-  { colKey: 'createTime', title: '申请时间', width: 180 },
-  { colKey: 'status', title: '状态', width: 100, cell: 'status' },
-  { colKey: 'action', title: '操作', width: 120, cell: 'action', fixed: 'right' },
-];
+const loading = ref(true)
+const latestBooking = ref<any>(null)
+const notices = ref<any[]>([])
 
-// 获取预约列表
-const { data: bookings, refresh: refreshBookings } = await useFetch<any[]>('/api/bookings', {
-  key: 'user-bookings',
-  headers: useRequestHeaders(['cookie'])
-});
+const noticeVisible = ref(false)
+const selectedNotice = ref<any>(null)
+
+const fetchData = async () => {
+  loading.value = true
+  try {
+    const [bookingsData, noticesData] = await Promise.all([
+      $fetch('/api/bookings'),
+      $fetch('/api/notices')
+    ])
+    
+    // 获取最近的一条预约
+    if (bookingsData && Array.isArray(bookingsData) && bookingsData.length > 0) {
+      latestBooking.value = bookingsData[0]
+    }
+    
+    notices.value = noticesData || []
+  } catch (error) {
+    console.error('Failed to fetch dashboard data:', error)
+  } finally {
+    loading.value = false
+  }
+}
 
 onMounted(() => {
-  refreshBookings();
-  refreshUser();
-});
+  fetchData()
+})
 
-const bookingData = computed(() => {
-  return (bookings.value || []).map((b: any) => {
-    return {
-      ...b,
-      formattedTime: formatBookingTime(b.startTime, b.endTime),
-      time: formatBookingTime(b.startTime, b.endTime),
-      createTime: formatDateTime(b.createTime)
-    };
-  });
-});
+const showNoticeDetail = (notice: any) => {
+  selectedNotice.value = notice
+  noticeVisible.value = true
+}
 
-// 使用 useFetch 获取最新用户信息，确保服务端和客户端都能获取到数据
-const { data: userData, refresh: refreshUser } = await useFetch<any>('/api/auth/me', {
-  key: 'current-user-info',
-  headers: useRequestHeaders(['cookie']),
-  onResponseError({ response }) {
-    if (response.status === 401) {
-      navigateTo('/login');
-    }
+const getStatusText = (status: string) => {
+  const map: any = {
+    pending: '待审批',
+    approved: '已通过',
+    rejected: '已驳回',
+    cancelled: '已取消'
   }
-});
+  return map[status] || status
+}
 
-const userOrganizations = computed(() => userData.value?.organizations || []);
-
-// 监听用户信息变化并同步到 localStorage
-watch(userData, (val) => {
-  if (val && import.meta.client) {
-    localStorage.setItem('user', JSON.stringify(val));
+const getStatusTheme = (status: string): "success" | "warning" | "danger" | "default" => {
+  const map: any = {
+    pending: 'warning',
+    approved: 'success',
+    rejected: 'danger',
+    cancelled: 'default'
   }
-}, { immediate: true });
+  return map[status] || 'default'
+}
 
-// 分页配置
-const pagination = reactive({
-  defaultCurrent: 1,
-  defaultPageSize: 10,
-  total: 0,
-});
-
-watch(bookingData, (newData) => {
-  pagination.total = newData.length;
-});
-
-// 对话框相关
-const visible = ref(false);
-const submitLoading = ref(false);
-const form = ref<any>(null);
-const viewVisible = ref(false);
-const currentBooking = ref<any>(null);
-
-const formData = reactive({
-  roomId: undefined as number | undefined,
-  organizationId: undefined as number | undefined,
-  date: '',
-  timeRange: [] as string[],
-  purpose: '',
-  remark: '',
-});
-
-const rules: FormRules = {
-  roomId: [{ required: true, message: '请选择场地', trigger: 'change' }],
-  organizationId: [{ required: true, message: '请选择使用组织', trigger: 'change' }],
-  date: [{ required: true, message: '请选择日期', trigger: 'change' }],
-  timeRange: [{ required: true, message: '请选择时间范围', trigger: 'change' }],
-  purpose: [{ required: true, message: '请输入使用说明', trigger: 'blur' }],
-};
-
-const { data: roomsData } = await useFetch<any[]>('/api/rooms');
-const roomOptions = computed(() => roomsData.value || []);
-
-
-// 方法
-const handleCreateBooking = () => {
-  // 如果用户只有一个组织，自动预选
-  if (userOrganizations.value.length === 1) {
-    formData.organizationId = userOrganizations.value[0].id;
+const getTypeText = (type: string) => {
+  const map: any = {
+    info: '普通',
+    success: '通知',
+    warning: '重要',
+    danger: '紧急'
   }
-  visible.value = true;
-};
+  return map[type] || type
+}
 
-const onSubmit = async ({ validateResult, firstError }: any) => {
-  if (validateResult === true) {
-    const startTime = new Date(`${formData.date}T${formData.timeRange[0]}:00`);
-    if (startTime < new Date()) {
-      MessagePlugin.error('预约时间不能早于当前时间');
-      return;
-    }
-
-    submitLoading.value = true;
-    try {
-      await $fetch('/api/bookings', {
-        method: 'POST',
-        body: {
-          roomId: formData.roomId,
-          organizationId: formData.organizationId,
-          date: formData.date,
-          timeRange: formData.timeRange,
-          purpose: formData.purpose,
-          remark: formData.remark
-        }
-      });
-      
-      MessagePlugin.success('预约提交成功');
-      visible.value = false;
-      refreshBookings(); // 刷新列表
-      
-      // 重置表单
-      Object.assign(formData, {
-        roomId: undefined,
-        organizationId: undefined,
-        date: '',
-        timeRange: [],
-        purpose: '',
-        remark: '',
-      });
-    } catch (error: any) {
-      MessagePlugin.error(error.data?.statusMessage || '提交失败');
-    } finally {
-      submitLoading.value = false;
-    }
-  } else {
-    MessagePlugin.error(firstError);
+const getTypeTheme = (type: string): "primary" | "success" | "warning" | "danger" | "default" => {
+  const map: any = {
+    info: 'primary',
+    success: 'success',
+    warning: 'warning',
+    danger: 'danger'
   }
-};
-
-const handleView = (row: any) => {
-  currentBooking.value = row;
-  viewVisible.value = true;
-};
-
-const handleCancel = async (row: any) => {
-  try {
-    await $fetch('/api/bookings/update', {
-      method: 'POST',
-      body: { id: row.id, status: 'cancelled' }
-    });
-    MessagePlugin.success(`已取消预约: ${row.id}`);
-    refreshBookings();
-  } catch (error: any) {
-    MessagePlugin.error(error.data?.statusMessage || '取消失败');
-  }
-};
+  return map[type] || 'default'
+}
 </script>
 
 <style scoped>
+.dashboard-container {
+  padding: 24px;
+}
+
+.dashboard-card {
+  height: 100%;
+}
+
+.shadow-card {
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+  transition: transform 0.3s ease;
+}
+
+.shadow-card:hover {
+  transform: translateY(-4px);
+}
+
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 40px 0;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 40px 0;
+  color: var(--td-text-color-placeholder);
+}
+
+.empty-state p {
+  margin: 12px 0;
+}
+
+.booking-info {
+  padding: 8px 0;
+}
+
+.booking-room {
+  font-size: 18px;
+  font-weight: bold;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.booking-time {
+  color: var(--td-text-color-secondary);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.info-icon {
+  color: var(--td-brand-color);
+}
+
+.booking-status {
+  margin-bottom: 8px;
+}
+
+.booking-purpose {
+  display: flex;
+  font-size: 14px;
+}
+
+.booking-purpose .label {
+  color: var(--td-text-color-secondary);
+  white-space: nowrap;
+}
+
+.booking-purpose .value {
+  color: var(--td-text-color-primary);
+}
+
+.notice-list-item {
+  padding: 12px 0;
+}
+
+.notice-item-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.notice-title {
+  font-weight: 500;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.notice-title:hover {
+  color: var(--td-brand-color);
+}
+
+.notice-time {
+  color: var(--td-text-color-placeholder);
+  font-size: 12px;
+}
+
+.notice-tag {
+  flex-shrink: 0;
+}
+
+.notice-detail-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 8px;
+  color: var(--td-text-color-secondary);
+  font-size: 14px;
+}
+
+.meta-item {
+  display: inline-flex;
+  align-items: center;
+}
+
+.notice-detail-content {
+  line-height: 1.8;
+  white-space: pre-wrap;
+  color: var(--td-text-color-primary);
+}
+
+.ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 </style>

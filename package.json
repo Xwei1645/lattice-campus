@@ -1,5 +1,6 @@
 {
   "name": "wzhs-booking",
+  "version": "0.1.0-dev",
   "type": "module",
   "private": true,
   "scripts": {

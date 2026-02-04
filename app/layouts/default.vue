@@ -25,44 +25,58 @@
       </t-head-menu>
     </t-header>
     <t-layout>
-      <t-aside class="app-aside" width="64px">
-        <t-menu theme="light" :value="$route.path" collapsed @change="handleMenuClick">
+      <t-aside class="app-aside" width="180px">
+        <t-menu theme="light" :value="$route.path" @change="handleMenuClick" style="width: 100%">
           <t-menu-item value="/" to="/">
             <template #icon><t-icon name="home" /></template>
             首页
+          </t-menu-item>
+          <t-menu-item value="/my-bookings" to="/my-bookings">
+            <template #icon><t-icon name="view-module" /></template>
+            我的预约
           </t-menu-item>
           <t-menu-item value="/overview" to="/overview">
             <template #icon><t-icon name="calendar" /></template>
             总览
           </t-menu-item>
-          <t-menu-item v-if="isAdmin" value="/booking-management" to="/booking-management">
-            <template #icon><t-icon name="assignment" /></template>
-            预约审批
-          </t-menu-item>
-          <t-menu-item v-if="isAdmin" value="/auto-approval" to="/auto-approval">
-            <template #icon><t-icon name="control-platform" /></template>
-            自动审批规则
-          </t-menu-item>
-          <t-menu-item v-if="isAdmin" value="/room-management" to="/room-management">
-            <template #icon><t-icon name="location" /></template>
-            场地管理
-          </t-menu-item>
-          <t-menu-item v-if="isAdmin" value="/account-management" to="/account-management">
-            <template #icon><t-icon name="user-setting" /></template>
-            用户管理
-          </t-menu-item>
-          <t-menu-item v-if="isAdmin" value="/organization-management" to="/organization-management">
-            <template #icon><t-icon name="usergroup" /></template>
-            组织管理
-          </t-menu-item>
-          <t-menu-item v-if="isAdmin" value="/feedback-management" to="/feedback-management">
-            <template #icon><t-icon name="chat-bubble-help" /></template>
-            反馈管理
-          </t-menu-item>
           <t-menu-item value="/feedback" to="/feedback">
             <template #icon><t-icon name="chat" /></template>
             意见反馈
           </t-menu-item>
+
+          <template v-if="isAdmin">
+            <t-divider style="margin: 8px 0" />
+            <t-menu-item value="/booking-management" to="/booking-management">
+              <template #icon><t-icon name="assignment" /></template>
+              预约审批
+            </t-menu-item>
+            <t-menu-item value="/auto-approval" to="/auto-approval">
+              <template #icon><t-icon name="control-platform" /></template>
+              自动审批规则
+            </t-menu-item>
+            <t-menu-item value="/room-management" to="/room-management">
+              <template #icon><t-icon name="location" /></template>
+              场地管理
+            </t-menu-item>
+            <t-menu-item value="/account-management" to="/account-management">
+              <template #icon><t-icon name="user-setting" /></template>
+              用户管理
+            </t-menu-item>
+            <t-menu-item value="/organization-management" to="/organization-management">
+              <template #icon><t-icon name="usergroup" /></template>
+              组织管理
+            </t-menu-item>
+            <t-menu-item value="/notice-management" to="/notice-management">
+              <template #icon><t-icon name="notification" /></template>
+              通知管理
+            </t-menu-item>
+            <t-menu-item value="/feedback-management" to="/feedback-management">
+              <template #icon><t-icon name="chat-bubble-help" /></template>
+              反馈管理
+            </t-menu-item>
+          </template>
+
+          <t-divider style="margin: 8px 0" />
           <t-menu-item value="/about" to="/about">
             <template #icon><t-icon name="info-circle" /></template>
             关于
@@ -129,11 +143,35 @@
         </t-form>
       </div>
     </t-dialog>
+
+    <!-- 通知弹窗 -->
+    <t-dialog
+      v-model:visible="noticePopupVisible"
+      :header="popupNotice?.title"
+      :footer="false"
+      width="min(500px, 95%)"
+    >
+      <div v-if="popupNotice" class="notice-popup-content">
+        <div class="notice-popup-meta">
+          <t-tag :theme="getTypeTheme(popupNotice.type)" variant="light" size="small">{{ getTypeText(popupNotice.type) }}</t-tag>
+          <span style="margin-left: 12px; color: var(--td-text-color-placeholder); font-size: 12px">
+            {{ formatDateTime(popupNotice.createTime) }}
+          </span>
+        </div>
+        <div class="notice-popup-body" style="margin-top: 16px; line-height: 1.6; white-space: pre-wrap;">
+          {{ popupNotice.content }}
+        </div>
+        <div style="margin-top: 24px; text-align: right;">
+          <t-button theme="primary" @click="noticePopupVisible = false">我知道了</t-button>
+        </div>
+      </div>
+    </t-dialog>
   </t-layout>
 </template>
 
 <script setup lang="ts">
 import { onMounted, ref, reactive } from 'vue';
+import { formatDateTime } from '~/utils/format';
 
 const route = useRoute();
 const router = useRouter();
@@ -143,6 +181,50 @@ const showDebug = useState('showDebug', () => false);
 
 // 使用响应式对象存储用户信息
 const userInfo = ref<any>(null);
+
+// 通知弹窗
+const noticePopupVisible = ref(false);
+const popupNotice = ref<any>(null);
+
+const fetchPopupNotice = async () => {
+    try {
+        const notices: any[] = await ($fetch as any)('/api/notices');
+        // 查找最新的需要弹窗的通知
+        const popup = notices.find(n => n.showPopup && n.status === 'published');
+        if (popup) {
+            // 简单的防重复：如果本次会话已经显示过该 ID，则不再显示
+            const shownList = JSON.parse(sessionStorage.getItem('shown_notices') || '[]');
+            if (!shownList.includes(popup.id)) {
+                popupNotice.value = popup;
+                noticePopupVisible.value = true;
+                shownList.push(popup.id);
+                sessionStorage.setItem('shown_notices', JSON.stringify(shownList));
+            }
+        }
+    } catch (error) {
+        console.error('Failed to fetch popup notice:', error);
+    }
+};
+
+const getTypeText = (type: string) => {
+  const map: any = {
+    info: '普通',
+    success: '通知',
+    warning: '重要',
+    danger: '紧急'
+  }
+  return map[type] || type
+}
+
+const getTypeTheme = (type: string): "danger" | "primary" | "default" | "warning" | "success" => {
+  const map: any = {
+    info: 'primary',
+    success: 'success',
+    warning: 'warning',
+    danger: 'danger'
+  }
+  return map[type] || 'default'
+}
 
 // 在客户端从localStorage加载用户信息
 onMounted(() => {
@@ -155,6 +237,7 @@ onMounted(() => {
       userInfo.value = null;
     }
   }
+  fetchPopupNotice();
 });
 
 const isAdmin = computed(() => {
@@ -369,6 +452,22 @@ const handleMenuClick = (value: any) => {
   border-right: 1px solid var(--td-component-border);
   position: relative;
   z-index: 1;
+  overflow: hidden;
+}
+
+/* 强制菜单宽度跟随父容器，防止出现232px的默认宽度背景块 */
+:deep(.t-default-menu) {
+  width: 100% !important;
+}
+
+/* 适配 180px 侧边栏的内边距 */
+:deep(.t-default-menu .t-menu__item) {
+  padding-left: 16px;
+  padding-right: 12px;
+  margin-bottom: 4px;
+}
+:deep(.t-default-menu .t-menu__item .t-icon) {
+  margin-right: 8px;
 }
 
 /* 修复侧边栏下方重复页脚问题 */

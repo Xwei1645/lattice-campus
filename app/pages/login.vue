@@ -78,7 +78,7 @@
         <p class="contact-admin">注册用户或重置密码请联系校管理员</p>
       </div>
     </div>
-    <p class="copyright">©Xwei1645 2025 All Rights Reserved.</p>
+    <p class="copyright">© 2025-2026 Xwei1645. All Rights Reserved.</p>
   </div>
 </template>
 

@@ -21,7 +21,7 @@
         <div class="section">
           <div class="section-title">碎碎念</div>
           <p class="section-text">
-            开发 WZHS Booking 的想法始于 2025 年 12 月 22 日学联大会对办公组中空间组的介绍。一个人在短时间内搭建出这样相对完善的框架并不容易，但 Vibe Coding 改变了这一切。
+            vibe coding 真好吃:) WSL 大抵不会流畅到哪里去罢（（
           </p>
         </div>
 
