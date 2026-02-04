@@ -2,6 +2,12 @@
   <div class="page-container">
     <div class="page-header">
       <h2 class="page-title">关于</h2>
+      <div class="header-actions">
+        <t-button theme="primary" @click="handleFeedback">
+          <template #icon><t-icon name="chat" /></template>
+          意见反馈
+        </t-button>
+      </div>
     </div>
     <t-card :bordered="false" class="content-card">
       <div class="about-content">
@@ -76,6 +82,10 @@ const showDebug = useState('showDebug', () => false)
 const clickCount = ref(0)
 const isAnimating = ref(false)
 let timer: any = null
+
+const handleFeedback = () => {
+  navigateTo('/feedback')
+}
 
 const handleSecretClick = () => {
   // 触发点击动画

@@ -27,7 +27,14 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
             const user = JSON.parse(userStr)
 
             // 权限控制
-            const adminRoutes = ['/account-management', '/organization-management']
+            const adminRoutes = [
+                '/account-management', 
+                '/organization-management', 
+                '/room-management', 
+                '/booking-management', 
+                '/auto-approval',
+                '/feedback-management'
+            ]
             if (adminRoutes.includes(to.path)) {
                 if (!['root', 'super_admin', 'admin'].includes(user.role)) {
                     return navigateTo('/')

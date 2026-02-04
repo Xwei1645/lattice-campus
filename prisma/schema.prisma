@@ -23,6 +23,7 @@ model User {
   organizations Organization[]
   bookings      Booking[]
   sessions      Session[]
+  feedbacks     Feedback[]
 
   @@map("users")
 }
@@ -100,3 +101,18 @@ model AutoApprovalRule {
 
   @@map("auto_approval_rules")
 }
+
+model Feedback {
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  user       User     @relation(fields: [userId], references: [id])
+  type       String   // bug, feature, other
+  content    String
+  status     String   @default("pending") // pending, resolved
+  reply      String?
+  createTime DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("feedbacks")
+}
+

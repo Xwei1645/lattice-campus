@@ -55,6 +55,14 @@
             <template #icon><t-icon name="usergroup" /></template>
             组织管理
           </t-menu-item>
+          <t-menu-item v-if="isAdmin" value="/feedback-management" to="/feedback-management">
+            <template #icon><t-icon name="chat-bubble-help" /></template>
+            反馈管理
+          </t-menu-item>
+          <t-menu-item value="/feedback" to="/feedback">
+            <template #icon><t-icon name="chat" /></template>
+            意见反馈
+          </t-menu-item>
           <t-menu-item value="/about" to="/about">
             <template #icon><t-icon name="info-circle" /></template>
             关于
