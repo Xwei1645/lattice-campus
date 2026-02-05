@@ -66,6 +66,10 @@
               <template #icon><t-icon name="usergroup" /></template>
               组织管理
             </t-menu-item>
+            <t-menu-item value="/invitation-code-management" to="/invitation-code-management">
+              <template #icon><t-icon name="root-list" /></template>
+              邀请码管理
+            </t-menu-item>
             <t-menu-item value="/notice-management" to="/notice-management">
               <template #icon><t-icon name="notification" /></template>
               通知管理

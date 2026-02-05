@@ -3,8 +3,8 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
     if (import.meta.client) {
         const userStr = localStorage.getItem('user')
 
-        // 1. 处理登录页逻辑
-        if (to.path === '/login') {
+        // 1. 处理登录和注册页逻辑
+        if (to.path === '/login' || to.path === '/register') {
             if (userStr) {
                 try {
                     // 验证 session 是否有效并获取最新数据
@@ -34,7 +34,8 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
                 '/booking-management', 
                 '/auto-approval',
                 '/feedback-management',
-                '/notice-management'
+                '/notice-management',
+                '/invitation-code-management'
             ]
             if (adminRoutes.includes(to.path)) {
                 if (!['root', 'super_admin', 'admin'].includes(user.role)) {

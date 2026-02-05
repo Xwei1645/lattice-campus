@@ -75,7 +75,11 @@
       </div>
 
       <div class="login-footer">
-        <p class="contact-admin">注册用户或重置密码请联系校管理员</p>
+        <p class="contact-admin">
+          没有账号？
+          <t-link theme="primary" underline @click="navigateTo('/register')">立即注册</t-link>
+        </p>
+        <p class="contact-admin" style="margin-top: 8px;">重置密码请联系校管理员</p>
       </div>
     </div>
     <p class="copyright">© 2025-2026 Xwei1645. All Rights Reserved.</p>
