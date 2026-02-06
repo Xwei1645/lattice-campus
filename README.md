@@ -2,7 +2,7 @@
 
 快速导航：
 - [Docker 部署 (推荐)](#docker-部署与更新)
-- [手动直接运行 (PM2)](#直接运行与生产部署)
+- [直接运行 (PM2)](#直接运行与生产部署)
 - [本地开发指南](#本地开发指南)
 
 ---
@@ -35,7 +35,7 @@
 cp .env.example .env
 
 # 一键启动服务 (包含数据库、应用及自动迁移)
-docker-compose up -d
+docker compose up -d
 ```
 
 ### 2. 如何更新项目
@@ -55,10 +55,10 @@ docker image prune -f
 
 ### 3. 容器常用维护命令
 
-- **查看实时日志**: `docker-compose logs -f app`
-- **重启应用容器**: `docker-compose restart app`
-- **执行数据填充 (Seed)**: `docker-compose exec app npx prisma db seed`
-- **停止并移除所有服务**: `docker-compose down`
+- **查看实时日志**: `docker compose logs -f app`
+- **重启应用容器**: `docker compose restart app`
+- **执行数据填充 (Seed)**: `docker compose exec app npx prisma db seed`
+- **停止并移除所有服务**: `docker compose down`
 
 ---
 
@@ -67,13 +67,13 @@ docker image prune -f
 如果您不想使用 Docker，可以按照以下步骤手动部署。
 
 <details>
-<summary><b>环境要求：安装 Node.js, pnpm, PM2 & PostgreSQL</b></summary>
+<summary><b>环境要求：安装 Node.js, pnpm, PM2 (可选) & PostgreSQL</b></summary>
 
 **1. Node.js & pnpm**
 ```bash
-# 安装 Node 24 (建议使用 nvm)
-nvm install 24
-nvm use 24
+# 安装 Node 22 (使用 nvm)
+nvm install 22
+nvm use 22
 # 安装 pnpm
 npm install -g pnpm
 ```
@@ -144,7 +144,7 @@ npx prisma migrate deploy
 <summary><b>环境要求：Node.js & pnpm</b></summary>
 
 ```bash
-# 确保已安装 Node 24+
+# 确保已安装 Node
 node -v
 # 安装依赖
 pnpm install
