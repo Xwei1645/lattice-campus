@@ -7,7 +7,7 @@ WORKDIR /app
 RUN corepack enable && corepack prepare pnpm@10.28.2 --activate
 
 # 安装 Prisma 依赖的 OpenSSL
-RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends openssl && rm -rf /var/lib/apt/lists/*
 
 # 复制配置文件和 schema
 COPY package.json pnpm-lock.yaml ./
@@ -31,7 +31,7 @@ FROM node:24-slim AS runner
 WORKDIR /app
 
 # 安装运行时必需库
-RUN apt-get update && apt-get install -y libssl3 && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends libssl3 && rm -rf /var/lib/apt/lists/*
 
 # 环境变量配置
 ENV NODE_ENV=production
@@ -47,4 +47,4 @@ USER node
 EXPOSE 3000
 
 # 执行数据库迁移并启动
-CMD npx prisma migrate deploy && node .output/server/index.mjs
+CMD ["/bin/sh", "-c", "npx prisma migrate deploy && node .output/server/index.mjs"]
