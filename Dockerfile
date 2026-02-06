@@ -31,7 +31,7 @@ FROM node:24-slim AS runner
 WORKDIR /app
 
 # 安装运行时必需库
-RUN apt-get update && apt-get install -y --no-install-recommends libssl3 && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends libssl3 postgresql-client && rm -rf /var/lib/apt/lists/*
 
 # 环境变量配置
 ENV NODE_ENV=production
