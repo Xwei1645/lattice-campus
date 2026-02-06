@@ -47,7 +47,7 @@ docker-compose up -d
 git pull
 
 # 2. 重新构建并平滑启动
-docker-compose up -d --build
+docker compose up -d --build
 
 # 3. (可选) 清理旧镜像释放空间
 docker image prune -f
