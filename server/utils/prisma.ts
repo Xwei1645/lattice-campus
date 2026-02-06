@@ -1,13 +1,19 @@
 import { PrismaClient } from '@prisma/client'
+import { PrismaPg } from '@prisma/adapter-pg'
+import pg from 'pg'
 
 let prisma: PrismaClient
 
 if (process.env.NODE_ENV === 'production') {
-    prisma = new PrismaClient()
+    const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL })
+    const adapter = new PrismaPg(pool)
+    prisma = new PrismaClient({ adapter })
 } else {
     const g = globalThis as any
     if (!g.prisma) {
-        g.prisma = new PrismaClient()
+        const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL })
+        const adapter = new PrismaPg(pool)
+        g.prisma = new PrismaClient({ adapter })
     }
     prisma = g.prisma
 }

@@ -13,20 +13,23 @@
     "start": "node -r dotenv/config .output/server/index.mjs"
   },
   "dependencies": {
+    "@prisma/adapter-pg": "^7.3.0",
     "bcryptjs": "^3.0.3",
     "dayjs": "^1.11.19",
     "dotenv": "^17.2.3",
     "nuxt": "^4.2.2",
+    "pg": "^8.18.0",
     "tdesign-icons-vue-next": "^0.4.1",
     "tdesign-vue-next": "^1.17.7",
     "vue": "^3.5.26",
     "vue-router": "^4.6.4"
   },
   "devDependencies": {
-    "@prisma/client": "6",
+    "@prisma/client": "7.3.0",
     "@tdesign-vue-next/nuxt": "^0.1.5",
     "@types/bcryptjs": "^3.0.0",
     "@types/node": "^25.0.3",
-    "prisma": "^6.19.1"
+    "@types/pg": "^8.16.0",
+    "prisma": "7.3.0"
   }
 }
