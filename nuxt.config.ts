@@ -3,8 +3,11 @@ import { version as vueVersion } from 'vue';
 import pkg from './package.json';
 
 const getGitHash = () => {
+  if (process.env.GIT_HASH) {
+    return process.env.GIT_HASH;
+  }
   try {
-    return execSync('git rev-parse --short HEAD').toString().trim();
+    return execSync('git rev-parse --short HEAD', { stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim();
   } catch (e) {
     return 'unknown';
   }

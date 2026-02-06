@@ -1,5 +1,8 @@
 # 构建阶段
-FROM node:24-slim AS builder
+FROM node:22-slim AS builder
+
+ARG GIT_HASH=unknown
+ENV GIT_HASH=$GIT_HASH
 
 WORKDIR /app
 
@@ -26,7 +29,7 @@ COPY . .
 RUN pnpm build
 
 # 运行阶段
-FROM node:24-slim AS runner
+FROM node:22-slim AS runner
 
 WORKDIR /app
 
@@ -47,4 +50,4 @@ USER node
 EXPOSE 3000
 
 # 执行数据库迁移并启动
-CMD ["/bin/sh", "-c", "npx prisma migrate deploy && node .output/server/index.mjs"]
+CMD ["/bin/sh", "-c", "npx prisma@6 migrate deploy && node .output/server/index.mjs"]
