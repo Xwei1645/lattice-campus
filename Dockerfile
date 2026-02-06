@@ -20,7 +20,7 @@ COPY prisma ./prisma/
 RUN pnpm install --frozen-lockfile
 
 # 生成 Prisma Client
-RUN pnpm prisma generate
+RUN pnpm prisma generate --config prisma/prisma.config.ts
 
 # 复制源码
 COPY . .
@@ -50,4 +50,4 @@ USER node
 EXPOSE 3000
 
 # 执行数据库迁移并启动
-CMD ["/bin/sh", "-c", "npx prisma@6 migrate deploy && node .output/server/index.mjs"]
+CMD ["/bin/sh", "-c", "npx prisma migrate deploy --config prisma/prisma.config.ts && node .output/server/index.mjs"]
