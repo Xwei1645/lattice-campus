@@ -1,161 +1,173 @@
 # WZHS Booking
 
-## 快速起步
+快速导航：
+- [Docker 部署 (推荐)](#docker-部署与更新)
+- [手动直接运行 (PM2)](#直接运行与生产部署)
+- [本地开发指南](#本地开发指南)
 
-请按照以下步骤完成环境初始化。
+---
 
-### 1. 软件环境准备
-
-请确保系统中已安装以下软件环境。点击展开查看安装指南：
+## Docker 部署与更新
 
 <details>
-<summary><b>Node.js (使用 nvm)</b></summary>
+<summary><b>环境要求：安装 Docker & Docker Compose</b></summary>
 
-1. **安装 nvm**:
+1. **安装 Docker**:
    ```bash
-   curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
+   curl -fsSL https://get.docker.com | sh
    ```
-2. **安装 Node.js 20**:
+2. **设置开机自启**:
    ```bash
-   nvm install 20
-   nvm use 20
+   sudo systemctl enable --now docker
+   ```
+3. **检查 Compose 插件**:
+   ```bash
+   docker compose version
    ```
 </details>
 
-<details>
-<summary><b>pnpm</b></summary>
+### 1. 快速部署
+
+确保已安装 Docker 和 Docker Compose，并在项目根目录执行：
 
 ```bash
+# 复制并配置环境变量 (修改 POSTGRES_PASSWORD 等)
+cp .env.example .env
+
+# 一键启动服务 (包含数据库、应用及自动迁移)
+docker-compose up -d
+```
+
+### 2. 如何更新项目
+
+当代码有变动需要更新时，执行：
+
+```bash
+# 1. 拉取最新代码
+git pull
+
+# 2. 重新构建并平滑启动
+docker-compose up -d --build
+
+# 3. (可选) 清理旧镜像释放空间
+docker image prune -f
+```
+
+### 3. 容器常用维护命令
+
+- **查看实时日志**: `docker-compose logs -f app`
+- **重启应用容器**: `docker-compose restart app`
+- **执行数据填充 (Seed)**: `docker-compose exec app npx prisma db seed`
+- **停止并移除所有服务**: `docker-compose down`
+
+---
+
+## 直接运行与生产部署
+
+如果您不想使用 Docker，可以按照以下步骤手动部署。
+
+<details>
+<summary><b>环境要求：安装 Node.js, pnpm, PM2 & PostgreSQL</b></summary>
+
+**1. Node.js & pnpm**
+```bash
+# 安装 Node 24 (建议使用 nvm)
+nvm install 24
+nvm use 24
+# 安装 pnpm
 npm install -g pnpm
 ```
-并在项目根目录安装依赖：
+
+**2. PM2**
 ```bash
+npm install -g pm2
+# 设置开机自启 (可选)
+pm2 startup
+# 按照输出提示执行 sudo 命令，最后执行 pm2 save
+```
+
+**3. PostgreSQL**
+```bash
+# 安装 PostgreSQL
+sudo apt install postgresql
+# 创建数据库及授权
+sudo -u postgres psql -c "CREATE DATABASE wzhs_booking;"
+sudo -u postgres psql -c "CREATE USER dbuser WITH PASSWORD 'yourpassword';"
+sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE wzhs_booking TO dbuser;"
+```
+</details>
+
+### 1. 环境配置
+```bash
+cp .env.example .env
+# 修改 .env 中的 DATABASE_URL
+```
+
+### 2. 数据库初始化
+```bash
+# 生成 Prisma Client 并应用迁移
+npx prisma generate
+npx prisma migrate deploy
+```
+
+### 3. 启动应用
+
+- **传统方式**:
+  ```bash
+  # 构建
+  pnpm build
+  # 启动
+  pnpm start
+  ```
+
+- **使用 PM2 启动 (推荐)**:
+  ```bash
+  # 首次启动
+  pm2 start pnpm --name "wzhs-booking" -- start
+  # 后续重启
+  pm2 restart wzhs-booking
+  ```
+
+<details>
+<summary><b>PM2 常用命令清单</b></summary>
+
+- **状态查询**: `pm2 list`
+- **日志查看**: `pm2 logs wzhs-booking`
+- **保存列表 (开机自启)**: `pm2 save`
+</details>
+
+---
+
+## 本地开发指南
+
+<details>
+<summary><b>环境要求：Node.js & pnpm</b></summary>
+
+```bash
+# 确保已安装 Node 24+
+node -v
+# 安装依赖
 pnpm install
 ```
 </details>
 
-<details>
-<summary><b>PM2 (推荐)</b></summary>
-
+### 1. 安装依赖
 ```bash
-npm install -g pm2
+pnpm install
 ```
-</details>
 
+### 2. 开发模式运行
+```bash
+# 启动 Nuxt 开发服务器
+pnp版本信息
 <details>
-<summary><b>设置 PM2 开机自启 (可选)</b></summary>
+<summary><b>PostgreSQL (手动部署时需要)</b></summary>
 
-1. **生成自启脚本**:
-   ```bash
-   pm2 startup
-   ```
-2. **执行指令**:
-   根据上一步命令输出的提示，复制并执行以 `sudo env PATH=...` 开头的指令。
-3. **保存当前进程列表**:
-   ```bash
-   pm2 save
-   ```
-</details>
-
-<details>
-<summary><b>PostgreSQL</b></summary>
-
-1. **安装 PostgreSQL (Ubuntu/Debian)**:
-   ```bash
-   sudo apt update
-   sudo apt install -y postgresql postgresql-contrib
-   ```
-
-2. **创建数据库及用户**:
-   登录到数据库终端：
-   ```bash
-   sudo -u postgres psql
-   ```
-   执行基础 SQL 命令：
+1. **安装**: `sudo apt install postgresql`
+2. **创建数据库**:
    ```sql
    CREATE DATABASE wzhs_booking;
    CREATE USER dbuser WITH PASSWORD 'yourpassword';
    GRANT ALL PRIVILEGES ON DATABASE wzhs_booking TO dbuser;
    ```
-
-   > [!TIP]
-   > **针对 PostgreSQL 15+ 版本** (还需额外授权 schema):
-   > ```sql
-   > \c wzhs_booking
-   > GRANT ALL ON SCHEMA public TO dbuser;
-   > ```
-
-   退出终端：
-   ```sql
-   \q
-   ```
-</details>
-
-### 2. 环境配置
-将环境变量模板文件复制为 `.env` 并根据实际情况编辑：
-```bash
-cp .env.example .env
-```
-修改 `.env` 中的 `DATABASE_URL`：
-```dotenv
-DATABASE_URL="postgresql://dbuser:yourpassword@localhost:5432/wzhs_booking"
-```
-
-### 3. 数据库初始化
-根据您的使用场景，选择以下方式之一初始化数据库：
-
-- **生产环境**
-  生成 Prisma Client 并应用现有的迁移记录：
-  ```bash
-  npx prisma generate
-  npx prisma migrate deploy
-  ```
-
-- **开发环境**
-  同步本地架构修改并生成新迁移：
-  ```bash
-  npx prisma migrate dev
-  ```
-
-### 4. 导入示例数据 (可选)
-如果需要初始化系统默认数据或测试数据，请运行：
-```bash
-node seed.js
-```
-
-### 5. 启动服务
-
-- **开发模式**:
-  ```bash
-  pnpm dev
-  ```
-
-- **生产部署**:
-  首先执行构建：
-  ```bash
-  pnpm build
-  ```
-  直接启动：
-  ```bash
-  pnpm start
-  ```
-  或者使用 PM2 启动 (推荐)：
-  ```bash
-  # 首次启动
-  pm2 start pnpm --name "wzhs-booking" -- start
-  ```
-
-  > [!IMPORTANT]
-  > `pm2 start` 仅需在首次运行时执行。后续更新代码（执行 `pnpm build` 后）或重启服务，请使用 `pm2 restart wzhs-booking`，避免产生重复进程。
-
-<details>
-<summary><b>PM2 常用命令</b></summary>
-
-- **查看服务状态**: `pm2 list`
-- **查看实时日志**: `pm2 logs wzhs-booking`
-- **重启服务**: `pm2 restart wzhs-booking`
-- **停止服务**: `pm2 stop wzhs-booking`
-- **删除服务**: `pm2 delete wzhs-booking`
-- **保存当前列表**: `pm2 save` (用于机器重启后自动恢复)
-- **监控界面**: `pm2 monit`
 </details>
