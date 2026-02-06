@@ -16,7 +16,7 @@
         <t-form-item name="account">
           <t-input
             v-model="formData.account"
-            placeholder="请输入用户名（用于登录）"
+            placeholder="请输入用户名"
             size="large"
             variant="filled"
           >
