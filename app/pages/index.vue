@@ -39,7 +39,10 @@
           <div v-else class="empty-state">
             <t-icon name="info-circle" size="32px" />
             <p>最近暂无预约</p>
-            <t-button variant="outline" size="small" @click="$router.push('/my-bookings')">去预约</t-button>
+            <t-button variant="outline" size="small" @click="$router.push('/my-bookings')">
+              <template #icon><t-icon name="calendar" /></template>
+              去预约
+            </t-button>
           </div>
         </t-card>
       </t-col>

@@ -52,6 +52,7 @@
             size="large"
             :loading="loading"
           >
+            <template #icon><t-icon name="login" /></template>
             登录
           </t-button>
         </t-form-item>

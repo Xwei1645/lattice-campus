@@ -169,7 +169,10 @@
           {{ popupNotice.content }}
         </div>
         <div style="margin-top: 24px; text-align: right;">
-          <t-button theme="primary" @click="noticePopupVisible = false">我知道了</t-button>
+          <t-button theme="primary" @click="noticePopupVisible = false">
+            <template #icon><t-icon name="check" /></template>
+            我知道了
+          </t-button>
         </div>
       </div>
     </t-dialog>
@@ -498,6 +501,8 @@ const handleMenuClick = (value: any) => {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  margin-bottom: 8px;
+  min-height: 32px; /* 确保高度一致 */
 }
 
 .page-title {
@@ -505,6 +510,7 @@ const handleMenuClick = (value: any) => {
   font-weight: 600;
   margin: 0;
   color: var(--td-text-color-primary);
+  line-height: 32px; /* 与普通按钮高度一致，确保对齐 */
 }
 
 .content-card {

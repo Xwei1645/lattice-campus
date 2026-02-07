@@ -3,9 +3,9 @@
     <div class="page-header">
       <h2 class="page-title">关于</h2>
       <div class="header-actions">
-        <t-button theme="primary" @click="handleFeedback">
-          <template #icon><t-icon name="chat" /></template>
-          意见反馈
+        <t-button variant="outline" @click="diagnosticVisible = true">
+          <template #icon><t-icon name="info-circle" /></template>
+          诊断信息
         </t-button>
       </div>
     </div>
@@ -70,10 +70,49 @@
         <img :src="quanweiImage" alt="quanwei" />
       </div>
     </t-card>
+
+    <!-- 诊断信息对话框 -->
+    <t-dialog
+      v-model:visible="diagnosticVisible"
+      header="诊断信息"
+      :footer="false"
+      width="min(600px, 95%)"
+    >
+      <div style="padding: 10px 0">
+        <t-tabs defaultValue="build">
+          <t-tab-panel value="build" label="构建信息">
+            <div style="padding-top: 16px">
+              <t-descriptions :column="1" bordered>
+                <t-descriptions-item label="版本">{{ buildInfo.version }}</t-descriptions-item>
+                <t-descriptions-item label="Git Hash">{{ buildInfo.gitHash }}</t-descriptions-item>
+                <t-descriptions-item label="环境">{{ buildInfo.env }}</t-descriptions-item>
+                <t-descriptions-item label="Nuxt 版本">{{ buildInfo.nuxtVersion }}</t-descriptions-item>
+                <t-descriptions-item label="Vue 版本">{{ buildInfo.vueVersion }}</t-descriptions-item>
+                <t-descriptions-item label="构建时间">{{ buildInfo.buildTime }}</t-descriptions-item>
+              </t-descriptions>
+            </div>
+          </t-tab-panel>
+          <t-tab-panel value="system" label="系统信息">
+            <div style="padding-top: 16px">
+              <t-descriptions :column="1" bordered>
+                <t-descriptions-item label="User Agent">{{ browserInfo.ua }}</t-descriptions-item>
+                <t-descriptions-item label="平台">{{ browserInfo.platform }}</t-descriptions-item>
+                <t-descriptions-item label="屏幕分辨率">{{ browserInfo.screen }}</t-descriptions-item>
+                <t-descriptions-item label="窗口大小">{{ browserInfo.windowSize }}</t-descriptions-item>
+                <t-descriptions-item label="语言">{{ browserInfo.language }}</t-descriptions-item>
+                <t-descriptions-item label="Cookie 状态">{{ browserInfo.cookieEnabled ? '启用' : '未启用' }}</t-descriptions-item>
+              </t-descriptions>
+            </div>
+          </t-tab-panel>
+        </t-tabs>
+      </div>
+    </t-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
+import dayjs from 'dayjs'
+
 useHead({ title: '关于' })
 
 const quanweiImage = '/images/quanwei.png'
@@ -83,8 +122,38 @@ const clickCount = ref(0)
 const isAnimating = ref(false)
 let timer: any = null
 
-const handleFeedback = () => {
-  navigateTo('/feedback')
+const diagnosticVisible = ref(false)
+const browserInfo = ref({
+  ua: 'Loading...',
+  platform: 'Loading...',
+  screen: 'Loading...',
+  windowSize: 'Loading...',
+  language: 'Loading...',
+  cookieEnabled: false
+})
+
+const config = useRuntimeConfig()
+const buildInfoData = config.public.buildInfo as any
+const buildInfo = {
+  env: import.meta.env.MODE,
+  version: buildInfoData?.version || 'unknown',
+  gitHash: buildInfoData?.gitHash || 'unknown',
+  nuxtVersion: buildInfoData?.nuxtVersion || 'unknown',
+  vueVersion: buildInfoData?.vueVersion || 'unknown',
+  buildTime: buildInfoData?.buildTime ? dayjs(buildInfoData.buildTime).format('YYYY-MM-DD HH:mm:ss') : 'unknown'
+}
+
+if (import.meta.client) {
+  const ua = navigator.userAgent
+
+  browserInfo.value = {
+    ua: ua,
+    platform: navigator.platform,
+    screen: `${window.screen.width} x ${window.screen.height} (DPR: ${window.devicePixelRatio})`,
+    windowSize: `${window.innerWidth} x ${window.innerHeight}`,
+    language: navigator.language,
+    cookieEnabled: navigator.cookieEnabled
+  }
 }
 
 const handleSecretClick = () => {

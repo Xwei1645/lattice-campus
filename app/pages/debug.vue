@@ -2,7 +2,10 @@
   <div class="page-container">
     <div class="page-header" style="display: flex; justify-content: space-between; align-items: center;">
       <h2 class="page-title">调试</h2>
-      <t-button variant="outline" @click="handleHide">隐藏调试页面</t-button>
+      <t-button variant="outline" @click="handleHide">
+        <template #icon><t-icon name="browse-off" /></template>
+        隐藏调试页面
+      </t-button>
     </div>
     <t-card :bordered="false" class="content-card">
       <div class="debug-content">
@@ -10,33 +13,10 @@
           <div class="section-title">操作</div>
           <t-space>
             <t-button theme="primary" :loading="loading" @click="handleConfirmLoad">
+              <template #icon><t-icon name="refresh" /></template>
               加载示例数据
             </t-button>
           </t-space>
-        </div>
-
-        <div class="debug-section" style="margin-top: 24px;">
-          <div class="section-title">构建信息</div>
-          <t-descriptions :column="1" bordered>
-            <t-descriptions-item label="版本">{{ buildInfo.version }}</t-descriptions-item>
-            <t-descriptions-item label="Git Hash">{{ buildInfo.gitHash }}</t-descriptions-item>
-            <t-descriptions-item label="环境">{{ buildInfo.env }}</t-descriptions-item>
-            <t-descriptions-item label="Nuxt 版本">{{ buildInfo.nuxtVersion }}</t-descriptions-item>
-            <t-descriptions-item label="Vue 版本">{{ buildInfo.vueVersion }}</t-descriptions-item>
-            <t-descriptions-item label="构建时间">{{ buildInfo.buildTime }}</t-descriptions-item>
-          </t-descriptions>
-        </div>
-
-        <div class="debug-section" style="margin-top: 24px;">
-          <div class="section-title">系统信息</div>
-          <t-descriptions :column="1" bordered>
-            <t-descriptions-item label="User Agent">{{ browserInfo.ua }}</t-descriptions-item>
-            <t-descriptions-item label="平台">{{ browserInfo.platform }}</t-descriptions-item>
-            <t-descriptions-item label="屏幕分辨率">{{ browserInfo.screen }}</t-descriptions-item>
-            <t-descriptions-item label="窗口大小">{{ browserInfo.windowSize }}</t-descriptions-item>
-            <t-descriptions-item label="语言">{{ browserInfo.language }}</t-descriptions-item>
-            <t-descriptions-item label="Cookie 状态">{{ browserInfo.cookieEnabled ? '启用' : '未启用' }}</t-descriptions-item>
-          </t-descriptions>
         </div>
       </div>
     </t-card>
@@ -44,7 +24,6 @@
 </template>
 
 <script setup lang="ts">
-import dayjs from 'dayjs'
 useHead({ title: '调试' })
 
 const showDebug = useState('showDebug', () => false)
@@ -69,39 +48,6 @@ if (import.meta.client) {
         fatal: true
       })
     }
-  }
-}
-
-const browserInfo = ref({
-  ua: 'Loading...',
-  platform: 'Loading...',
-  screen: 'Loading...',
-  windowSize: 'Loading...',
-  language: 'Loading...',
-  cookieEnabled: false
-})
-
-const config = useRuntimeConfig()
-const buildInfoData = config.public.buildInfo as any
-const buildInfo = {
-  env: import.meta.env.MODE,
-  version: buildInfoData?.version || 'unknown',
-  gitHash: buildInfoData?.gitHash || 'unknown',
-  nuxtVersion: buildInfoData?.nuxtVersion || 'unknown',
-  vueVersion: buildInfoData?.vueVersion || 'unknown',
-  buildTime: buildInfoData?.buildTime ? dayjs(buildInfoData.buildTime).format('YYYY-MM-DD HH:mm:ss') : 'unknown'
-}
-
-if (import.meta.client) {
-  const ua = navigator.userAgent
-
-  browserInfo.value = {
-    ua: ua,
-    platform: navigator.platform,
-    screen: `${window.screen.width} x ${window.screen.height} (DPR: ${window.devicePixelRatio})`,
-    windowSize: `${window.innerWidth} x ${window.innerHeight}`,
-    language: navigator.language,
-    cookieEnabled: navigator.cookieEnabled
   }
 }
 

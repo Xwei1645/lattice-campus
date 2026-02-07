@@ -74,6 +74,7 @@
             size="large"
             :loading="loading"
           >
+            <template #icon><t-icon name="user-add" /></template>
             注册
           </t-button>
         </t-form-item>
