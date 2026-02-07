@@ -136,8 +136,6 @@ model Notice {
   id         Int      @id @default(autoincrement())
   title      String
   content    String
-  type       String   @default("info") // info, success, warning, danger
-  status     String   @default("published") // published, draft
   showPopup  Boolean  @default(false)
   creatorId  Int
   creator    User     @relation(fields: [creatorId], references: [id])

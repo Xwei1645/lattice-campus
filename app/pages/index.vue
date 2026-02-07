@@ -47,21 +47,32 @@
       <!-- 通知列表卡片 -->
       <t-col :xs="12" :md="6" :lg="8">
         <t-card title="通知" :bordered="false" class="dashboard-card shadow-card">
-          <t-list v-if="notices.length > 0" :split="true">
-            <t-list-item v-for="notice in notices.slice(0, 5)" :key="notice.id" class="notice-list-item">
-              <template #content>
-                <div class="notice-item-content">
-                  <t-tag :theme="getTypeTheme(notice.type)" variant="light-outline" size="small" class="notice-tag">
-                    {{ getTypeText(notice.type) }}
-                  </t-tag>
-                  <span class="notice-title" @click="showNoticeDetail(notice)">{{ notice.title }}</span>
-                </div>
-              </template>
-              <template #action>
-                <span class="notice-time">{{ formatDate(notice.createTime) }}</span>
-              </template>
-            </t-list-item>
-          </t-list>
+          <div v-if="notices.length > 0">
+            <t-list :split="true">
+              <t-list-item v-for="notice in notices" :key="notice.id" class="notice-list-item">
+                <template #content>
+                  <div class="notice-item-content">
+                    <span class="notice-title" @click="showNoticeDetail(notice)">{{ notice.title }}</span>
+                  </div>
+                </template>
+                <template #action>
+                  <span class="notice-time">{{ formatDate(notice.createTime) }}</span>
+                </template>
+              </t-list-item>
+            </t-list>
+            <div class="notice-pagination">
+              <t-pagination
+                v-model:current="noticePage"
+                v-model:page-size="noticePageSize"
+                :total="noticeTotal"
+                size="small"
+                show-total
+                show-paged
+                :show-page-size="false"
+                @current-change="fetchNotices"
+              />
+            </div>
+          </div>
           <div v-else class="empty-state">
             <t-icon name="notification" size="32px" />
             <p>暂无通知</p>
@@ -79,9 +90,6 @@
     >
       <div v-if="selectedNotice" class="notice-detail">
         <div class="notice-detail-meta">
-          <t-tag :theme="getTypeTheme(selectedNotice.type)" variant="light" size="small">
-            {{ getTypeText(selectedNotice.type) }}
-          </t-tag>
           <span class="meta-item">发布人：{{ selectedNotice.creator?.name }}</span>
           <span class="meta-item">时间：{{ formatDateTime(selectedNotice.createTime) }}</span>
         </div>
@@ -103,24 +111,40 @@ useHead({ title: '首页' })
 const loading = ref(true)
 const latestBooking = ref<any>(null)
 const notices = ref<any[]>([])
+const noticeTotal = ref(0)
+const noticePage = ref(1)
+const noticePageSize = ref(5)
 
 const noticeVisible = ref(false)
 const selectedNotice = ref<any>(null)
 
+const fetchNotices = async () => {
+  try {
+    const res: any = await $fetch('/api/notices', {
+      query: {
+        page: noticePage.value,
+        pageSize: noticePageSize.value
+      }
+    })
+    notices.value = res.notices || []
+    noticeTotal.value = res.total || 0
+  } catch (error) {
+    console.error('Failed to fetch notices:', error)
+  }
+}
+
 const fetchData = async () => {
   loading.value = true
   try {
-    const [bookingsData, noticesData] = await Promise.all([
+    const [bookingsData] = await Promise.all([
       $fetch('/api/bookings'),
-      $fetch('/api/notices')
+      fetchNotices()
     ])
     
     // 获取最近的一条预约
     if (bookingsData && Array.isArray(bookingsData) && bookingsData.length > 0) {
       latestBooking.value = bookingsData[0]
     }
-    
-    notices.value = noticesData || []
   } catch (error) {
     console.error('Failed to fetch dashboard data:', error)
   } finally {
@@ -156,26 +180,6 @@ const getStatusTheme = (status: string): "success" | "warning" | "danger" | "def
   }
   return map[status] || 'default'
 }
-
-const getTypeText = (type: string) => {
-  const map: any = {
-    info: '普通',
-    success: '通知',
-    warning: '重要',
-    danger: '紧急'
-  }
-  return map[type] || type
-}
-
-const getTypeTheme = (type: string): "primary" | "success" | "warning" | "danger" | "default" => {
-  const map: any = {
-    info: 'primary',
-    success: 'success',
-    warning: 'warning',
-    danger: 'danger'
-  }
-  return map[type] || 'default'
-}
 </script>
 
 <style scoped>
@@ -200,7 +204,13 @@ const getTypeTheme = (type: string): "primary" | "success" | "warning" | "danger
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 40px 0;
+  height: 200px;
+}
+
+.notice-pagination {
+  margin-top: 16px;
+  display: flex;
+  justify-content: flex-end;
 }
 
 .empty-state {

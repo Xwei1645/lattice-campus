@@ -161,8 +161,7 @@
     >
       <div v-if="popupNotice" class="notice-popup-content">
         <div class="notice-popup-meta">
-          <t-tag :theme="getTypeTheme(popupNotice.type)" variant="light" size="small">{{ getTypeText(popupNotice.type) }}</t-tag>
-          <span style="margin-left: 12px; color: var(--td-text-color-placeholder); font-size: 12px">
+          <span style="color: var(--td-text-color-placeholder); font-size: 12px">
             {{ formatDateTime(popupNotice.createTime) }}
           </span>
         </div>
@@ -196,9 +195,9 @@ const popupNotice = ref<any>(null);
 
 const fetchPopupNotice = async () => {
     try {
-        const notices: any[] = await ($fetch as any)('/api/notices');
-        // 查找最新的需要弹窗的通知
-        const popup = notices.find(n => n.showPopup && n.status === 'published');
+        const res: any = await $fetch('/api/notices', { query: { pageSize: 50 } });
+        const notices = res.notices || [];
+        const popup = notices.find((n: any) => n.showPopup);
         if (popup) {
             // 简单的防重复：如果本次会话已经显示过该 ID，则不再显示
             const shownList = JSON.parse(sessionStorage.getItem('shown_notices') || '[]');
@@ -213,26 +212,6 @@ const fetchPopupNotice = async () => {
         console.error('Failed to fetch popup notice:', error);
     }
 };
-
-const getTypeText = (type: string) => {
-  const map: any = {
-    info: '普通',
-    success: '通知',
-    warning: '重要',
-    danger: '紧急'
-  }
-  return map[type] || type
-}
-
-const getTypeTheme = (type: string): "danger" | "primary" | "default" | "warning" | "success" => {
-  const map: any = {
-    info: 'primary',
-    success: 'success',
-    warning: 'warning',
-    danger: 'danger'
-  }
-  return map[type] || 'default'
-}
 
 // 在客户端从localStorage加载用户信息
 onMounted(() => {

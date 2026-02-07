@@ -4,7 +4,7 @@ import { requireAdmin } from '../../utils/auth'
 export default defineEventHandler(async (event) => {
     await requireAdmin(event)
     const body = await readBody(event)
-    const { id, title, content, type, status, showPopup } = body
+    const { id, title, content, showPopup } = body
 
     if (!id) {
         throw createError({
@@ -18,8 +18,6 @@ export default defineEventHandler(async (event) => {
         data: {
             title,
             content,
-            type,
-            status,
             showPopup: !!showPopup
         }
     })

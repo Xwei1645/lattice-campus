@@ -2,31 +2,34 @@ import { db } from '../../utils/prisma'
 import { requireAuth } from '../../utils/auth'
 
 export default defineEventHandler(async (event) => {
-    const user = await requireAuth(event)
-    const isAdmin = ['root', 'super_admin', 'admin'].includes(user.role)
+    await requireAuth(event)
     const query = getQuery(event)
+    const page = Number(query.page) || 1
+    const pageSize = Number(query.pageSize) || 10
     
-    // 如果不是管理员，只看已发布的通知
     const where: any = {}
-    if (!isAdmin) {
-        where.status = 'published'
-    } else if (query.status) {
-        where.status = query.status as string
-    }
 
-    const notices = await db.notice.findMany({
-        where,
-        include: {
-            creator: {
-                select: {
-                    name: true
+    const [total, notices] = await Promise.all([
+        db.notice.count({ where }),
+        db.notice.findMany({
+            where,
+            include: {
+                creator: {
+                    select: {
+                        name: true
+                    }
                 }
-            }
-        },
-        orderBy: {
-            createTime: 'desc'
-        }
-    })
+            },
+            orderBy: {
+                createTime: 'desc'
+            },
+            skip: (page - 1) * pageSize,
+            take: pageSize
+        })
+    ])
 
-    return notices
+    return {
+        total,
+        notices
+    }
 })

@@ -19,17 +19,8 @@
         :hover="true"
         resizable
         table-layout="auto"
+        :pagination="pagination"
       >
-        <template #type="{ row }">
-          <t-tag :theme="getTypeTheme(row.type)" variant="light">
-            {{ getTypeText(row.type) }}
-          </t-tag>
-        </template>
-        <template #status="{ row }">
-          <t-tag :theme="row.status === 'published' ? 'success' : 'default'" variant="light">
-            {{ row.status === 'published' ? '已发布' : '草稿' }}
-          </t-tag>
-        </template>
         <template #showPopup="{ row }">
           <t-tag v-if="row.showPopup" theme="warning" variant="light">是</t-tag>
           <span v-else>否</span>
@@ -60,23 +51,12 @@
         <t-form-item label="标题" name="title">
           <t-input v-model="formData.title" placeholder="请输入通知标题" />
         </t-form-item>
-        <t-form-item label="类型" name="type">
-          <t-radio-group v-model="formData.type" variant="default-filled">
-            <t-radio-button value="info">普通</t-radio-button>
-            <t-radio-button value="success">通知</t-radio-button>
-            <t-radio-button value="warning">重要</t-radio-button>
-            <t-radio-button value="danger">紧急</t-radio-button>
-          </t-radio-group>
-        </t-form-item>
         <t-form-item label="内容" name="content">
           <t-textarea 
             v-model="formData.content" 
             placeholder="请输入通知内容，支持换行..." 
             :autosize="{ minRows: 6, maxRows: 12 }"
           />
-        </t-form-item>
-        <t-form-item label="发布状态" name="status">
-          <t-switch v-model="formData.status" :label="['已发布', '草稿']" :custom-value="['published', 'draft']" />
         </t-form-item>
         <t-form-item label="弹窗提醒" name="showPopup">
           <t-switch v-model="formData.showPopup" />
@@ -104,8 +84,6 @@ const formData = reactive({
   id: null as number | null,
   title: '',
   content: '',
-  type: 'info',
-  status: 'published',
   showPopup: false
 })
 
@@ -117,18 +95,35 @@ const rules: FormRules = {
 const columns: PrimaryTableCol[] = [
   { colKey: 'id', title: 'ID', width: 70 },
   { colKey: 'title', title: '标题', ellipsis: true },
-  { colKey: 'type', title: '类型', cell: 'type', width: 100 },
   { colKey: 'showPopup', title: '弹窗提醒', cell: 'showPopup', width: 100 },
-  { colKey: 'status', title: '状态', cell: 'status', width: 100 },
   { colKey: 'creator.name', title: '发布者', width: 120 },
   { colKey: 'createTime', title: '发布时间', cell: 'createTime', width: 180 },
   { colKey: 'operation', title: '操作', cell: 'operation', width: 120 }
 ]
 
+const pagination = reactive({
+  current: 1,
+  pageSize: 10,
+  total: 0,
+  showTotal: true,
+  onChange: (pageInfo: any) => {
+    pagination.current = pageInfo.current
+    pagination.pageSize = pageInfo.pageSize
+    fetchNotices()
+  }
+})
+
 const fetchNotices = async () => {
   loading.value = true
   try {
-    notices.value = await ($fetch as any)('/api/notices', { query: { status: '' } })
+    const res: any = await $fetch('/api/notices', {
+      query: {
+        page: pagination.current,
+        pageSize: pagination.pageSize
+      }
+    })
+    notices.value = res.notices
+    pagination.total = res.total
   } catch (error) {
     MessagePlugin.error('获取通知列表失败')
   } finally {
@@ -142,8 +137,6 @@ const handleAdd = () => {
     id: null,
     title: '',
     content: '',
-    type: 'info',
-    status: 'published',
     showPopup: false
   })
   dialogVisible.value = true
@@ -155,8 +148,6 @@ const handleEdit = (row: any) => {
     id: row.id,
     title: row.title,
     content: row.content,
-    type: row.type,
-    status: row.status,
     showPopup: !!row.showPopup
   })
   dialogVisible.value = true
@@ -194,26 +185,6 @@ const handleDelete = async (row: any) => {
   } catch (error) {
     MessagePlugin.error('删除失败')
   }
-}
-
-const getTypeText = (type: string) => {
-  const map: any = {
-    info: '普通',
-    success: '通知',
-    warning: '重要',
-    danger: '紧急'
-  }
-  return map[type] || type
-}
-
-const getTypeTheme = (type: string): "danger" | "primary" | "default" | "warning" | "success" => {
-  const map: any = {
-    info: 'primary',
-    success: 'success',
-    warning: 'warning',
-    danger: 'danger'
-  }
-  return map[type] || 'default'
 }
 
 onMounted(fetchNotices)
