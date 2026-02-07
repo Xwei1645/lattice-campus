@@ -14,6 +14,8 @@ const getGitHash = () => {
 };
 
 export default defineNuxtConfig({
+  srcDir: 'app/',
+  serverDir: 'app/server',
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
   runtimeConfig: {
