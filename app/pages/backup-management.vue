@@ -24,9 +24,6 @@
             <t-input-number v-model="settings.backupMaxKeep" :min="1" :max="100" align="center" style="width: 120px" theme="column" @blur="handleSaveSettings" />
             <span style="margin-left: 8px; color: var(--td-text-color-secondary)">份</span>
           </t-form-item>
-          <div v-show="savingSettings" class="save-status">
-            <t-loading size="small" text="正在同步配置..." />
-          </div>
         </t-space>
       </t-form>
     </t-card>
@@ -65,7 +62,6 @@ useHead({ title: '数据备份' })
 const backups = ref<any[]>([])
 const loading = ref(false)
 const creating = ref(false)
-const savingSettings = ref(false)
 
 const settings = reactive({
   autoBackupEnabled: true,
@@ -97,7 +93,6 @@ const fetchBackups = async () => {
 }
 
 const handleSaveSettings = async () => {
-  savingSettings.value = true
   try {
     await $fetch('/api/backups/settings', {
       method: 'POST',
@@ -106,8 +101,6 @@ const handleSaveSettings = async () => {
     // 自动生效时不需要频繁提示成功
   } catch (error: any) {
     MessagePlugin.error(`设置同步失败: ${error.message}`)
-  } finally {
-    savingSettings.value = false
   }
 }
 
@@ -185,12 +178,5 @@ onMounted(() => {
 .header-actions {
   display: flex;
   gap: 16px;
-}
-.save-status {
-  display: flex;
-  align-items: center;
-  color: var(--td-text-color-secondary);
-  font-size: 13px;
-  margin-left: 8px;
 }
 </style>

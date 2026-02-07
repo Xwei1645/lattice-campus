@@ -21,6 +21,7 @@
         :data="filteredUserData"
         :columns="columns"
         :hover="true"
+        :loading="loading"
         :pagination="pagination"
       >
         <template #createTime="{ row }">
@@ -148,7 +149,7 @@ onMounted(() => {
 });
 
 // 获取后端数据
-const { data: users, refresh } = await useFetch<User[]>('/api/users');
+const { data: users, refresh, pending: loading } = await useFetch<User[]>('/api/users');
 const { data: organizations } = await useFetch('/api/organizations');
 const userData = computed(() => users.value || []);
 
