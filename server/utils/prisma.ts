@@ -3,10 +3,13 @@ import { PrismaPg } from '@prisma/adapter-pg'
 import pg from 'pg'
 
 function createPrismaClient() {
-    if (!process.env.DATABASE_URL) {
-        throw new Error('DATABASE_URL environment variable is not set. Please configure it in your .env file.')
+    const databaseUrl = process.env.DATABASE_URL
+    
+    if (!databaseUrl) {
+        console.warn('Prisma: DATABASE_URL environment variable is not set. Using dummy connection for build/init.')
     }
-    const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL })
+    
+    const pool = new pg.Pool({ connectionString: databaseUrl || 'postgresql://null:5432/null' })
     const adapter = new PrismaPg(pool)
     return new PrismaClient({ adapter })
 }
