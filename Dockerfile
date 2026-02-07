@@ -29,7 +29,7 @@ ENV GIT_HASH=$GIT_HASH
 COPY . .
 
 # 生成 Prisma Client（仅需 schema，不需要真实数据库连接）
-RUN pnpm prisma generate --config prisma/prisma.config.ts
+RUN pnpm prisma generate --config prisma.config.ts
 
 # 构建 Nuxt 应用
 RUN pnpm build

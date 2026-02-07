@@ -106,8 +106,8 @@ cp .env.example .env
 ### 2. 数据库初始化
 ```bash
 # 生成 Prisma Client 并应用迁移
-npx prisma generate --config prisma/prisma.config.ts
-npx prisma migrate deploy --config prisma/prisma.config.ts
+npx prisma generate --config prisma.config.ts
+npx prisma migrate deploy --config prisma.config.ts
 ```
 
 ### 3. 启动应用
