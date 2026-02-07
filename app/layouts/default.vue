@@ -78,6 +78,10 @@
               <template #icon><t-icon name="chat-bubble-help" /></template>
               反馈管理
             </t-menu-item>
+            <t-menu-item v-if="isSuperAdmin" value="/backup-management" to="/backup-management">
+              <template #icon><t-icon name="cloud-download" /></template>
+              数据备份
+            </t-menu-item>
           </template>
 
           <t-divider style="margin: 8px 0" />
@@ -247,6 +251,10 @@ onMounted(() => {
 const isAdmin = computed(() => {
   const role = userInfo.value?.role;
   return ['root', 'super_admin', 'admin'].includes(role);
+});
+
+const isSuperAdmin = computed(() => {
+  return userInfo.value?.role === 'super_admin';
 });
 
 // 个人信息逻辑

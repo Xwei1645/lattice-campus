@@ -35,10 +35,16 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
                 '/auto-approval',
                 '/feedback-management',
                 '/notice-management',
-                '/invitation-code-management'
+                '/invitation-code-management',
+                '/backup-management'
             ]
             if (adminRoutes.includes(to.path)) {
                 if (!['root', 'super_admin', 'admin'].includes(user.role)) {
+                    return navigateTo('/')
+                }
+                
+                // 数据备份仅限超级管理员
+                if (to.path === '/backup-management' && user.role !== 'super_admin') {
                     return navigateTo('/')
                 }
             }
