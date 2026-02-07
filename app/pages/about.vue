@@ -21,7 +21,7 @@
         <div class="section">
           <div class="section-title">碎碎念</div>
           <p class="section-text">
-            vibe coding 真好吃:) WSL 大抵不会流畅到哪里去罢（（
+            vibe coding 真好吃 : )
           </p>
         </div>
 
