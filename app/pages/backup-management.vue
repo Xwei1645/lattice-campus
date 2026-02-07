@@ -188,7 +188,7 @@ const handleRestore = async (row: any) => {
   const confirmDialog = DialogPlugin.confirm({
     header: '风险提示',
     theme: 'warning',
-    body: `确定要通过备份文件 [${row.name}] 还原系统吗？这将覆盖当前所有数据且不可撤销！`,
+    body: `确定要通过备份文件 ${row.name} 还原系统吗？这将覆盖当前所有数据且不可撤销！`,
     onConfirm: async () => {
       try {
         await $fetch('/api/backups/restore', {
@@ -208,7 +208,7 @@ const handleDelete = async (row: any) => {
   const confirmDialog = DialogPlugin.confirm({
     header: '确认删除',
     theme: 'danger',
-    body: `确定删除备份文件 [${row.name}] 吗？`,
+    body: `确定删除备份文件 ${row.name} 吗？`,
     onConfirm: async () => {
       try {
         await $fetch('/api/backups/delete', {
