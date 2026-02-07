@@ -1,13 +1,27 @@
+# 依赖和构建产物
 node_modules
 .nuxt
 .output
 dist
+
+# 环境配置（安全）
 .env
+.env.*
+
+# 版本控制
 .git
 .gitignore
-*.log
+
+# Docker 自身文件
 docker-compose*.yml
 Dockerfile
 .dockerignore
+
+# 文档和日志
 README.md
 TODO.md
+*.log
+
+# 编辑器
+.vscode
+.idea
