@@ -55,7 +55,7 @@ COPY --from=build --chown=node:node /app/node_modules ./node_modules
 
 # 复制 Prisma 相关文件（schema、migrations、config）
 COPY --from=build --chown=node:node /app/prisma ./prisma
-COPY --from=build --chown=node:node /app/package.json ./
+COPY --from=build --chown=node:node /app/package.json /app/prisma.config.ts ./
 
 # 复制启动脚本
 COPY --chown=node:node docker-entrypoint.sh ./
