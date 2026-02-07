@@ -45,11 +45,29 @@
           {{ formatFileSize(row.size) }}
         </template>
         <template #op="{ row }">
+          <t-link theme="primary" hover="color" style="margin-right: 16px" @click="handleRename(row)">重命名</t-link>
           <t-link theme="primary" hover="color" style="margin-right: 16px" @click="handleRestore(row)">还原</t-link>
           <t-link theme="danger" hover="color" @click="handleDelete(row)">删除</t-link>
         </template>
       </t-table>
     </t-card>
+
+    <!-- 重命名对话框 -->
+    <t-dialog
+      v-model:visible="renameVisible"
+      header="重命名备份文件"
+      :confirm-btn="{ content: '确定', loading: renameLoading }"
+      width="400px"
+      @confirm="submitRename"
+    >
+      <t-form :data="renameData" label-align="top">
+        <t-form-item label="文件名" name="newName">
+          <t-input v-model="renameData.newName" placeholder="请输入新文件名">
+            <template #suffix>.sql</template>
+          </t-input>
+        </t-form-item>
+      </t-form>
+    </t-dialog>
   </div>
 </template>
 
@@ -62,6 +80,13 @@ useHead({ title: '数据备份' })
 const backups = ref<any[]>([])
 const loading = ref(false)
 const creating = ref(false)
+
+const renameVisible = ref(false)
+const renameLoading = ref(false)
+const renameData = reactive({
+  oldName: '',
+  newName: ''
+})
 
 const settings = reactive({
   autoBackupEnabled: true,
@@ -114,6 +139,48 @@ const handleCreateBackup = async () => {
     MessagePlugin.error(`备份失败: ${error.message}`)
   } finally {
     creating.value = false
+  }
+}
+
+const handleRename = (row: any) => {
+  renameData.oldName = row.name
+  // 移除后缀名显示在输入框，方便用户修改
+  renameData.newName = row.name.replace(/\.sql$|\.dump$/, '')
+  renameVisible.value = true
+}
+
+const submitRename = async () => {
+  if (!renameData.newName) {
+    MessagePlugin.warning('文件名不能为空')
+    return
+  }
+
+  const finalNewName = renameData.newName.endsWith('.sql') || renameData.newName.endsWith('.dump') 
+    ? renameData.newName 
+    : `${renameData.newName}.sql`
+
+  // 如果没有更改文件名，直接关闭对话框
+  if (finalNewName === renameData.oldName) {
+    renameVisible.value = false
+    return
+  }
+
+  renameLoading.value = true
+  try {
+    await $fetch('/api/backups/rename', {
+      method: 'POST',
+      body: { 
+        oldName: renameData.oldName, 
+        newName: finalNewName 
+      }
+    })
+    MessagePlugin.success('重命名成功')
+    renameVisible.value = false
+    fetchBackups()
+  } catch (error: any) {
+    MessagePlugin.error(`重命名失败: ${error.message}`)
+  } finally {
+    renameLoading.value = false
   }
 }
 

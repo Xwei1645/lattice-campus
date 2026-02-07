@@ -101,3 +101,31 @@ export async function deleteBackup(fileName: string) {
     }
     return false
 }
+
+/**
+ * 重命名备份
+ */
+export async function renameBackup(oldName: string, newName: string) {
+    const oldPath = path.join(BACKUP_DIR, oldName)
+    const newPath = path.join(BACKUP_DIR, newName)
+
+    if (oldName === newName) {
+        return true
+    }
+
+    if (!fs.existsSync(oldPath)) {
+        throw new Error('原备份文件不存在')
+    }
+
+    if (fs.existsSync(newPath)) {
+        throw new Error('目标文件名已存在')
+    }
+
+    // 简单校验后缀名，防止重命名为非法文件
+    if (!newName.endsWith('.sql') && !newName.endsWith('.dump')) {
+        throw new Error('文件名必须以 .sql 或 .dump 结尾')
+    }
+
+    await fs.promises.rename(oldPath, newPath)
+    return true
+}
