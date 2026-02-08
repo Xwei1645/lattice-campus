@@ -4,7 +4,7 @@
       <h2 class="page-title">数据备份</h2>
       <div class="header-actions">
         <t-button theme="primary" :loading="creating" @click="handleCreateBackup">
-          <template #icon><t-icon name="cloud-upload" /></template>
+          <template #icon><CloudUploadIcon /></template>
           立即备份
         </t-button>
       </div>
@@ -72,6 +72,7 @@
 </template>
 
 <script setup lang="ts">
+import { CloudUploadIcon } from 'tdesign-icons-vue-next';
 import { ref, reactive, onMounted } from 'vue'
 import type { PrimaryTableCol, TableRowData } from 'tdesign-vue-next'
 

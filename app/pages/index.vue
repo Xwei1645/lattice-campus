@@ -10,7 +10,7 @@
         <t-card title="最近预约" :bordered="false" class="dashboard-card shadow-card">
           <template #actions>
             <t-link theme="primary" @click="$router.push('/my-bookings')">
-              更多 <t-icon name="chevron-right" />
+              更多 <ChevronRightIcon />
             </t-link>
           </template>
           <div v-if="loading" class="loading-container">
@@ -18,11 +18,11 @@
           </div>
           <div v-else-if="latestBooking" class="booking-info">
             <div class="booking-room">
-              <t-icon name="location" class="info-icon" />
+              <LocationIcon class="info-icon" />
               {{ latestBooking.room?.name }}
             </div>
             <div class="booking-time">
-              <t-icon name="time" class="info-icon" />
+              <TimeIcon class="info-icon" />
               {{ formatDateTime(latestBooking.startTime) }}
             </div>
             <div class="booking-status">
@@ -37,10 +37,10 @@
             </div>
           </div>
           <div v-else class="empty-state">
-            <t-icon name="info-circle" size="32px" />
+            <InfoCircleIcon size="32px" />
             <p>最近暂无预约</p>
             <t-button variant="outline" size="small" @click="$router.push('/my-bookings')">
-              <template #icon><t-icon name="calendar" /></template>
+              <template #icon><CalendarIcon /></template>
               去预约
             </t-button>
           </div>
@@ -77,7 +77,7 @@
             </div>
           </div>
           <div v-else class="empty-state">
-            <t-icon name="notification" size="32px" />
+            <NotificationIcon size="32px" />
             <p>暂无通知</p>
           </div>
         </t-card>
@@ -106,6 +106,14 @@
 </template>
 
 <script setup lang="ts">
+import {
+  ChevronRightIcon,
+  LocationIcon,
+  TimeIcon,
+  InfoCircleIcon,
+  CalendarIcon,
+  NotificationIcon,
+} from 'tdesign-icons-vue-next';
 import { ref, onMounted } from 'vue'
 import { formatDateTime, formatDate } from '~/utils/format'
 

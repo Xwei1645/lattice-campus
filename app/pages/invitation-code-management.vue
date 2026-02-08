@@ -4,7 +4,7 @@
       <h2 class="page-title">邀请码管理</h2>
       <div class="header-actions">
         <t-button theme="primary" @click="handleAdd">
-          <template #icon><t-icon name="add" /></template>
+          <template #icon><AddIcon /></template>
           生成邀请码
         </t-button>
       </div>
@@ -82,6 +82,7 @@
 </template>
 
 <script setup lang="ts">
+import { AddIcon } from 'tdesign-icons-vue-next';
 import type { PrimaryTableCol, FormRules } from 'tdesign-vue-next'
 import { MessagePlugin } from 'tdesign-vue-next'
 
@@ -107,7 +108,7 @@ const columns: PrimaryTableCol[] = [
 const formData = ref({
   count: 1,
   role: 'user',
-  organizationId: null as number | null,
+  organizationId: undefined as number | undefined,
   expiresAt: '',
   maxUses: 1
 })
@@ -167,7 +168,7 @@ const handleAdd = () => {
   formData.value = {
     count: 1,
     role: 'user',
-    organizationId: null,
+    organizationId: undefined,
     expiresAt: '',
     maxUses: 1
   }

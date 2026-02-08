@@ -7,7 +7,7 @@
       </t-space>
       <div class="header-actions">
         <t-button theme="primary" @click="handleAddRule">
-          <template #icon><t-icon name="add" /></template>
+          <template #icon><AddIcon /></template>
           新增规则
         </t-button>
       </div>
@@ -110,6 +110,7 @@
 </template>
 
 <script setup lang="ts">
+import { AddIcon } from 'tdesign-icons-vue-next';
 import type { PrimaryTableCol } from 'tdesign-vue-next'
 import { formatDateTime } from '~/utils/format'
 

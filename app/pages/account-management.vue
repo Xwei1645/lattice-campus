@@ -7,7 +7,7 @@
           <t-input v-model="searchQuery" placeholder="搜索用户名/姓名" clearable variant="filled" />
           <template #append>
             <t-button theme="primary" @click="handleAddUser">
-              <template #icon><t-icon name="add" /></template>
+              <template #icon><AddIcon /></template>
               新增用户
             </t-button>
           </template>
@@ -108,6 +108,7 @@
 </template>
 
 <script setup lang="ts">
+import { AddIcon } from 'tdesign-icons-vue-next';
 import { ref, reactive, computed, onMounted } from 'vue';
 import type { PrimaryTableCol, FormRules } from 'tdesign-vue-next';
 

@@ -4,7 +4,7 @@
       <h2 class="page-title">通知管理</h2>
       <div class="header-actions">
         <t-button theme="primary" @click="handleAdd">
-          <template #icon><t-icon name="add" /></template>
+          <template #icon><AddIcon /></template>
           发布通知
         </t-button>
       </div>
@@ -67,6 +67,7 @@
 </template>
 
 <script setup lang="ts">
+import { AddIcon } from 'tdesign-icons-vue-next';
 import type { PrimaryTableCol, FormRules } from 'tdesign-vue-next'
 import { MessagePlugin } from 'tdesign-vue-next'
 import { formatDateTime } from '~/utils/format'

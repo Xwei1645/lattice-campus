@@ -10,9 +10,9 @@
             <t-tag theme="primary" variant="light" class="role-tag">{{ getRoleName(userInfo?.role) }}</t-tag>
             <t-dropdown trigger="click" @click="handleDropdownClick">
               <t-link theme="default" class="user-name-link">
-                <t-icon name="user-circle" class="user-avatar-icon" />
+                <UserCircleIcon class="user-avatar-icon" />
                 <span class="user-name-text">{{ userInfo?.name }} ({{ userInfo?.account }})</span>
-                <t-icon name="chevron-down" class="chevron-icon" />
+                <ChevronDownIcon class="chevron-icon" />
               </t-link>
               <t-dropdown-menu>
                 <t-dropdown-item value="profile">个人信息</t-dropdown-item>
@@ -28,69 +28,69 @@
       <t-aside class="app-aside" width="180px">
         <t-menu theme="light" :value="$route.path" @change="handleMenuClick" style="width: 100%">
           <t-menu-item value="/" to="/">
-            <template #icon><t-icon name="home" /></template>
+            <template #icon><HomeIcon /></template>
             首页
           </t-menu-item>
           <t-menu-item value="/my-bookings" to="/my-bookings">
-            <template #icon><t-icon name="view-module" /></template>
+            <template #icon><ViewModuleIcon /></template>
             我的预约
           </t-menu-item>
           <t-menu-item value="/overview" to="/overview">
-            <template #icon><t-icon name="calendar" /></template>
+            <template #icon><CalendarIcon /></template>
             总览
           </t-menu-item>
           <t-menu-item value="/feedback" to="/feedback">
-            <template #icon><t-icon name="chat" /></template>
+            <template #icon><ChatIcon /></template>
             意见反馈
           </t-menu-item>
 
           <template v-if="isAdmin">
             <t-divider style="margin: 8px 0" />
             <t-menu-item value="/booking-management" to="/booking-management">
-              <template #icon><t-icon name="assignment" /></template>
+              <template #icon><AssignmentIcon /></template>
               预约审批
             </t-menu-item>
             <t-menu-item value="/auto-approval" to="/auto-approval">
-              <template #icon><t-icon name="control-platform" /></template>
+              <template #icon><ControlPlatformIcon /></template>
               自动审批规则
             </t-menu-item>
             <t-menu-item value="/room-management" to="/room-management">
-              <template #icon><t-icon name="location" /></template>
+              <template #icon><LocationIcon /></template>
               场地管理
             </t-menu-item>
             <t-menu-item value="/account-management" to="/account-management">
-              <template #icon><t-icon name="user-setting" /></template>
+              <template #icon><UserSettingIcon /></template>
               用户管理
             </t-menu-item>
             <t-menu-item value="/organization-management" to="/organization-management">
-              <template #icon><t-icon name="usergroup" /></template>
+              <template #icon><UsergroupIcon /></template>
               组织管理
             </t-menu-item>
             <t-menu-item value="/invitation-code-management" to="/invitation-code-management">
-              <template #icon><t-icon name="root-list" /></template>
+              <template #icon><RootListIcon /></template>
               邀请码管理
             </t-menu-item>
             <t-menu-item value="/notice-management" to="/notice-management">
-              <template #icon><t-icon name="notification" /></template>
+              <template #icon><NotificationIcon /></template>
               通知管理
             </t-menu-item>
             <t-menu-item value="/feedback-management" to="/feedback-management">
-              <template #icon><t-icon name="chat-bubble-help" /></template>
+              <template #icon><ChatBubbleHelpIcon /></template>
               反馈管理
             </t-menu-item>
             <t-menu-item v-if="isSuperAdmin" value="/backup-management" to="/backup-management">
-              <template #icon><t-icon name="cloud-download" /></template>
+              <template #icon><CloudDownloadIcon /></template>
               数据备份
             </t-menu-item>
           </template>
 
           <t-divider style="margin: 8px 0" />
           <t-menu-item value="/about" to="/about">
-            <template #icon><t-icon name="info-circle" /></template>
+            <template #icon><InfoCircleIcon /></template>
             关于
           </t-menu-item>
           <t-menu-item v-if="showDebug" value="/debug" to="/debug">
-            <template #icon><t-icon name="bug" /></template>
+            <template #icon><BugIcon /></template>
             调试
           </t-menu-item>
         </t-menu>
@@ -170,7 +170,7 @@
         </div>
         <div style="margin-top: 24px; text-align: right;">
           <t-button theme="primary" @click="noticePopupVisible = false">
-            <template #icon><t-icon name="check" /></template>
+            <template #icon><CheckIcon /></template>
             我知道了
           </t-button>
         </div>
@@ -180,6 +180,26 @@
 </template>
 
 <script setup lang="ts">
+import {
+  UserCircleIcon,
+  ChevronDownIcon,
+  HomeIcon,
+  ViewModuleIcon,
+  CalendarIcon,
+  ChatIcon,
+  AssignmentIcon,
+  ControlPlatformIcon,
+  LocationIcon,
+  UserSettingIcon,
+  UsergroupIcon,
+  RootListIcon,
+  NotificationIcon,
+  ChatBubbleHelpIcon,
+  CloudDownloadIcon,
+  InfoCircleIcon,
+  BugIcon,
+  CheckIcon,
+} from 'tdesign-icons-vue-next';
 import { onMounted, ref, reactive } from 'vue';
 import { formatDateTime } from '~/utils/format';
 

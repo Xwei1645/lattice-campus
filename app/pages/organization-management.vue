@@ -7,7 +7,7 @@
           <t-input v-model="searchQuery" placeholder="搜索组织名称" clearable variant="filled" />
           <template #append>
             <t-button theme="primary" @click="handleAdd">
-              <template #icon><t-icon name="add" /></template>
+              <template #icon><AddIcon /></template>
               新增组织
             </t-button>
           </template>
@@ -78,6 +78,7 @@
 </template>
 
 <script setup lang="ts">
+import { AddIcon } from 'tdesign-icons-vue-next';
 import type { PrimaryTableCol, FormRules } from 'tdesign-vue-next'
 
 useHead({ title: '组织管理' })

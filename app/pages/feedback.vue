@@ -4,7 +4,7 @@
       <h2 class="page-title">意见反馈</h2>
       <div class="header-actions">
         <t-button theme="primary" @click="dialogVisible = true">
-          <template #icon><t-icon name="add" /></template>
+          <template #icon><AddIcon /></template>
           提交反馈
         </t-button>
       </div>
@@ -13,7 +13,7 @@
     <t-card :bordered="false" class="content-card">
       <t-loading :loading="loading">
         <div v-if="feedbacks.length === 0" class="empty-container">
-          <t-icon name="info-circle" size="48px" style="color: var(--td-text-color-placeholder)" />
+          <InfoCircleIcon size="48px" style="color: var(--td-text-color-placeholder)" />
           <p>暂无反馈记录，您的意见对我们很重要</p>
         </div>
         
@@ -71,6 +71,7 @@
 </template>
 
 <script setup lang="ts">
+import { AddIcon, InfoCircleIcon } from 'tdesign-icons-vue-next';
 import type { FormRules } from 'tdesign-vue-next'
 
 useHead({ title: '意见反馈' })
