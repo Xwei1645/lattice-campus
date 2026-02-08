@@ -57,6 +57,9 @@ COPY --from=build --chown=node:node /app/node_modules ./node_modules
 COPY --from=build --chown=node:node /app/prisma ./prisma
 COPY --from=build --chown=node:node /app/package.json /app/prisma.config.ts ./
 
+# 创建备份目录并设置权限
+RUN mkdir -p /app/backups && chown node:node /app/backups
+
 # 复制启动脚本
 COPY --chown=node:node docker-entrypoint.sh ./
 RUN chmod +x docker-entrypoint.sh
