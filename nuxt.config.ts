@@ -16,12 +16,6 @@ const getGitHash = () => {
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
-  css: [
-    'tdesign-icons-vue-next/dist/index.css'
-  ],
-  build: {
-    transpile: ['tdesign-icons-vue-next']
-  },
   runtimeConfig: {
     // 仅在服务端可见
     backupInterval: 12 * 60 * 60 * 1000, // 默认 12 小时
