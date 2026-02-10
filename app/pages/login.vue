@@ -137,8 +137,22 @@ const onSubmit = async ({ validateResult, firstError }: any) => {
   }
 };
 
+const route = useRoute();
+
+onMounted(() => {
+  const { error, dingName } = route.query;
+  if (error === 'dingtalk_user_not_found') {
+    MessagePlugin.warning(`钉钉用户 [${dingName}] 尚未绑定系统账号，请联系管理员关联 OpenID`);
+  } else if (error === 'dingtalk_auth_failed') {
+    MessagePlugin.error('钉钉登录失败，请稍后重试');
+  } else if (error === 'account_disabled') {
+    MessagePlugin.error('该账号已被禁用');
+  }
+});
+
 const onDingtalkLogin = () => {
-  MessagePlugin.info('钉钉登录功能开发中...');
+  // 直接跳转到后端重定向接口
+  window.location.href = '/api/auth/dingtalk/login';
 };
 </script>
 
