@@ -109,8 +109,8 @@ const tableSkeleton = Array(8).fill([
 const fetchBookings = async () => {
   loading.value = true
   try {
-    const data = await $fetch<any>('/api/bookings')
-    bookings.value = data as any[]
+    const res: any = await $fetch('/api/bookings')
+    bookings.value = res.data || []
     pagination.total = bookings.value.length
   } catch (error: any) {
     MessagePlugin.error('获取预约列表失败：' + error.message)

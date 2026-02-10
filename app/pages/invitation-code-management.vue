@@ -161,7 +161,8 @@ const getRoleTheme = (role: string): "default" | "primary" | "warning" | "danger
 const fetchCodes = async () => {
   loading.value = true
   try {
-    codes.value = await $fetch('/api/invitation-codes')
+    const res: any = await $fetch('/api/invitation-codes')
+    codes.value = res.data || []
   } catch (error: any) {
     MessagePlugin.error('获取列表失败: ' + error.message)
   } finally {
@@ -171,7 +172,8 @@ const fetchCodes = async () => {
 
 const fetchOrganizations = async () => {
   try {
-    organizations.value = await $fetch('/api/organizations')
+    const res: any = await $fetch('/api/organizations')
+    organizations.value = res.data || []
   } catch (error: any) {
     console.error('获取组织失败', error)
   }

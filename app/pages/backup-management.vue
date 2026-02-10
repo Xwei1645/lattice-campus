@@ -115,11 +115,11 @@ const tableSkeleton = Array(5).fill([
 const fetchBackups = async () => {
   loading.value = true
   try {
-    const [backupsRes, settingsRes] = await Promise.all([
+    const [backupsRes, settingsRes]: [any, any] = await Promise.all([
       $fetch('/api/backups'),
       $fetch('/api/backups/settings')
     ])
-    backups.value = backupsRes
+    backups.value = backupsRes.data || []
     Object.assign(settings, settingsRes)
   } catch (error: any) {
     MessagePlugin.error(`获取数据失败: ${error.message}`)

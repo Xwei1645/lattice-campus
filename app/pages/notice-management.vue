@@ -135,8 +135,8 @@ const fetchNotices = async () => {
         pageSize: pagination.pageSize
       }
     })
-    notices.value = res.notices
-    pagination.total = res.total
+    notices.value = res.data?.notices || []
+    pagination.total = res.data?.total || 0
   } catch (error) {
     MessagePlugin.error('获取通知列表失败')
   } finally {

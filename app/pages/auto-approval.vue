@@ -170,7 +170,8 @@ const pagination = reactive({
 const fetchRules = async () => {
   rulesLoading.value = true
   try {
-    rules.value = await $fetch<any>('/api/auto-approval')
+    const res: any = await $fetch('/api/auto-approval')
+    rules.value = res.data || []
     pagination.total = rules.value.length
   } catch (error: any) {
     MessagePlugin.error('获取规则失败：' + error.message)
@@ -185,14 +186,14 @@ const roomOptions = ref<any[]>([])
 
 const fetchOptions = async () => {
   try {
-    const [orgs, users, rooms] = await Promise.all([
+    const [orgRes, userRes, roomRes] = await Promise.all([
       $fetch<any>('/api/organizations'),
       $fetch<any>('/api/users'),
       $fetch<any>('/api/rooms')
     ])
-    organizationOptions.value = orgs.map((i: any) => ({ label: i.name, value: i.id }))
-    userOptions.value = users.map((i: any) => ({ label: `${i.name} (${i.account})`, value: i.id }))
-    roomOptions.value = rooms.map((i: any) => ({ label: i.name, value: i.id }))
+    organizationOptions.value = orgRes.data?.map((i: any) => ({ label: i.name, value: i.id })) || []
+    userOptions.value = userRes.data?.map((i: any) => ({ label: `${i.name} (${i.account})`, value: i.id })) || []
+    roomOptions.value = roomRes.data?.map((i: any) => ({ label: i.name, value: i.id })) || []
   } catch (error) {
     console.error('Failed to fetch options', error)
   }

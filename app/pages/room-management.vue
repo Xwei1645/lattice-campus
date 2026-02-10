@@ -124,8 +124,8 @@ const dialogTitle = computed(() => isEdit.value ? '编辑场地' : '新增场地
 const fetchRooms = async () => {
   loading.value = true
   try {
-    const data = await $fetch('/api/rooms')
-    rooms.value = data as any[]
+    const res: any = await $fetch('/api/rooms')
+    rooms.value = res.data || []
     pagination.total = rooms.value.length
   } catch (error: any) {
     MessagePlugin.error('获取场地列表失败：' + error.message)

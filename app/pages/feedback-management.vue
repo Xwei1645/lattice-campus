@@ -114,7 +114,8 @@ const tableSkeleton = Array(6).fill([
 const fetchFeedbacks = async () => {
   loading.value = true
   try {
-    feedbacks.value = await $fetch('/api/feedback')
+    const res: any = await $fetch('/api/feedback')
+    feedbacks.value = res.data || []
   } catch (error) {
     MessagePlugin.error('获取反馈列表失败')
   } finally {

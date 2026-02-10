@@ -1,13 +1,14 @@
 import { db } from '../../utils/prisma'
 import { requireAuth } from '../../utils/auth'
+import { sendSuccess, handleError } from '../../utils/api'
 
 export default defineEventHandler(async (event) => {
-    const user = await requireAuth(event)
-
-    const query = getQuery(event)
-    const scope = query.scope as string
-
     try {
+        const user = await requireAuth(event)
+
+        const query = getQuery(event)
+        const scope = query.scope as string
+
         const isAdmin = ['root', 'super_admin', 'admin'].includes(user.role)
 
         // 如果是管理员，或者请求 scope 为 all，则查询所有预约
@@ -46,7 +47,7 @@ export default defineEventHandler(async (event) => {
             }
         })
 
-        return bookings.map(b => ({
+        const mappedBookings = bookings.map(b => ({
             id: b.id,
             roomId: b.room.id,
             roomName: b.room.name,
@@ -61,10 +62,9 @@ export default defineEventHandler(async (event) => {
             remark: b.remark,
             createTime: b.createTime
         }))
-    } catch (error: any) {
-        throw createError({
-            statusCode: 500,
-            statusMessage: error.message
-        })
+
+        return sendSuccess(event, mappedBookings, '获取预约列表成功')
+    } catch (error) {
+        return handleError(error)
     }
 })
