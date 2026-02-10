@@ -11,36 +11,38 @@
     </div>
 
     <t-card :bordered="false" class="content-card">
-      <t-table
-        row-key="id"
-        :data="codes"
-        :columns="columns"
-        :loading="loading"
-        :hover="true"
-      >
-        <template #organization="{ row }">
-          {{ row.organization?.name || '所有组织' }}
-        </template>
-        <template #expiresAt="{ row }">
-          {{ row.expiresAt ? formatDateTime(row.expiresAt) : '永不过期' }}
-        </template>
-        <template #usage="{ row }">
-          {{ row.usedCount }} / {{ row.maxUses }}
-        </template>
-        <template #createTime="{ row }">
-          {{ formatDateTime(row.createTime) }}
-        </template>
-        <template #role="{ row }">
-          <t-tag :theme="getRoleTheme(row.role)" variant="light-outline">
-            {{ getRoleLabel(row.role) }}
-          </t-tag>
-        </template>
-        <template #operation="{ row }">
-          <t-popconfirm content="确认删除该邀请码吗？" @confirm="handleDelete(row)">
-            <t-link theme="danger" hover="color">删除</t-link>
-          </t-popconfirm>
-        </template>
-      </t-table>
+      <t-skeleton :loading="loading" :row-col="tableSkeleton" animation="gradient">
+        <t-table
+          row-key="id"
+          :data="codes"
+          :columns="columns"
+          :loading="loading"
+          :hover="true"
+        >
+          <template #organization="{ row }">
+            {{ row.organization?.name || '所有组织' }}
+          </template>
+          <template #expiresAt="{ row }">
+            {{ row.expiresAt ? formatDateTime(row.expiresAt) : '永不过期' }}
+          </template>
+          <template #usage="{ row }">
+            {{ row.usedCount }} / {{ row.maxUses }}
+          </template>
+          <template #createTime="{ row }">
+            {{ formatDateTime(row.createTime) }}
+          </template>
+          <template #role="{ row }">
+            <t-tag :theme="getRoleTheme(row.role)" variant="light-outline">
+              {{ getRoleLabel(row.role) }}
+            </t-tag>
+          </template>
+          <template #operation="{ row }">
+            <t-popconfirm content="确认删除该邀请码吗？" @confirm="handleDelete(row)">
+              <t-link theme="danger" hover="color">删除</t-link>
+            </t-popconfirm>
+          </template>
+        </t-table>
+      </t-skeleton>
     </t-card>
 
     <!-- Generate Dialog -->
@@ -104,6 +106,17 @@ const columns: PrimaryTableCol[] = [
   { colKey: 'createTime', title: '创建时间', width: 180 },
   { colKey: 'operation', title: '操作', width: 100, fixed: 'right' }
 ]
+
+// 骨架屏配置
+const tableSkeleton = Array(6).fill([
+  { width: '120px' },
+  { width: '100px' },
+  { width: '150px' },
+  { width: '180px' },
+  { width: '100px' },
+  { width: '180px' },
+  { width: '100px' },
+]);
 
 const formData = ref({
   count: 1,

@@ -16,14 +16,15 @@
     </div>
 
     <t-card :bordered="false" class="content-card">
-      <t-table
-        row-key="id"
-        :data="filteredUserData"
-        :columns="columns"
-        :hover="true"
-        :loading="loading"
-        :pagination="pagination"
-      >
+      <t-skeleton :loading="loading" :row-col="tableSkeleton" animation="gradient">
+        <t-table
+          row-key="id"
+          :data="filteredUserData"
+          :columns="columns"
+          :hover="true"
+          :loading="loading"
+          :pagination="pagination"
+        >
         <template #createTime="{ row }">
           {{ formatDateTime(row.createTime) }}
         </template>
@@ -55,6 +56,7 @@
           </t-link>
         </template>
       </t-table>
+    </t-skeleton>
     </t-card>
 
     <!-- 新增/编辑对话框 -->
@@ -179,6 +181,18 @@ const pagination = reactive({
   defaultPageSize: 10,
   total: computed(() => filteredUserData.value.length),
 });
+
+// 骨架屏配置
+const tableSkeleton = Array(8).fill([
+  { width: '40px' },
+  { width: '120px' },
+  { width: '100px' },
+  { width: '180px' },
+  { width: '100px' },
+  { width: '100px' },
+  { width: '150px' },
+  { width: '150px' },
+]);
 
 const getRoleName = (role: string) => {
   const map: Record<string, string> = {

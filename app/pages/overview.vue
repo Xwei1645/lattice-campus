@@ -63,37 +63,38 @@
 
     <!-- 表格区域 -->
     <t-card :bordered="false" class="content-card table-card">
-      <div class="table-wrapper">
-        <table class="schedule-table">
-          <thead>
-            <tr v-if="!isSwapped">
-              <th class="corner-cell">
-                <div class="corner-content">
-                  <span class="corner-top">场地</span>
-                  <span class="corner-line"></span>
-                  <span class="corner-bottom">日期</span>
-                </div>
-              </th>
-              <th v-for="room in displayedRooms" :key="room.id">
-                {{ room.name }}
-              </th>
-            </tr>
-            <tr v-else>
-              <th class="corner-cell">
-                <div class="corner-content">
-                  <span class="corner-top">日期</span>
-                  <span class="corner-line"></span>
-                  <span class="corner-bottom">场地</span>
-                </div>
-              </th>
-              <th v-for="day in weekDays" :key="day.dateStr">
-                <div class="th-date">{{ day.dateStr }}</div>
-                <div class="th-weekday">{{ day.weekday }}</div>
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            <template v-if="!isSwapped">
+      <t-skeleton :loading="roomsPending || bookingsPending" :row-col="overviewSkeleton" animation="gradient">
+        <div class="table-wrapper">
+          <table class="schedule-table">
+            <thead>
+              <tr v-if="!isSwapped">
+                <th class="corner-cell">
+                  <div class="corner-content">
+                    <span class="corner-top">场地</span>
+                    <span class="corner-line"></span>
+                    <span class="corner-bottom">日期</span>
+                  </div>
+                </th>
+                <th v-for="room in displayedRooms" :key="room.id">
+                  {{ room.name }}
+                </th>
+              </tr>
+              <tr v-else>
+                <th class="corner-cell">
+                  <div class="corner-content">
+                    <span class="corner-top">日期</span>
+                    <span class="corner-line"></span>
+                    <span class="corner-bottom">场地</span>
+                  </div>
+                </th>
+                <th v-for="day in weekDays" :key="day.dateStr">
+                  <div class="th-date">{{ day.dateStr }}</div>
+                  <div class="th-weekday">{{ day.weekday }}</div>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <template v-if="!isSwapped">
               <tr v-for="day in weekDays" :key="day.dateStr">
                 <td class="row-header">
                   <div class="row-date">{{ day.dateStr }}</div>
@@ -141,6 +142,7 @@
           </tbody>
         </table>
       </div>
+    </t-skeleton>
     </t-card>
 
     <!-- 预约详情对话框 -->
@@ -191,6 +193,14 @@ const selectedRoomIds = ref<number[]>([])
 const selectedStatuses = ref<string[]>(['approved', 'pending'])
 const isSwapped = ref(false)
 
+// 骨架屏配置
+const overviewSkeleton = [
+  // 表头
+  Array(6).fill({ height: '48px' }),
+  // 表格主体
+  ...Array(7).fill(Array(6).fill({ height: '80px' }))
+];
+
 const statusOptions = [
   { label: '已通过', value: 'approved' },
   { label: '待审批', value: 'pending' },
@@ -226,8 +236,8 @@ const formatFullDateTime = (date: string) => {
 }
 
 // --- Data Fetching ---
-const { data: rooms } = await useFetch('/api/rooms')
-const { data: bookings } = await useFetch('/api/bookings', { query: { scope: 'all' } })
+const { data: rooms, pending: roomsPending } = await useFetch<any[]>('/api/rooms')
+const { data: bookings, pending: bookingsPending } = await useFetch<any[]>('/api/bookings', { query: { scope: 'all' } })
 
 // --- Computed ---
 const roomOptions = computed(() => rooms.value?.map(r => ({ label: r.name, value: r.id })) || [])

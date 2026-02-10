@@ -11,7 +11,7 @@
     </div>
 
     <t-card :bordered="false" class="content-card">
-      <t-loading :loading="loading">
+      <t-skeleton :loading="loading" :row-col="listSkeleton" animation="gradient">
         <div v-if="feedbacks.length === 0" class="empty-container">
           <InfoCircleIcon size="48px" style="color: var(--td-text-color-placeholder)" />
           <p>暂无反馈记录，您的意见对我们很重要</p>
@@ -39,7 +39,7 @@
             </template>
           </t-list-item>
         </t-list>
-      </t-loading>
+      </t-skeleton>
     </t-card>
 
     <!-- 提交反馈对话框 -->
@@ -91,6 +91,13 @@ const rules: FormRules = {
   type: [{ required: true, message: '请选择反馈类型', trigger: 'blur' }],
   content: [{ required: true, message: '请输入反馈内容', trigger: 'blur' }, { min: 5, message: '内容至少5个字符', trigger: 'blur' }]
 }
+
+// 骨架屏配置
+const listSkeleton = Array(3).fill([
+  { width: '150px', height: '24px' },
+  { width: '100%', height: '40px', margin: '12px 0' },
+  { width: '90%', height: '32px', margin: '0 0 12px 24px' }
+]);
 
 const fetchFeedbacks = async () => {
   loading.value = true

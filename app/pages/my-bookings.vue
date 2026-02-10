@@ -17,6 +17,7 @@
         :columns="columns"
         :hover="true"
         :pagination="pagination"
+        :loading="bookingsPending"
       >
         <template #status="{ row }">
           <t-tag v-if="row.status === 'approved'" theme="success" variant="light">已通过</t-tag>
@@ -146,7 +147,7 @@ const columns: PrimaryTableCol[] = [
 ];
 
 // 获取预约列表
-const { data: bookings, refresh: refreshBookings } = await useFetch<any[]>('/api/bookings', {
+const { data: bookings, refresh: refreshBookings, pending: bookingsPending } = await useFetch<any[]>('/api/bookings', {
   key: 'user-bookings',
   headers: useRequestHeaders(['cookie'])
 });
@@ -222,7 +223,7 @@ const rules: FormRules = {
   purpose: [{ required: true, message: '请输入使用说明', trigger: 'blur' }],
 };
 
-const { data: roomsData } = await useFetch<any[]>('/api/rooms');
+const { data: roomsData, pending: roomsPending } = await useFetch<any[]>('/api/rooms');
 const roomOptions = computed(() => roomsData.value || []);
 
 
