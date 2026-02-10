@@ -100,6 +100,17 @@ const columns: PrimaryTableCol[] = [
   { colKey: 'operation', title: '操作', cell: 'operation', width: 120 }
 ]
 
+// 骨架屏配置
+const tableSkeleton = Array(6).fill([
+  { width: '70px' },
+  { width: '150px' },
+  { width: '100px' },
+  { width: '30%' },
+  { width: '100px' },
+  { width: '150px' },
+  { width: '120px' },
+]);
+
 const fetchFeedbacks = async () => {
   loading.value = true
   try {

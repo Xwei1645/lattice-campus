@@ -13,73 +13,75 @@
               更多 <ChevronRightIcon />
             </t-link>
           </template>
-          <div v-if="loading" class="loading-container">
-            <t-loading size="small" text="加载中..." />
-          </div>
-          <div v-else-if="latestBooking" class="booking-info">
-            <div class="booking-room">
-              <LocationIcon class="info-icon" />
-              {{ latestBooking.room?.name }}
+          
+          <t-skeleton :loading="loading" :row-col="bookingSkeleton" animation="gradient">
+            <div v-if="latestBooking" class="booking-info">
+              <div class="booking-room">
+                <LocationIcon class="info-icon" />
+                {{ latestBooking.room?.name }}
+              </div>
+              <div class="booking-time">
+                <TimeIcon class="info-icon" />
+                {{ formatDateTime(latestBooking.startTime) }}
+              </div>
+              <div class="booking-status">
+                <t-tag :theme="getStatusTheme(latestBooking.status)" variant="light">
+                  {{ getStatusText(latestBooking.status) }}
+                </t-tag>
+              </div>
+              <t-divider dashed />
+              <div class="booking-purpose">
+                <span class="label">用途：</span>
+                <span class="value ellipsis">{{ latestBooking.purpose }}</span>
+              </div>
             </div>
-            <div class="booking-time">
-              <TimeIcon class="info-icon" />
-              {{ formatDateTime(latestBooking.startTime) }}
+            <div v-else class="empty-state">
+              <InfoCircleIcon size="32px" />
+              <p>最近暂无预约</p>
+              <t-button variant="outline" size="small" @click="$router.push('/my-bookings')">
+                <template #icon><CalendarIcon /></template>
+                去预约
+              </t-button>
             </div>
-            <div class="booking-status">
-              <t-tag :theme="getStatusTheme(latestBooking.status)" variant="light">
-                {{ getStatusText(latestBooking.status) }}
-              </t-tag>
-            </div>
-            <t-divider dashed />
-            <div class="booking-purpose">
-              <span class="label">用途：</span>
-              <span class="value ellipsis">{{ latestBooking.purpose }}</span>
-            </div>
-          </div>
-          <div v-else class="empty-state">
-            <InfoCircleIcon size="32px" />
-            <p>最近暂无预约</p>
-            <t-button variant="outline" size="small" @click="$router.push('/my-bookings')">
-              <template #icon><CalendarIcon /></template>
-              去预约
-            </t-button>
-          </div>
+          </t-skeleton>
         </t-card>
       </t-col>
 
       <!-- 通知列表卡片 -->
       <t-col :xs="12" :md="6" :lg="8">
         <t-card title="通知" :bordered="false" class="dashboard-card shadow-card">
-          <div v-if="notices.length > 0">
-            <t-list :split="true">
-              <t-list-item v-for="notice in notices" :key="notice.id" class="notice-list-item">
-                <template #content>
-                  <div class="notice-item-content">
-                    <span class="notice-title" @click="showNoticeDetail(notice)">{{ notice.title }}</span>
-                  </div>
-                </template>
-                <template #action>
-                  <span class="notice-time">{{ formatDate(notice.createTime) }}</span>
-                </template>
-              </t-list-item>
-            </t-list>
-            <div class="notice-pagination">
-              <t-pagination
-                v-model:current="noticePage"
-                v-model:page-size="noticePageSize"
-                :total="noticeTotal"
-                size="small"
-                show-total
-                show-paged
-                :show-page-size="false"
-                @current-change="fetchNotices"
-              />
+          <t-skeleton :loading="loading" :row-col="noticeSkeleton" animation="gradient">
+            <div v-if="notices.length > 0">
+              <t-list :split="true">
+                <t-list-item v-for="notice in notices" :key="notice.id" class="notice-list-item">
+                  <template #content>
+                    <div class="notice-item-content">
+                      <span class="notice-title" @click="showNoticeDetail(notice)">{{ notice.title }}</span>
+                    </div>
+                  </template>
+                  <template #action>
+                    <span class="notice-time">{{ formatDate(notice.createTime) }}</span>
+                  </template>
+                </t-list-item>
+              </t-list>
+              <div class="notice-pagination">
+                <t-pagination
+                  v-model:current="noticePage"
+                  v-model:page-size="noticePageSize"
+                  :total="noticeTotal"
+                  size="small"
+                  show-total
+                  show-paged
+                  :show-page-size="false"
+                  @current-change="fetchNotices"
+                />
+              </div>
             </div>
-          </div>
-          <div v-else class="empty-state">
-            <NotificationIcon size="32px" />
-            <p>暂无通知</p>
-          </div>
+            <div v-else class="empty-state">
+              <NotificationIcon size="32px" />
+              <p>暂无通知</p>
+            </div>
+          </t-skeleton>
         </t-card>
       </t-col>
     </t-row>
@@ -128,6 +130,20 @@ const noticePageSize = ref(5)
 
 const noticeVisible = ref(false)
 const selectedNotice = ref<any>(null)
+
+// 骨架屏配置
+const bookingSkeleton = [
+  { width: '60%', height: '24px' },
+  { width: '50%', height: '20px' },
+  { width: '80px', height: '24px' },
+  { width: '100%', height: '1px' },
+  { width: '70%', height: '20px' }
+];
+
+const noticeSkeleton = Array(5).fill([
+  { width: '60%', height: '24px' },
+  { width: '20%', height: '20px' }
+]);
 
 const fetchNotices = async () => {
   try {
