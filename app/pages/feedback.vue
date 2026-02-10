@@ -99,10 +99,13 @@ const listSkeleton = Array(3).fill([
   { width: '90%', height: '32px', margin: '0 0 12px 24px' }
 ]);
 
+import { MessagePlugin } from 'tdesign-vue-next'
+
 const fetchFeedbacks = async () => {
   loading.value = true
   try {
-    feedbacks.value = await $fetch('/api/feedback')
+    const res: any = await $fetch('/api/feedback')
+    feedbacks.value = res.data || []
   } catch (error) {
     console.error('Failed to fetch feedbacks', error)
   } finally {

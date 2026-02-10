@@ -152,9 +152,10 @@ onMounted(() => {
 });
 
 // 获取后端数据
-const { data: users, refresh, pending: loading } = await useFetch<User[]>('/api/users');
-const { data: organizations } = await useFetch('/api/organizations');
-const userData = computed(() => users.value || []);
+const { data: userResponse, refresh, pending: loading } = await useFetch<any>('/api/users');
+const { data: orgResponse } = await useFetch<any>('/api/organizations');
+const userData = computed(() => userResponse.value?.data || []);
+const organizations = computed(() => orgResponse.value?.data || []);
 
 const searchQuery = ref('');
 const filteredUserData = computed(() => {

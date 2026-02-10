@@ -156,15 +156,15 @@ const dialogTitle = computed(() => isEdit.value ? '编辑组织' : '新增组织
 const fetchOrganizations = async () => {
   loading.value = true
   try {
-    const [orgData, userData] = await Promise.all([
-      $fetch('/api/organizations'),
-      $fetch('/api/users')
+    const [orgRes, userRes] = await Promise.all([
+      $fetch<any>('/api/organizations'),
+      $fetch<any>('/api/users')
     ])
-    organizations.value = orgData
-    userOptions.value = userData.map((u: any) => ({
+    organizations.value = orgRes.data
+    userOptions.value = userRes.data?.map((u: any) => ({
       label: `${u.name} (${u.account})`,
       value: u.id
-    }))
+    })) || []
   } catch (error) {
     MessagePlugin.error('获取数据失败')
   } finally {

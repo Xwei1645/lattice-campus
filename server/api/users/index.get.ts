@@ -1,11 +1,12 @@
 import { db } from '../../utils/prisma'
 import { requireAdmin } from '../../utils/auth'
+import { sendSuccess, handleError } from '../../utils/api'
 
 export default defineEventHandler(async (event) => {
-    // 只有管理员可以查看用户列表
-    await requireAdmin(event)
-
     try {
+        // 只有管理员可以查看用户列表
+        await requireAdmin(event)
+
         const users = await db.user.findMany({
             orderBy: {
                 createTime: 'desc'
@@ -25,11 +26,10 @@ export default defineEventHandler(async (event) => {
                 }
             }
         })
-        return users
-    } catch (error: any) {
-        throw createError({
-            statusCode: 500,
-            statusMessage: error.message
-        })
+
+        return sendSuccess(event, users, '获取用户列表成功')
+    } catch (error) {
+        return handleError(error)
     }
 })
+

@@ -153,8 +153,8 @@ const fetchNotices = async () => {
         pageSize: noticePageSize.value
       }
     })
-    notices.value = res.notices || []
-    noticeTotal.value = res.total || 0
+    notices.value = res.data?.notices || []
+    noticeTotal.value = res.data?.total || 0
   } catch (error) {
     console.error('Failed to fetch notices:', error)
   }
@@ -163,14 +163,15 @@ const fetchNotices = async () => {
 const fetchData = async () => {
   loading.value = true
   try {
-    const [bookingsData] = await Promise.all([
+    const [bookingsRes]: any[] = await Promise.all([
       $fetch('/api/bookings'),
       fetchNotices()
     ])
     
     // 获取最近的一条预约
-    if (bookingsData && Array.isArray(bookingsData) && bookingsData.length > 0) {
-      latestBooking.value = bookingsData[0]
+    const bookingList = bookingsRes?.data || []
+    if (bookingList.length > 0) {
+      latestBooking.value = bookingList[0]
     }
   } catch (error) {
     console.error('Failed to fetch dashboard data:', error)

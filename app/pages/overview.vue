@@ -184,6 +184,32 @@ dayjs.locale('zh-cn')
 
 useHead({ title: '总览' })
 
+// --- Types ---
+interface Room {
+  id: number
+  name: string
+  capacity?: number | null
+  location?: string | null
+  description?: string | null
+  status: boolean
+}
+
+interface Booking {
+  id: number
+  roomId: number
+  roomName: string
+  organizationId: number
+  organizationName: string
+  userId: number
+  userName: string
+  startTime: string | Date
+  endTime: string | Date
+  purpose: string
+  status: string
+  remark?: string | null
+  createTime: string | Date
+}
+
 // --- State ---
 const dateRange = ref([
   dayjs().startOf('isoWeek').format('YYYY-MM-DD'),
@@ -236,19 +262,19 @@ const formatFullDateTime = (date: string) => {
 }
 
 // --- Data Fetching ---
-const { data: rooms, pending: roomsPending } = await useFetch<any[]>('/api/rooms')
-const { data: bookings, pending: bookingsPending } = await useFetch<any[]>('/api/bookings', { query: { scope: 'all' } })
+const { data: roomsRes, pending: roomsPending } = await useFetch<ApiResponse<Room[]>>('/api/rooms')
+const { data: bookingsRes, pending: bookingsPending } = await useFetch<ApiResponse<Booking[]>>('/api/bookings', { query: { scope: 'all' } })
 
 // --- Computed ---
-const roomOptions = computed(() => rooms.value?.map(r => ({ label: r.name, value: r.id })) || [])
+const roomOptions = computed(() => roomsRes.value?.data?.map((r: Room) => ({ label: r.name, value: r.id })) || [])
 
 watchEffect(() => {
-  if (rooms.value?.length && !selectedRoomIds.value.length) {
-    selectedRoomIds.value = rooms.value.map(r => r.id)
+  if (roomsRes.value?.data?.length && !selectedRoomIds.value.length) {
+    selectedRoomIds.value = roomsRes.value.data.map((r: Room) => r.id)
   }
 })
 
-const displayedRooms = computed(() => rooms.value?.filter(r => selectedRoomIds.value.includes(r.id)) || [])
+const displayedRooms = computed(() => roomsRes.value?.data?.filter((r: Room) => selectedRoomIds.value.includes(r.id)) || [])
 
 const weekDays = computed(() => {
   if (!dateRange.value || dateRange.value.length !== 2) return []
@@ -270,8 +296,8 @@ const weekDays = computed(() => {
 })
 
 const getBookingsForCell = (roomId: number, dateStr: string) => {
-  if (!bookings.value) return []
-  return bookings.value
+  const list = bookingsRes.value?.data || []
+  return list
     .filter(b => 
       b.roomId === roomId && 
       dayjs(b.startTime).format('YYYY-MM-DD') === dateStr &&
