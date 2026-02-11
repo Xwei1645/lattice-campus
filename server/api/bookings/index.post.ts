@@ -8,9 +8,9 @@ const bookingSchema = z.object({
     roomId: z.coerce.number().int().positive('无效的场地ID'),
     organizationId: z.coerce.number().int().positive('无效的组织ID'),
     date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, '日期格式必须为 YYYY-MM-DD'),
-    timeRange: z.array(z.string().regex(/^\d{2}:\d{2}$/)).length(2, '必须提供开始和结束时间'),
+    timeRange: z.array(z.string().regex(/^\d{2}:\d{2}(:\d{2})?$/)).length(2, '必须提供开始和结束时间'),
     purpose: z.string().min(2, '用途描述太短').max(200, '用途描述太长'),
-    remark: z.string().max(500, '备注太长').optional()
+    remark: z.string().max(500, '备注太长').optional().nullable()
 })
 
 export default defineEventHandler(async (event) => {
