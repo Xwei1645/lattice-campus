@@ -37,8 +37,8 @@ export default defineEventHandler(async (event) => {
                 user: {
                     select: {
                         id: true,
-                        name: true,
-                        account: true
+                        name: true
+                        // 移除 account 字段，防止信息泄露
                     }
                 }
             },

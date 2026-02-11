@@ -1,6 +1,7 @@
 import { db } from '../../../utils/prisma'
 import { requireAdmin } from '../../../utils/auth'
 import { dingtalk } from '../../../utils/dingtalk'
+import { verifyBindState } from './login.get'
 
 /**
  * 钉钉绑定回调 API
@@ -31,28 +32,30 @@ export default defineEventHandler(async (event) => {
             }
         }
 
-        // 提取实际的 state 和 userId（绑定模式下 state 格式为 bind_userId_actualState）
-        let actualState = state
-        let userId: number | null = null
-        if (state.startsWith('bind_')) {
-            const parts = state.split('_')
-            if (parts.length >= 3) {
-                userId = parseInt(parts[1])
-                actualState = parts.slice(2).join('_')
-            }
-        }
-
-        if (actualState !== savedState) {
+        // 使用签名验证绑定状态
+        const bindResult = verifyBindState(state)
+        
+        if (!bindResult.valid) {
             return {
                 success: false,
                 message: '授权状态验证失败，请重新绑定'
             }
         }
 
+        // 验证随机state是否匹配
+        if (bindResult.randomState !== savedState) {
+            return {
+                success: false,
+                message: '授权状态验证失败，请重新绑定'
+            }
+        }
+
+        const userId = parseInt(bindResult.userId!)
+
         // 验证通过后清除 state cookie
         deleteCookie(event, 'dingtalk_state', { path: '/' })
 
-        if (!userId || isNaN(userId)) {
+        if (isNaN(userId)) {
             return {
                 success: false,
                 message: '用户ID无效'
@@ -102,7 +105,7 @@ export default defineEventHandler(async (event) => {
             }
         }
     } catch (error: any) {
-        console.error('[DingTalk Bind Error]:', error)
+        console.error('[DingTalk Bind Error]:', error.message)
 
         if (error.statusCode === 401) {
             return {
