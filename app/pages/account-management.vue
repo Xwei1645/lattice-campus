@@ -444,9 +444,9 @@ const handleBindDingtalk = async (row: User) => {
 
   try {
     // 使用绑定模式，回调到 dingtalk-bind-bridge.html
-    const state = `bind_${row.id}_${Date.now()}`;
+    // 使用 bindUserId 参数，后端会自动生成 state
     const res: any = await $fetch('/api/auth/dingtalk/login', {
-      query: { state, bind: 'true' }
+      query: { bind: 'true', bindUserId: row.id.toString() }
     });
     const authUrl = res.url || '';
     // 使用 dingtalk-bind.html 显示二维码
@@ -463,8 +463,8 @@ const handleBindDingtalk = async (row: User) => {
 const openDingtalkBind = () => {
   if (!currentBindUser.value) return;
 
-  const state = `bind_${currentBindUser.value.id}_${Date.now()}`;
-  const bindUrl = `/api/auth/dingtalk/login?state=${state}&bind=true`;
+  // 使用 bindUserId 参数，后端会自动生成 state
+  const bindUrl = `/api/auth/dingtalk/login?bind=true&bindUserId=${currentBindUser.value.id}&redirect=true`;
 
   // 打开绑定窗口
   dingtalkBindWindow.value = window.open(bindUrl, 'dingtalkBind', 'width=600,height=600');
@@ -501,11 +501,36 @@ const handleUnbindDingtalk = async (row: User) => {
   });
 };
 
-// 监听绑定结果消息
+// 监听绑定结果消息（来自 iframe）
 const handleBindMessage = (event: MessageEvent) => {
+  // 验证消息来源
+  if (event.origin !== window.location.origin) {
+    return;
+  }
+
   const data = event.data;
-  
+
   if (data && typeof data === 'object' && data.type === 'dingtalk_bind_result') {
+    if (data.success) {
+      MessagePlugin.success('钉钉绑定成功');
+      bindDingtalkVisible.value = false;
+      refresh();
+    } else {
+      MessagePlugin.error(data.message || '钉钉绑定失败');
+    }
+  }
+};
+
+// 监听绑定完成消息（来自弹窗）
+const handleBindComplete = (event: MessageEvent) => {
+  // 验证消息来源
+  if (event.origin !== window.location.origin) {
+    return;
+  }
+
+  const data = event.data;
+
+  if (data && typeof data === 'object' && data.type === 'dingtalk_bind_complete') {
     if (data.success) {
       MessagePlugin.success('钉钉绑定成功');
       bindDingtalkVisible.value = false;
@@ -518,10 +543,12 @@ const handleBindMessage = (event: MessageEvent) => {
 
 onMounted(() => {
   window.addEventListener('message', handleBindMessage);
+  window.addEventListener('message', handleBindComplete);
 });
 
 onUnmounted(() => {
   window.removeEventListener('message', handleBindMessage);
+  window.removeEventListener('message', handleBindComplete);
 });
 
 const handleDelete = async (row: User) => {

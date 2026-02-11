@@ -27,6 +27,11 @@ export class DingTalkService {
         this.host = process.env.NODE_ENV === 'production'
             ? (process.env.APP_URL || '')
             : 'http://localhost:3000'
+
+        // 检查环境变量配置
+        if (!this.clientId || !this.clientSecret) {
+            console.warn('[DingTalk] 警告: 环境变量 DINGTALK_CLIENT_ID 或 DINGTALK_CLIENT_SECRET 未配置，钉钉登录功能将不可用')
+        }
     }
 
     /**
