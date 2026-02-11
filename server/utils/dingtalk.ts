@@ -3,37 +3,68 @@ export interface DingTalkUser {
     name: string
     avatar?: string
     unionId?: string
+    corpId?: string
 }
 
 /**
  * 钉钉 OAuth 2.0 服务工具类 (API v2)
+ * 
+ * 支持的登录方式：
+ * 1. 钉钉扫码登录
+ * 2. 钉钉账号密码登录
+ * 3. 钉钉通行密钥登录
+ * 
+ * 钉钉授权页面会自动显示所有可用的登录方式
  */
 export class DingTalkService {
     private clientId: string
     private clientSecret: string
-    private redirectUri: string
+    private host: string
 
     constructor() {
         this.clientId = process.env.DINGTALK_CLIENT_ID || ''
         this.clientSecret = process.env.DINGTALK_CLIENT_SECRET || ''
-
-        const host = process.env.NODE_ENV === 'production'
-            ? process.env.APP_URL
+        this.host = process.env.NODE_ENV === 'production'
+            ? (process.env.APP_URL || '')
             : 'http://localhost:3000'
-        this.redirectUri = `${host}/api/auth/dingtalk/callback`
     }
 
     /**
      * 生成钉钉授权登录 URL
+     * 
+     * scope 参数说明：
+     * - openid: 仅获取用户 userid
+     * - openid corpid: 获取用户 id 和组织 id
+     * 
+     * 钉钉授权页面支持多种登录方式：
+     * - 扫码登录
+     * - 账号密码登录
+     * - 通行密钥登录
+     * 
+     * @param state 状态参数
+     * @param scope 授权范围
+     * @param useBridge 是否使用桥接页面作为回调（用于扫码登录）
+     * @param customRedirectUri 自定义回调地址（可选）
      */
-    getAuthUrl(state: string = 'STATE'): string {
+    getAuthUrl(state: string = 'STATE', scope: string = 'openid corpid', useBridge: boolean = false, customRedirectUri?: string): string {
         const baseUrl = 'https://login.dingtalk.com/oauth2/auth'
+        
+        // 确定回调地址
+        let redirectUri: string
+        if (customRedirectUri) {
+            redirectUri = customRedirectUri
+        } else if (useBridge) {
+            redirectUri = `${this.host}/dingtalk-bridge.html`
+        } else {
+            redirectUri = `${this.host}/api/auth/dingtalk/callback`
+        }
+        
         const params = new URLSearchParams({
             role: 'user',
             client_id: this.clientId,
-            redirect_uri: this.redirectUri,
+            redirect_uri: redirectUri,
             response_type: 'code',
-            scope: 'openid corpid',
+            scope: scope,
             state: state,
             prompt: 'consent'
         })
@@ -69,7 +100,8 @@ export class DingTalkService {
                 openId: userInfo.openId || userInfo.unionId,
                 name: userInfo.nick,
                 avatar: userInfo.avatarUrl,
-                unionId: userInfo.unionId
+                unionId: userInfo.unionId,
+                corpId: userInfo.corpId
             }
         } catch (error: any) {
             console.error('[DingTalk Error]:', error)

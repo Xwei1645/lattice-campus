@@ -18,6 +18,7 @@ export default defineEventHandler(async (event) => {
                 role: true,
                 status: true,
                 createTime: true,
+                dingTalkOpenId: true,
                 organizations: {
                     select: {
                         id: true,
@@ -32,4 +33,3 @@ export default defineEventHandler(async (event) => {
         return handleError(error)
     }
 })
-
