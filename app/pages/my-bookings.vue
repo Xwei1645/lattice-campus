@@ -181,7 +181,7 @@ const { data: userData, refresh: refreshUser } = await useFetch<any>('/api/auth/
 });
 
 const userOrganizations = computed(() => userData.value?.organizations || []);
-const isAdmin = computed(() => ['super_admin', 'admin'].includes(userData.value?.role || ''));
+const isAdmin = computed(() => ['root', 'super_admin', 'admin'].includes(userData.value?.role || ''));
 
 // 获取全量组织列表（仅管理员需要，但为了逻辑简单可以统一获取或按需获取）
 const { data: allOrgsRes } = await useFetch<any>('/api/organizations');
