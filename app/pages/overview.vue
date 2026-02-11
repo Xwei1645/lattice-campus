@@ -63,37 +63,38 @@
 
     <!-- 表格区域 -->
     <t-card :bordered="false" class="content-card table-card">
-      <div class="table-wrapper">
-        <table class="schedule-table">
-          <thead>
-            <tr v-if="!isSwapped">
-              <th class="corner-cell">
-                <div class="corner-content">
-                  <span class="corner-top">场地</span>
-                  <span class="corner-line"></span>
-                  <span class="corner-bottom">日期</span>
-                </div>
-              </th>
-              <th v-for="room in displayedRooms" :key="room.id">
-                {{ room.name }}
-              </th>
-            </tr>
-            <tr v-else>
-              <th class="corner-cell">
-                <div class="corner-content">
-                  <span class="corner-top">日期</span>
-                  <span class="corner-line"></span>
-                  <span class="corner-bottom">场地</span>
-                </div>
-              </th>
-              <th v-for="day in weekDays" :key="day.dateStr">
-                <div class="th-date">{{ day.dateStr }}</div>
-                <div class="th-weekday">{{ day.weekday }}</div>
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            <template v-if="!isSwapped">
+      <t-skeleton :loading="roomsPending || bookingsPending" :row-col="overviewSkeleton" animation="gradient">
+        <div class="table-wrapper">
+          <table class="schedule-table">
+            <thead>
+              <tr v-if="!isSwapped">
+                <th class="corner-cell">
+                  <div class="corner-content">
+                    <span class="corner-top">场地</span>
+                    <span class="corner-line"></span>
+                    <span class="corner-bottom">日期</span>
+                  </div>
+                </th>
+                <th v-for="room in displayedRooms" :key="room.id">
+                  {{ room.name }}
+                </th>
+              </tr>
+              <tr v-else>
+                <th class="corner-cell">
+                  <div class="corner-content">
+                    <span class="corner-top">日期</span>
+                    <span class="corner-line"></span>
+                    <span class="corner-bottom">场地</span>
+                  </div>
+                </th>
+                <th v-for="day in weekDays" :key="day.dateStr">
+                  <div class="th-date">{{ day.dateStr }}</div>
+                  <div class="th-weekday">{{ day.weekday }}</div>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <template v-if="!isSwapped">
               <tr v-for="day in weekDays" :key="day.dateStr">
                 <td class="row-header">
                   <div class="row-date">{{ day.dateStr }}</div>
@@ -141,6 +142,7 @@
           </tbody>
         </table>
       </div>
+    </t-skeleton>
     </t-card>
 
     <!-- 预约详情对话框 -->
@@ -182,6 +184,32 @@ dayjs.locale('zh-cn')
 
 useHead({ title: '总览' })
 
+// --- Types ---
+interface Room {
+  id: number
+  name: string
+  capacity?: number | null
+  location?: string | null
+  description?: string | null
+  status: boolean
+}
+
+interface Booking {
+  id: number
+  roomId: number
+  roomName: string
+  organizationId: number
+  organizationName: string
+  userId: number
+  userName: string
+  startTime: string | Date
+  endTime: string | Date
+  purpose: string
+  status: string
+  remark?: string | null
+  createTime: string | Date
+}
+
 // --- State ---
 const dateRange = ref([
   dayjs().startOf('isoWeek').format('YYYY-MM-DD'),
@@ -190,6 +218,14 @@ const dateRange = ref([
 const selectedRoomIds = ref<number[]>([])
 const selectedStatuses = ref<string[]>(['approved', 'pending'])
 const isSwapped = ref(false)
+
+// 骨架屏配置
+const overviewSkeleton = [
+  // 表头
+  Array(6).fill({ height: '48px' }),
+  // 表格主体
+  ...Array(7).fill(Array(6).fill({ height: '80px' }))
+];
 
 const statusOptions = [
   { label: '已通过', value: 'approved' },
@@ -226,19 +262,19 @@ const formatFullDateTime = (date: string) => {
 }
 
 // --- Data Fetching ---
-const { data: rooms } = await useFetch('/api/rooms')
-const { data: bookings } = await useFetch('/api/bookings', { query: { scope: 'all' } })
+const { data: roomsRes, pending: roomsPending } = await useFetch<ApiResponse<Room[]>>('/api/rooms')
+const { data: bookingsRes, pending: bookingsPending } = await useFetch<ApiResponse<Booking[]>>('/api/bookings', { query: { scope: 'all' } })
 
 // --- Computed ---
-const roomOptions = computed(() => rooms.value?.map(r => ({ label: r.name, value: r.id })) || [])
+const roomOptions = computed(() => roomsRes.value?.data?.map((r: Room) => ({ label: r.name, value: r.id })) || [])
 
 watchEffect(() => {
-  if (rooms.value?.length && !selectedRoomIds.value.length) {
-    selectedRoomIds.value = rooms.value.map(r => r.id)
+  if (roomsRes.value?.data?.length && !selectedRoomIds.value.length) {
+    selectedRoomIds.value = roomsRes.value.data.map((r: Room) => r.id)
   }
 })
 
-const displayedRooms = computed(() => rooms.value?.filter(r => selectedRoomIds.value.includes(r.id)) || [])
+const displayedRooms = computed(() => roomsRes.value?.data?.filter((r: Room) => selectedRoomIds.value.includes(r.id)) || [])
 
 const weekDays = computed(() => {
   if (!dateRange.value || dateRange.value.length !== 2) return []
@@ -260,8 +296,8 @@ const weekDays = computed(() => {
 })
 
 const getBookingsForCell = (roomId: number, dateStr: string) => {
-  if (!bookings.value) return []
-  return bookings.value
+  const list = bookingsRes.value?.data || []
+  return list
     .filter(b => 
       b.roomId === roomId && 
       dayjs(b.startTime).format('YYYY-MM-DD') === dateStr &&

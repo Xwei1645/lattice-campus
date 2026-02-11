@@ -13,76 +13,88 @@
               更多 <ChevronRightIcon />
             </t-link>
           </template>
-          <div v-if="loading" class="loading-container">
-            <t-loading size="small" text="加载中..." />
-          </div>
-          <div v-else-if="latestBooking" class="booking-info">
-            <div class="booking-room">
-              <LocationIcon class="info-icon" />
-              {{ latestBooking.room?.name }}
+          
+          <t-skeleton :loading="loading" :row-col="bookingSkeleton" animation="gradient">
+            <div v-if="latestBooking" class="booking-info">
+              <div class="booking-room">
+                <LocationIcon class="info-icon" />
+                {{ latestBooking.room?.name }}
+              </div>
+              <div class="booking-time">
+                <TimeIcon class="info-icon" />
+                {{ formatDateTime(latestBooking.startTime) }}
+              </div>
+              <div class="booking-status">
+                <t-tag :theme="getStatusTheme(latestBooking.status)" variant="light">
+                  {{ getStatusText(latestBooking.status) }}
+                </t-tag>
+              </div>
+              <t-divider dashed />
+              <div class="booking-purpose">
+                <span class="label">用途：</span>
+                <span class="value ellipsis">{{ latestBooking.purpose }}</span>
+              </div>
             </div>
-            <div class="booking-time">
-              <TimeIcon class="info-icon" />
-              {{ formatDateTime(latestBooking.startTime) }}
+            <div v-else class="empty-state">
+              <InfoCircleIcon size="32px" />
+              <p>最近暂无预约</p>
+              <t-button variant="outline" size="small" @click="$router.push('/my-bookings')">
+                <template #icon><CalendarIcon /></template>
+                去预约
+              </t-button>
             </div>
-            <div class="booking-status">
-              <t-tag :theme="getStatusTheme(latestBooking.status)" variant="light">
-                {{ getStatusText(latestBooking.status) }}
-              </t-tag>
-            </div>
-            <t-divider dashed />
-            <div class="booking-purpose">
-              <span class="label">用途：</span>
-              <span class="value ellipsis">{{ latestBooking.purpose }}</span>
-            </div>
-          </div>
-          <div v-else class="empty-state">
-            <InfoCircleIcon size="32px" />
-            <p>最近暂无预约</p>
-            <t-button variant="outline" size="small" @click="$router.push('/my-bookings')">
-              <template #icon><CalendarIcon /></template>
-              去预约
-            </t-button>
-          </div>
+          </t-skeleton>
         </t-card>
       </t-col>
 
       <!-- 通知列表卡片 -->
       <t-col :xs="12" :md="6" :lg="8">
         <t-card title="通知" :bordered="false" class="dashboard-card shadow-card">
-          <div v-if="notices.length > 0">
-            <t-list :split="true">
-              <t-list-item v-for="notice in notices" :key="notice.id" class="notice-list-item">
-                <template #content>
-                  <div class="notice-item-content">
-                    <span class="notice-title" @click="showNoticeDetail(notice)">{{ notice.title }}</span>
-                  </div>
-                </template>
-                <template #action>
-                  <span class="notice-time">{{ formatDate(notice.createTime) }}</span>
-                </template>
-              </t-list-item>
-            </t-list>
-            <div class="notice-pagination">
-              <t-pagination
-                v-model:current="noticePage"
-                v-model:page-size="noticePageSize"
-                :total="noticeTotal"
-                size="small"
-                show-total
-                show-paged
-                :show-page-size="false"
-                @current-change="fetchNotices"
-              />
+          <t-skeleton :loading="loading" :row-col="noticeSkeleton" animation="gradient">
+            <div v-if="notices.length > 0">
+              <t-list :split="true">
+                <t-list-item v-for="notice in notices" :key="notice.id" class="notice-list-item">
+                  <template #content>
+                    <div class="notice-item-content">
+                      <span class="notice-title" @click="showNoticeDetail(notice)">{{ notice.title }}</span>
+                    </div>
+                  </template>
+                  <template #action>
+                    <span class="notice-time">{{ formatDate(notice.createTime) }}</span>
+                  </template>
+                </t-list-item>
+              </t-list>
+              <div class="notice-pagination">
+                <t-pagination
+                  v-model:current="noticePage"
+                  v-model:page-size="noticePageSize"
+                  :total="noticeTotal"
+                  size="small"
+                  show-total
+                  show-paged
+                  :show-page-size="false"
+                  @current-change="fetchNotices"
+                />
+              </div>
             </div>
-          </div>
-          <div v-else class="empty-state">
-            <NotificationIcon size="32px" />
-            <p>暂无通知</p>
-          </div>
+            <div v-else class="empty-state">
+              <NotificationIcon size="32px" />
+              <p>暂无通知</p>
+            </div>
+          </t-skeleton>
         </t-card>
       </t-col>
     </t-row>
+
+    <!-- 快捷操作区域 -->
+    <t-card :bordered="false" class="quick-actions-card">
+      <t-space direction="vertical" :size="12">
+        <t-button theme="default" variant="outline" @click="$router.push('/my-bookings')">
+          <template #icon><CalendarIcon /></template>
+          查看我的预约
+        </t-button>
+      </t-space>
+    </t-card>
 
     <!-- 通知详情对话框 -->
     <t-dialog
@@ -113,8 +125,9 @@ import {
   InfoCircleIcon,
   CalendarIcon,
   NotificationIcon,
+  FileIcon,
 } from 'tdesign-icons-vue-next';
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { formatDateTime, formatDate } from '~/utils/format'
 
 useHead({ title: '首页' })
@@ -129,6 +142,20 @@ const noticePageSize = ref(5)
 const noticeVisible = ref(false)
 const selectedNotice = ref<any>(null)
 
+// 骨架屏配置
+const bookingSkeleton = [
+  { width: '60%', height: '24px' },
+  { width: '50%', height: '20px' },
+  { width: '80px', height: '24px' },
+  { width: '100%', height: '1px' },
+  { width: '70%', height: '20px' }
+];
+
+const noticeSkeleton = Array(5).fill([
+  { width: '60%', height: '24px' },
+  { width: '20%', height: '20px' }
+]);
+
 const fetchNotices = async () => {
   try {
     const res: any = await $fetch('/api/notices', {
@@ -137,8 +164,8 @@ const fetchNotices = async () => {
         pageSize: noticePageSize.value
       }
     })
-    notices.value = res.notices || []
-    noticeTotal.value = res.total || 0
+    notices.value = res.data?.notices || []
+    noticeTotal.value = res.data?.total || 0
   } catch (error) {
     console.error('Failed to fetch notices:', error)
   }
@@ -147,14 +174,15 @@ const fetchNotices = async () => {
 const fetchData = async () => {
   loading.value = true
   try {
-    const [bookingsData] = await Promise.all([
+    const [bookingsRes]: any[] = await Promise.all([
       $fetch('/api/bookings'),
       fetchNotices()
     ])
     
     // 获取最近的一条预约
-    if (bookingsData && Array.isArray(bookingsData) && bookingsData.length > 0) {
-      latestBooking.value = bookingsData[0]
+    const bookingList = bookingsRes?.data || []
+    if (bookingList.length > 0) {
+      latestBooking.value = bookingList[0]
     }
   } catch (error) {
     console.error('Failed to fetch dashboard data:', error)
@@ -191,6 +219,18 @@ const getStatusTheme = (status: string): "success" | "warning" | "danger" | "def
   }
   return map[status] || 'default'
 }
+
+const isSuperAdmin = computed(() => {
+  if (typeof window === 'undefined') return false;
+  const userStr = localStorage.getItem('user');
+  if (!userStr) return false;
+  try {
+    const user = JSON.parse(userStr);
+    return user?.role === 'super_admin';
+  } catch {
+    return false;
+  }
+});
 </script>
 
 <style scoped>
@@ -209,6 +249,10 @@ const getStatusTheme = (status: string): "success" | "warning" | "danger" | "def
 
 .shadow-card:hover {
   transform: translateY(-4px);
+}
+
+.quick-actions-card {
+  margin-top: 16px;
 }
 
 .loading-container {

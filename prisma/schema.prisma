@@ -14,7 +14,7 @@ model User {
   account    String   @unique
   password   String
   name       String
-  role       String   @default("user") // super_admin, admin, user
+  role       String   @default("user")
   status     Boolean  @default(true)
   createTime DateTime @default(now())
   updatedAt  DateTime @updatedAt
@@ -72,7 +72,7 @@ model Room {
   capacity    Int?
   location    String?
   description String?
-  status      Boolean  @default(true) // true: available, false: maintenance
+  status      Boolean  @default(true)
   bookings    Booking[]
   createTime  DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -92,7 +92,7 @@ model Booking {
   endTime        DateTime
   purpose        String
   remark         String?
-  status         String       @default("pending") // pending, approved, cancelled, rejected
+  status         String       @default("pending")
   createTime     DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
 
@@ -102,15 +102,14 @@ model Booking {
 model AutoApprovalRule {
   id             Int      @id @default(autoincrement())
   name           String
-  // 触发条件 (null 表示不限制)
   organizationId Int?
   roomId         Int?
   userId         Int?
-  maxDuration    Int?     // 最大时长（分钟）
-  startHour      String?  // 允许的开始时间 (HH:mm)
-  endHour        String?  // 允许的结束时间 (HH:mm)
+  maxDuration    Int?
+  startHour      String?
+  endHour        String?
   
-  action         String   @default("approve") // approve, reject
+  action         String   @default("approve")
   status         Boolean  @default(true)
   createTime     DateTime @default(now())
   updatedAt      DateTime @updatedAt
@@ -122,9 +121,9 @@ model Feedback {
   id         Int      @id @default(autoincrement())
   userId     Int
   user       User     @relation(fields: [userId], references: [id])
-  type       String   // bug, feature, other
+  type       String
   content    String
-  status     String   @default("pending") // pending, resolved
+  status     String   @default("pending")
   reply      String?
   createTime DateTime @default(now())
   updatedAt  DateTime @updatedAt
@@ -152,5 +151,4 @@ model SystemSetting {
 
   @@map("system_settings")
 }
-
 

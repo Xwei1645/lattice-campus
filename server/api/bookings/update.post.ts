@@ -24,17 +24,13 @@ export default defineEventHandler(async (event) => {
             throw createError({ statusCode: 404, statusMessage: 'Booking not found' })
         }
 
-        const isAdmin = ['root', 'super_admin', 'admin'].includes(user.role)
+        const isAdmin = ['super_admin', 'admin'].includes(user.role)
 
-        // 权限检查：
-        // - 管理员可以更新任何预订状态
-        // - 用户只能取消自己的预订
         if (!isAdmin) {
             if (booking.userId !== user.id) {
                 throw createError({ statusCode: 403, statusMessage: 'Forbidden' })
             }
 
-            // 普通用户只能取消预订
             if (status !== 'cancelled') {
                 throw createError({
                     statusCode: 403,

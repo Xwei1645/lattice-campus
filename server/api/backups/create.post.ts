@@ -2,9 +2,10 @@ import { requireSuperAdmin } from '../../utils/auth'
 import { createBackup } from '../../utils/backup'
 
 export default defineEventHandler(async (event) => {
-    await requireSuperAdmin(event)
+    const currentUser = await requireSuperAdmin(event)
     try {
         const result = await createBackup()
+
         return {
             success: true,
             message: 'Backup created successfully',

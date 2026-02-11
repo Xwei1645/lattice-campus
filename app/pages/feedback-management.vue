@@ -100,10 +100,22 @@ const columns: PrimaryTableCol[] = [
   { colKey: 'operation', title: '操作', cell: 'operation', width: 120 }
 ]
 
+// 骨架屏配置
+const tableSkeleton = Array(6).fill([
+  { width: '70px' },
+  { width: '150px' },
+  { width: '100px' },
+  { width: '30%' },
+  { width: '100px' },
+  { width: '150px' },
+  { width: '120px' },
+]);
+
 const fetchFeedbacks = async () => {
   loading.value = true
   try {
-    feedbacks.value = await $fetch('/api/feedback')
+    const res: any = await $fetch('/api/feedback')
+    feedbacks.value = res.data || []
   } catch (error) {
     MessagePlugin.error('获取反馈列表失败')
   } finally {

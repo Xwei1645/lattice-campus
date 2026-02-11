@@ -3,7 +3,7 @@ import { requireAuth } from '../../utils/auth'
 
 export default defineEventHandler(async (event) => {
     const user = await requireAuth(event)
-    if (!['root', 'super_admin', 'admin'].includes(user.role)) {
+    if (!['super_admin', 'admin'].includes(user.role)) {
         throw createError({ statusCode: 403, statusMessage: 'Forbidden' })
     }
 

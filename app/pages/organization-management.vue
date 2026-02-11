@@ -16,35 +16,37 @@
     </div>
 
     <t-card :bordered="false" class="content-card">
-      <t-table
-        row-key="id"
-        :data="filteredOrganizations"
-        :columns="columns"
-        :loading="loading"
-        :hover="true"
-        :pagination="pagination"
-        @page-change="onPageChange"
-      >
-        <template #createTime="{ row }">
-          {{ formatDateTime(row.createTime) }}
-        </template>
-        <template #users="{ row }">
-          <t-space break-line :size="4">
-            <t-tag v-for="user in row.users" :key="user.id" variant="light">
-              {{ user.name }}
-            </t-tag>
-            <span v-if="!row.users?.length" style="color: var(--td-text-color-placeholder)">暂无成员</span>
-          </t-space>
-        </template>
-        <template #operation="{ row }">
-          <t-space>
-            <t-link theme="primary" hover="color" @click="handleEdit(row)">编辑</t-link>
-            <t-popconfirm content="确认删除该组织吗？" @confirm="handleDelete(row)">
-              <t-link theme="danger" hover="color">删除</t-link>
-            </t-popconfirm>
-          </t-space>
-        </template>
-      </t-table>
+      <t-skeleton :loading="loading" :row-col="tableSkeleton" animation="gradient">
+        <t-table
+          row-key="id"
+          :data="filteredOrganizations"
+          :columns="columns"
+          :loading="loading"
+          :hover="true"
+          :pagination="pagination"
+          @page-change="onPageChange"
+        >
+          <template #createTime="{ row }">
+            {{ formatDateTime(row.createTime) }}
+          </template>
+          <template #users="{ row }">
+            <t-space break-line :size="4">
+              <t-tag v-for="user in row.users" :key="user.id" variant="light">
+                {{ user.name }}
+              </t-tag>
+              <span v-if="!row.users?.length" style="color: var(--td-text-color-placeholder)">暂无成员</span>
+            </t-space>
+          </template>
+          <template #operation="{ row }">
+            <t-space>
+              <t-link theme="primary" hover="color" @click="handleEdit(row)">编辑</t-link>
+              <t-popconfirm content="确认删除该组织吗？" @confirm="handleDelete(row)">
+                <t-link theme="danger" hover="color">删除</t-link>
+              </t-popconfirm>
+            </t-space>
+          </template>
+        </t-table>
+      </t-skeleton>
     </t-card>
 
     <!-- Add/Edit Dialog -->
@@ -138,21 +140,31 @@ const columns: PrimaryTableCol[] = [
   { colKey: 'operation', title: '操作', width: 150, fixed: 'right' }
 ]
 
+// 骨架屏配置
+const tableSkeleton = Array(6).fill([
+  { width: '10%' },
+  { width: '20%' },
+  { width: '30%' },
+  { width: '20%' },
+  { width: '10%' },
+  { width: '10%' },
+]);
+
 const dialogTitle = computed(() => isEdit.value ? '编辑组织' : '新增组织')
 
 // Fetch data
 const fetchOrganizations = async () => {
   loading.value = true
   try {
-    const [orgData, userData] = await Promise.all([
-      $fetch('/api/organizations'),
-      $fetch('/api/users')
+    const [orgRes, userRes] = await Promise.all([
+      $fetch<any>('/api/organizations'),
+      $fetch<any>('/api/users')
     ])
-    organizations.value = orgData
-    userOptions.value = userData.map((u: any) => ({
+    organizations.value = orgRes.data
+    userOptions.value = userRes.data?.map((u: any) => ({
       label: `${u.name} (${u.account})`,
       value: u.id
-    }))
+    })) || []
   } catch (error) {
     MessagePlugin.error('获取数据失败')
   } finally {

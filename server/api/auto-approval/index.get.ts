@@ -1,13 +1,14 @@
 import { db } from '../../utils/prisma'
 import { requireAuth } from '../../utils/auth'
+import { sendSuccess, handleError } from '../../utils/api'
 
 export default defineEventHandler(async (event) => {
-    const user = await requireAuth(event)
-    if (!['root', 'super_admin', 'admin'].includes(user.role)) {
-        throw createError({ statusCode: 403, statusMessage: 'Forbidden' })
-    }
-
     try {
+        const user = await requireAuth(event)
+        if (!['super_admin', 'admin'].includes(user.role)) {
+            throw createError({ statusCode: 403, statusMessage: 'Forbidden' })
+        }
+
         const rules = await (db as any).autoApprovalRule.findMany({
             orderBy: { createTime: 'desc' }
         })
@@ -27,13 +28,15 @@ export default defineEventHandler(async (event) => {
         const userMap = Object.fromEntries(users.map(u => [u.id, u.name]))
         const roomMap = Object.fromEntries(rooms.map(r => [r.id, r.name]))
 
-        return rules.map((rule: any) => ({
+        const mappedRules = rules.map((rule: any) => ({
             ...rule,
             organizationName: rule.organizationId ? orgMap[rule.organizationId] : null,
             userName: rule.userId ? userMap[rule.userId] : null,
             roomName: rule.roomId ? roomMap[rule.roomId] : null
         }))
-    } catch (error: any) {
-        throw createError({ statusCode: 500, statusMessage: error.message })
+
+        return sendSuccess(event, mappedRules, '获取自动审批规则成功')
+    } catch (error) {
+        return handleError(error)
     }
 })

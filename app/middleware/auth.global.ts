@@ -3,9 +3,10 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
     if (import.meta.client) {
         const userStr = localStorage.getItem('user')
 
-        // 1. 处理登录和注册页逻辑
-        if (to.path === '/login' || to.path === '/register') {
-            if (userStr) {
+        // 1. 处理免登录页面逻辑
+        const publicRoutes = ['/login', '/register', '/display']
+        if (publicRoutes.includes(to.path)) {
+            if (userStr && (to.path === '/login' || to.path === '/register')) {
                 try {
                     // 验证 session 是否有效并获取最新数据
                     const user = await $fetch('/api/auth/me')
@@ -23,15 +24,16 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
             return navigateTo('/login')
         }
 
+
         try {
             const user = JSON.parse(userStr)
 
             // 权限控制
             const adminRoutes = [
-                '/account-management', 
-                '/organization-management', 
-                '/room-management', 
-                '/booking-management', 
+                '/account-management',
+                '/organization-management',
+                '/room-management',
+                '/booking-management',
                 '/auto-approval',
                 '/feedback-management',
                 '/notice-management',
@@ -39,10 +41,10 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
                 '/backup-management'
             ]
             if (adminRoutes.includes(to.path)) {
-                if (!['root', 'super_admin', 'admin'].includes(user.role)) {
+                if (!['super_admin', 'admin'].includes(user.role)) {
                     return navigateTo('/')
                 }
-                
+
                 // 数据备份仅限超级管理员
                 if (to.path === '/backup-management' && user.role !== 'super_admin') {
                     return navigateTo('/')

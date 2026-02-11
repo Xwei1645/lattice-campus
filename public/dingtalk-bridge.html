@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>钉钉登录 - 处理中</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        html, body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: #f5f5f5;
+            min-height: 100vh;
+        }
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .container {
+            text-align: center;
+            background-color: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            max-width: 400px;
+            width: 100%;
+        }
+        .title {
+            font-size: 20px;
+            color: #333;
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+        .status {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 24px;
+            line-height: 1.6;
+        }
+        .spinner {
+            width: 48px;
+            height: 48px;
+            border: 4px solid #f3f3f3;
+            border-top-color: #0052d9;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .success-icon {
+            width: 60px;
+            height: 60px;
+            background-color: #52c41a;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            font-size: 32px;
+            color: white;
+        }
+        .error-icon {
+            width: 60px;
+            height: 60px;
+            background-color: #ff4d4f;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            font-size: 32px;
+            color: white;
+        }
+        .close-btn {
+            background-color: #0052d9;
+            color: white;
+            border: none;
+            padding: 12px 32px;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            margin-top: 16px;
+        }
+        .close-btn:hover {
+            background-color: #0043b5;
+        }
+        .error-message {
+            color: #ff4d4f;
+            font-size: 13px;
+            margin-top: 8px;
+            padding: 8px;
+            background-color: #fff2f0;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container" id="container">
+        <div class="spinner" id="spinner"></div>
+        <div class="title" id="title">正在处理...</div>
+        <div class="status" id="status">请稍候，正在验证您的身份信息</div>
+        <div id="error-container"></div>
+        <button class="close-btn" id="closeBtn" style="display: none;" onclick="closeWindow()">关闭窗口</button>
+    </div>
+
+    <script>
+        // 获取 URL 参数
+        const urlParams = new URLSearchParams(window.location.search);
+        const authCode = urlParams.get('authCode');
+        const state = urlParams.get('state');
+        const error = urlParams.get('error');
+
+        // 判断是登录还是绑定流程
+        const isBindFlow = state && state.startsWith('bind_');
+        const bindUserId = isBindFlow ? state.split('_')[1] : null;
+
+        // 关闭窗口
+        function closeWindow() {
+            window.close();
+        }
+
+        // 显示成功状态
+        function showSuccess(user) {
+            document.getElementById('spinner').style.display = 'none';
+            document.getElementById('title').textContent = isBindFlow ? '绑定成功' : '登录成功';
+            document.getElementById('status').textContent = isBindFlow ? '钉钉账号绑定成功' : '正在返回原页面...';
+            document.getElementById('closeBtn').style.display = 'inline-block';
+            
+            // 插入成功图标
+            const container = document.getElementById('container');
+            const icon = document.createElement('div');
+            icon.className = 'success-icon';
+            icon.innerHTML = '✓';
+            container.insertBefore(icon, document.getElementById('title'));
+
+            // 通知父窗口
+            if (window.opener) {
+                if (isBindFlow) {
+                    // 绑定流程：通知绑定页面
+                    window.opener.postMessage({
+                        type: 'dingtalk_bind_complete',
+                        success: true
+                    }, '*');
+                } else {
+                    // 登录流程：通知登录页面
+                    window.opener.postMessage({
+                        type: 'dingtalk_bridge_result',
+                        success: true,
+                        user: user
+                    }, '*');
+                }
+            }
+
+            // 3秒后自动关闭
+            setTimeout(closeWindow, 3000);
+        }
+
+        // 显示错误状态
+        function showError(errorCode, message) {
+            document.getElementById('spinner').style.display = 'none';
+            document.getElementById('title').textContent = isBindFlow ? '绑定失败' : '登录失败';
+            document.getElementById('status').textContent = message || (isBindFlow ? '绑定过程中出现错误' : '登录过程中出现错误');
+            document.getElementById('closeBtn').style.display = 'inline-block';
+            
+            // 插入错误图标
+            const container = document.getElementById('container');
+            const icon = document.createElement('div');
+            icon.className = 'error-icon';
+            icon.innerHTML = '✕';
+            container.insertBefore(icon, document.getElementById('title'));
+
+            // 显示详细错误信息
+            if (message) {
+                const errorContainer = document.getElementById('error-container');
+                errorContainer.innerHTML = '<div class="error-message">' + message + '</div>';
+            }
+
+            // 通知父窗口
+            if (window.opener) {
+                if (isBindFlow) {
+                    // 绑定流程：通知绑定页面
+                    window.opener.postMessage({
+                        type: 'dingtalk_bind_complete',
+                        success: false,
+                        error: errorCode,
+                        message: message
+                    }, '*');
+                } else {
+                    // 登录流程：通知登录页面
+                    window.opener.postMessage({
+                        type: 'dingtalk_bridge_result',
+                        success: false,
+                        error: errorCode,
+                        message: message
+                    }, '*');
+                }
+            }
+        }
+
+        // 处理登录
+        async function processLogin() {
+            if (error) {
+                const messages = {
+                    'dingtalk_user_not_found': '钉钉用户尚未绑定系统账号，请联系管理员关联 OpenID',
+                    'dingtalk_auth_failed': '钉钉授权失败，请稍后重试',
+                    'account_disabled': '该账号已被禁用',
+                    'dingtalk_code_missing': '授权码缺失，请重新扫码'
+                };
+                showError(error, messages[error] || (isBindFlow ? '绑定失败' : '登录失败'));
+                return;
+            }
+
+            if (!authCode) {
+                showError('no_code', '未获取到授权码');
+                return;
+            }
+
+            try {
+                // 调用后端 API 处理登录
+                const response = await fetch('/api/auth/dingtalk/callback?authCode=' + encodeURIComponent(authCode) + '&state=' + encodeURIComponent(state || '') + '&bridge=true');
+                const data = await response.json();
+
+                if (data.success) {
+                    if (isBindFlow && bindUserId) {
+                        // 绑定流程：调用绑定 API
+                        await processBind(data.user.dingTalkOpenId);
+                    } else {
+                        // 登录流程
+                        showSuccess(data.user);
+                    }
+                } else {
+                    showError(data.error, data.message);
+                }
+            } catch (err) {
+                console.error('Login error:', err);
+                showError('network_error', '网络错误，请检查网络连接后重试');
+            }
+        }
+
+        // 处理绑定
+        async function processBind(dingTalkOpenId) {
+            try {
+                const response = await fetch('/api/users/bind-dingtalk', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        userId: parseInt(bindUserId),
+                        dingTalkOpenId: dingTalkOpenId
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showSuccess(null);
+                } else {
+                    showError('bind_failed', data.message || '绑定失败');
+                }
+            } catch (err) {
+                console.error('Bind error:', err);
+                showError('network_error', '网络错误，请检查网络连接后重试');
+            }
+        }
+
+        // 页面加载完成后处理
+        window.onload = processLogin;
+    </script>
+</body>
+</html>

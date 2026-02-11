@@ -2,7 +2,7 @@ import { requireSuperAdmin } from '../../utils/auth'
 import { deleteBackup } from '../../utils/backup'
 
 export default defineEventHandler(async (event) => {
-    await requireSuperAdmin(event)
+    const currentUser = await requireSuperAdmin(event)
     const body = await readBody(event)
     const { fileName } = body
 

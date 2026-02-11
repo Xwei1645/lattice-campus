@@ -2,7 +2,7 @@ import { requireSuperAdmin } from '../../utils/auth'
 import { restoreBackup } from '../../utils/backup'
 
 export default defineEventHandler(async (event) => {
-    await requireSuperAdmin(event)
+    const currentUser = await requireSuperAdmin(event)
     const body = await readBody(event)
     const { fileName } = body
 
@@ -15,6 +15,7 @@ export default defineEventHandler(async (event) => {
 
     try {
         await restoreBackup(fileName)
+
         return {
             success: true,
             message: 'Database restored successfully'

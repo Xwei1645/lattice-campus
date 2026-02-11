@@ -2,7 +2,7 @@ import { db } from '../../utils/prisma'
 import { requireAdmin } from '../../utils/auth'
 
 export default defineEventHandler(async (event) => {
-    const user = await requireAdmin(event)
+    const currentUser = await requireAdmin(event)
     const body = await readBody(event)
     const { title, content, showPopup } = body
 
@@ -18,7 +18,7 @@ export default defineEventHandler(async (event) => {
             title,
             content,
             showPopup: !!showPopup,
-            creatorId: user.id
+            creatorId: currentUser.id
         }
     })
 

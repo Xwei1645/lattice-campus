@@ -1,158 +1,122 @@
+import { z } from 'zod'
 import { db } from '../../utils/prisma'
 import { requireAuth, isUserInOrganization } from '../../utils/auth'
+import { sendSuccess, handleError } from '../../utils/api'
+
+const bookingSchema = z.object({
+    roomId: z.coerce.number().int().positive('无效的场地ID'),
+    organizationId: z.coerce.number().int().positive('无效的组织ID'),
+    date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, '日期格式必须为 YYYY-MM-DD'),
+    timeRange: z.array(z.string().regex(/^\d{2}:\d{2}(:\d{2})?$/)).length(2, '必须提供开始和结束时间'),
+    purpose: z.string().min(2, '用途描述太短').max(200, '用途描述太长'),
+    remark: z.string().max(500, '备注太长').optional().nullable()
+})
 
 export default defineEventHandler(async (event) => {
-    const user = await requireAuth(event)
-
-    const body = await readBody(event)
-    const { roomId, organizationId, date, timeRange, purpose, remark } = body
-
-    if (!roomId || !organizationId || !date || !timeRange || timeRange.length !== 2 || !purpose) {
-        throw createError({ statusCode: 400, statusMessage: 'Missing required fields' })
-    }
-
-    // 验证用户是否属于该组织（管理员可以跳过此检查）
-    const isAdmin = ['root', 'super_admin', 'admin'].includes(user.role)
-    if (!isAdmin && !isUserInOrganization(user, Number(organizationId))) {
-        throw createError({
-            statusCode: 403,
-            statusMessage: 'You are not a member of this organization'
-        })
-    }
-
-    const startTime = new Date(`${date}T${timeRange[0]}:00`)
-    const endTime = new Date(`${date}T${timeRange[1]}:00`)
-
-    // 验证时间范围
-    if (startTime < new Date()) {
-        throw createError({
-            statusCode: 400,
-            statusMessage: 'Booking time must be in the future'
-        })
-    }
-
-    if (startTime >= endTime) {
-        throw createError({
-            statusCode: 400,
-            statusMessage: 'End time must be after start time'
-        })
-    }
-
     try {
-        // 检查场地是否存在且可用
-        const room = await db.room.findUnique({
-            where: { id: Number(roomId) }
-        })
+        const user = await requireAuth(event)
+        const body = await readBody(event)
 
-        if (!room || !room.status) {
+        const validatedData = bookingSchema.parse(body)
+        const { roomId, organizationId, date, timeRange, purpose, remark } = validatedData
+
+        const isAdmin = ['super_admin', 'admin'].includes(user.role)
+        if (!isAdmin && !isUserInOrganization(user, organizationId)) {
             throw createError({
-                statusCode: 400,
-                statusMessage: 'Room not found or unavailable'
+                statusCode: 403,
+                statusMessage: 'Forbidden: You are not a member of this organization'
             })
         }
 
-        // 检查时间冲突
-        const conflict = await db.booking.findFirst({
-            where: {
-                roomId: Number(roomId),
-                status: { notIn: ['cancelled', 'rejected'] },
-                OR: [
-                    {
-                        startTime: { lt: endTime },
-                        endTime: { gt: startTime }
-                    }
-                ]
+        const startTime = new Date(`${date}T${timeRange[0]}:00`)
+        const endTime = new Date(`${date}T${timeRange[1]}:00`)
+
+        if (startTime < new Date()) {
+            throw createError({ statusCode: 400, statusMessage: 'Booking time must be in the future' })
+        }
+        if (startTime >= endTime) {
+            throw createError({ statusCode: 400, statusMessage: 'End time must be after start time' })
+        }
+
+        const result = await db.$transaction(async (tx) => {
+            const room = await tx.room.findUnique({ where: { id: roomId } })
+            if (!room || !room.status) {
+                throw createError({ statusCode: 400, statusMessage: 'Room not found or unavailable' })
             }
-        })
 
-        if (conflict) {
-            throw createError({
-                statusCode: 400,
-                statusMessage: 'Time slot conflicts with an existing booking'
+            const conflict = await tx.booking.findFirst({
+                where: {
+                    roomId,
+                    status: { notIn: ['cancelled', 'rejected'] },
+                    OR: [{ startTime: { lt: endTime }, endTime: { gt: startTime } }]
+                }
             })
-        }
 
-        // 检查自动审批规则
-        const autoApprovalRules = await (db as any).autoApprovalRule.findMany({
-            where: { status: true }
-        })
+            if (conflict) {
+                throw createError({ statusCode: 400, statusMessage: 'Time slot conflicts with an existing booking' })
+            }
 
-        let finalStatus = 'pending'
-        let autoRemark = remark
-        const durationMinutes = (endTime.getTime() - startTime.getTime()) / (1000 * 60)
-        const startHourStr = startTime.getHours().toString().padStart(2, '0') + ':' + startTime.getMinutes().toString().padStart(2, '0')
+            const autoApprovalRules = await (tx as any).autoApprovalRule.findMany({ where: { status: true } })
+            let finalStatus = 'pending'
+            let autoRemark = remark || ''
+            const durationMinutes = (endTime.getTime() - startTime.getTime()) / (1000 * 60)
+            const startHourStr = startTime.getHours().toString().padStart(2, '0') + ':' + startTime.getMinutes().toString().padStart(2, '0')
 
-        for (const rule of (autoApprovalRules as any[])) {
-            let match = true
+            for (const rule of (autoApprovalRules as any[])) {
+                let match = true
+                if (rule.organizationId && rule.organizationId !== organizationId) match = false
+                if (rule.roomId && rule.roomId !== roomId) match = false
+                if (rule.userId && rule.userId !== user.id) match = false
+                if (rule.maxDuration && durationMinutes > rule.maxDuration) match = false
+                if (rule.startHour && startHourStr < rule.startHour) match = false
+                if (rule.endHour && startHourStr > rule.endHour) match = false
 
-            // 检查组织
-            if (rule.organizationId && rule.organizationId !== Number(organizationId)) match = false
-            // 检查场地
-            if (rule.roomId && rule.roomId !== Number(roomId)) match = false
-            // 检查用户
-            if (rule.userId && rule.userId !== user.id) match = false
-            // 检查时长
-            if (rule.maxDuration && durationMinutes > rule.maxDuration) match = false
-            // 检查时间范围 (HH:mm)
-            if (rule.startHour && startHourStr < rule.startHour) match = false
-            if (rule.endHour && startHourStr > rule.endHour) match = false
-
-            if (match) {
-                if (rule.action === 'approve') {
-                    finalStatus = 'approved'
-                    autoRemark = (autoRemark ? autoRemark + ' | ' : '') + '系统自动通过: ' + rule.name
-                    break
-                } else if (rule.action === 'reject') {
-                    finalStatus = 'rejected'
-                    autoRemark = (autoRemark ? autoRemark + ' | ' : '') + '系统自动驳回: ' + rule.name
-                    break
+                if (match) {
+                    if (rule.action === 'approve') {
+                        finalStatus = 'approved'
+                        autoRemark = (autoRemark ? autoRemark + ' | ' : '') + '系统自动通过: ' + rule.name
+                        break
+                    } else if (rule.action === 'reject') {
+                        finalStatus = 'rejected'
+                        autoRemark = (autoRemark ? autoRemark + ' | ' : '') + '系统自动驳回: ' + rule.name
+                        break
+                    }
                 }
             }
-        }
 
-        const booking = await db.booking.create({
-            data: {
-                roomId: Number(roomId),
-                organizationId: Number(organizationId),
-                userId: user.id,
-                startTime,
-                endTime,
-                purpose,
-                remark: autoRemark,
-                status: finalStatus
-            },
-            include: {
-                organization: {
-                    select: {
-                        id: true,
-                        name: true
-                    }
+            return await tx.booking.create({
+                data: {
+                    roomId,
+                    organizationId,
+                    userId: user.id,
+                    startTime,
+                    endTime,
+                    purpose,
+                    remark: autoRemark,
+                    status: finalStatus
                 },
-                room: {
-                    select: {
-                        name: true
-                    }
+                include: {
+                    organization: { select: { id: true, name: true } },
+                    room: { select: { name: true } }
                 }
-            }
+            })
         })
 
-        return {
-            id: booking.id,
-            roomName: booking.room.name,
-            organizationId: booking.organization.id,
-            organizationName: booking.organization.name,
-            startTime: booking.startTime,
-            endTime: booking.endTime,
-            purpose: booking.purpose,
-            status: booking.status,
-            remark: booking.remark,
-            createTime: booking.createTime
-        }
-    } catch (error: any) {
-        if (error.statusCode) throw error
-        throw createError({
-            statusCode: 500,
-            statusMessage: error.message
-        })
+        return sendSuccess(event, {
+            id: result.id,
+            roomName: result.room.name,
+            organizationId: result.organization.id,
+            organizationName: result.organization.name,
+            startTime: result.startTime,
+            endTime: result.endTime,
+            purpose: result.purpose,
+            status: result.status,
+            remark: result.remark,
+            createTime: result.createTime
+        }, '预约提交成功')
+
+    } catch (error) {
+        return handleError(error)
     }
 })
+
