@@ -2,8 +2,8 @@ import { z } from 'zod'
 import { db } from '../../utils/prisma'
 import { requireAdmin } from '../../utils/auth'
 import { sendSuccess, handleError } from '../../utils/api'
+import { logSensitiveAction } from '../../utils/audit'
 
-// 定义输入校验 Schema
 const orgCreateSchema = z.object({
     name: z.string().min(2, '组织名称至少2个字符').max(50, '组织名称最多50个字符'),
     description: z.string().max(200, '描述不能超过200个字符').optional(),
@@ -12,11 +12,9 @@ const orgCreateSchema = z.object({
 
 export default defineEventHandler(async (event) => {
     try {
-        // 只有管理员可以创建组织
-        await requireAdmin(event)
+        const currentUser = await requireAdmin(event)
         const body = await readBody(event)
 
-        // Zod 校验
         const { name, description, userIds } = orgCreateSchema.parse(body)
 
         const existingOrg = await db.organization.findUnique({ where: { name } })
@@ -40,6 +38,12 @@ export default defineEventHandler(async (event) => {
                     select: { users: true, bookings: true }
                 }
             }
+        })
+
+        await logSensitiveAction(event, 'organization_create', currentUser, organization.id, 'organization', {
+            name: organization.name,
+            description: organization.description,
+            userIds: organization.users.map(u => u.id)
         })
 
         return sendSuccess(event, organization, '组织创建成功')
