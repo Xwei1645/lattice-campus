@@ -3,8 +3,8 @@ import { db } from '../../utils/prisma'
 import { requireAdmin } from '../../utils/auth'
 import bcrypt from 'bcryptjs'
 import { sendSuccess, handleError } from '../../utils/api'
+import { logSensitiveAction } from '../../utils/audit'
 
-// 定义输入校验 Schema
 const userCreateSchema = z.object({
     account: z.string().min(4, '账号至少4个字符').max(20, '账号最多20个字符').regex(/^[a-zA-Z0-9_]+$/, '账号只能包含字母、数字和下划线'),
     password: z.string().min(6, '密码至少6个字符').max(20, '密码最多20个字符'),
@@ -15,15 +15,12 @@ const userCreateSchema = z.object({
 
 export default defineEventHandler(async (event) => {
     try {
-        // 只有管理员可以创建用户
         const currentUser = await requireAdmin(event)
         const body = await readBody(event)
 
-        // Zod 校验
         const validatedData = userCreateSchema.parse(body)
         const { account, password, name, role, organizationIds } = validatedData
 
-        // 权限控制：不能创建比自己权限更高的用户
         const roleHierarchy = ['user', 'admin', 'super_admin']
         const currentRoleIndex = roleHierarchy.indexOf(currentUser.role)
         const targetRoleIndex = roleHierarchy.indexOf(role)
@@ -35,13 +32,11 @@ export default defineEventHandler(async (event) => {
             })
         }
 
-        // 检查账号是否已存在
         const existingUser = await db.user.findUnique({ where: { account } })
         if (existingUser) {
             throw createError({ statusCode: 400, statusMessage: 'Account already exists' })
         }
 
-        // 密码加密
         const hashedPassword = await bcrypt.hash(password, 10)
 
         const user = await db.user.create({
@@ -58,6 +53,13 @@ export default defineEventHandler(async (event) => {
             include: {
                 organizations: { select: { id: true, name: true } }
             }
+        })
+
+        await logSensitiveAction(event, 'user_create', currentUser, user.id, 'user', {
+            account: user.account,
+            name: user.name,
+            role: user.role,
+            organizationIds: user.organizations.map(o => o.id)
         })
 
         return sendSuccess(event, {

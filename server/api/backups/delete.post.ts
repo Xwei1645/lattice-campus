@@ -1,8 +1,9 @@
 import { requireSuperAdmin } from '../../utils/auth'
 import { deleteBackup } from '../../utils/backup'
+import { logSensitiveAction } from '../../utils/audit'
 
 export default defineEventHandler(async (event) => {
-    await requireSuperAdmin(event)
+    const currentUser = await requireSuperAdmin(event)
     const body = await readBody(event)
     const { fileName } = body
 
@@ -20,6 +21,10 @@ export default defineEventHandler(async (event) => {
             statusMessage: 'Backup file not found'
         })
     }
+
+    await logSensitiveAction(event, 'backup_delete', currentUser, undefined, 'backup', {
+        fileName
+    })
 
     return {
         success: true,

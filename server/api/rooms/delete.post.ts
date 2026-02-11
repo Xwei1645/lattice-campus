@@ -1,5 +1,6 @@
 import { db } from '../../utils/prisma'
 import { requireAuth } from '../../utils/auth'
+import { logSensitiveAction } from '../../utils/audit'
 
 export default defineEventHandler(async (event) => {
     const user = await requireAuth(event)
@@ -16,7 +17,12 @@ export default defineEventHandler(async (event) => {
     }
 
     try {
-        // 检查是否有预约关联
+        const room = await db.room.findUnique({ where: { id: Number(id) } })
+
+        if (!room) {
+            throw createError({ statusCode: 404, statusMessage: 'Room not found' })
+        }
+
         const bookingsCount = await db.booking.count({
             where: { roomId: Number(id) }
         })
@@ -31,6 +37,14 @@ export default defineEventHandler(async (event) => {
         await db.room.delete({
             where: { id: Number(id) }
         })
+
+        await logSensitiveAction(event, 'room_delete', user, room.id, 'room', {
+            name: room.name,
+            capacity: room.capacity,
+            location: room.location,
+            description: room.description
+        })
+
         return { success: true }
     } catch (error: any) {
         if (error.statusCode) throw error

@@ -1,8 +1,9 @@
 import { db } from '../../utils/prisma'
 import { requireAdmin } from '../../utils/auth'
+import { logSensitiveAction } from '../../utils/audit'
 
 export default defineEventHandler(async (event) => {
-    const user = await requireAdmin(event)
+    const currentUser = await requireAdmin(event)
     const body = await readBody(event)
     const { title, content, showPopup } = body
 
@@ -18,8 +19,13 @@ export default defineEventHandler(async (event) => {
             title,
             content,
             showPopup: !!showPopup,
-            creatorId: user.id
+            creatorId: currentUser.id
         }
+    })
+
+    await logSensitiveAction(event, 'notice_create', currentUser, notice.id, 'notice', {
+        title: notice.title,
+        showPopup: notice.showPopup
     })
 
     return notice

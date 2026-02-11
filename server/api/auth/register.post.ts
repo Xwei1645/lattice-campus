@@ -1,5 +1,6 @@
 import { db } from '../../utils/prisma'
 import bcrypt from 'bcryptjs'
+import { logRegister } from '../../utils/audit'
 
 export default defineEventHandler(async (event) => {
     const body = await readBody(event)
@@ -13,7 +14,6 @@ export default defineEventHandler(async (event) => {
     }
 
     try {
-        // 1. 验证邀请码
         const codeData = await db.invitationCode.findUnique({
             where: { code: invitationCode },
             include: { organization: true }
@@ -47,7 +47,6 @@ export default defineEventHandler(async (event) => {
             })
         }
 
-        // 2. 检查用户是否已存在
         const existingUser = await db.user.findUnique({
             where: { account }
         })
@@ -59,17 +58,14 @@ export default defineEventHandler(async (event) => {
             })
         }
 
-        // 3. 创建用户
         const hashedPassword = await bcrypt.hash(password, 10)
         
         const user = await db.$transaction(async (tx) => {
-            // 更新邀请码使用次数
             await tx.invitationCode.update({
                 where: { id: codeData.id },
                 data: { usedCount: { increment: 1 } }
             })
 
-            // 创建用户
             return await tx.user.create({
                 data: {
                     account,
@@ -83,6 +79,8 @@ export default defineEventHandler(async (event) => {
                 }
             })
         })
+
+        await logRegister(event, account, name, codeData.role)
 
         return {
             success: true,

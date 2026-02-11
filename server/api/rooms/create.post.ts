@@ -1,10 +1,10 @@
 import { db } from '../../utils/prisma'
 import { requireAuth } from '../../utils/auth'
+import { logSensitiveAction } from '../../utils/audit'
 
 export default defineEventHandler(async (event) => {
     const user = await requireAuth(event)
 
-    // 权限检查
     if (!['root', 'super_admin', 'admin'].includes(user.role)) {
         throw createError({ statusCode: 403, statusMessage: 'Forbidden' })
     }
@@ -26,6 +26,14 @@ export default defineEventHandler(async (event) => {
                 status: true
             }
         })
+
+        await logSensitiveAction(event, 'room_create', user, room.id, 'room', {
+            name: room.name,
+            capacity: room.capacity,
+            location: room.location,
+            description: room.description
+        })
+
         return room
     } catch (error: any) {
         if (error.code === 'P2002') {

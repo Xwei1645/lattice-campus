@@ -86,6 +86,20 @@
       </t-col>
     </t-row>
 
+    <!-- 快捷操作区域 -->
+    <t-card :bordered="false" class="quick-actions-card">
+      <t-space direction="vertical" :size="12">
+        <t-button theme="default" variant="outline" @click="$router.push('/my-bookings')">
+          <template #icon><CalendarIcon /></template>
+          查看我的预约
+        </t-button>
+        <t-button v-if="isSuperAdmin" theme="default" variant="outline" @click="$router.push('/audit-log-management')">
+          <template #icon><FileIcon /></template>
+          查看系统日志
+        </t-button>
+      </t-space>
+    </t-card>
+
     <!-- 通知详情对话框 -->
     <t-dialog
       v-model:visible="noticeVisible"
@@ -115,8 +129,9 @@ import {
   InfoCircleIcon,
   CalendarIcon,
   NotificationIcon,
+  FileIcon,
 } from 'tdesign-icons-vue-next';
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { formatDateTime, formatDate } from '~/utils/format'
 
 useHead({ title: '首页' })
@@ -208,6 +223,17 @@ const getStatusTheme = (status: string): "success" | "warning" | "danger" | "def
   }
   return map[status] || 'default'
 }
+
+const isSuperAdmin = computed(() => {
+  const userStr = localStorage.getItem('user');
+  if (!userStr) return false;
+  try {
+    const user = JSON.parse(userStr);
+    return user?.role === 'super_admin';
+  } catch {
+    return false;
+  }
+});
 </script>
 
 <style scoped>
@@ -226,6 +252,10 @@ const getStatusTheme = (status: string): "success" | "warning" | "danger" | "def
 
 .shadow-card:hover {
   transform: translateY(-4px);
+}
+
+.quick-actions-card {
+  margin-top: 16px;
 }
 
 .loading-container {

@@ -2,8 +2,8 @@ import { z } from 'zod'
 import { db } from '../../utils/prisma'
 import { requireAuth, isUserInOrganization } from '../../utils/auth'
 import { sendSuccess, handleError } from '../../utils/api'
+import { logSensitiveAction } from '../../utils/audit'
 
-// 定义输入校验 Schema
 const bookingSchema = z.object({
     roomId: z.coerce.number().int().positive('无效的场地ID'),
     organizationId: z.coerce.number().int().positive('无效的组织ID'),
@@ -18,11 +18,9 @@ export default defineEventHandler(async (event) => {
         const user = await requireAuth(event)
         const body = await readBody(event)
 
-        // Zod 校验
         const validatedData = bookingSchema.parse(body)
         const { roomId, organizationId, date, timeRange, purpose, remark } = validatedData
 
-        // 权限验证
         const isAdmin = ['root', 'super_admin', 'admin'].includes(user.role)
         if (!isAdmin && !isUserInOrganization(user, organizationId)) {
             throw createError({
@@ -41,15 +39,12 @@ export default defineEventHandler(async (event) => {
             throw createError({ statusCode: 400, statusMessage: 'End time must be after start time' })
         }
 
-        // 使用事务处理核心逻辑
         const result = await db.$transaction(async (tx) => {
-            // 1. 检查场地
             const room = await tx.room.findUnique({ where: { id: roomId } })
             if (!room || !room.status) {
                 throw createError({ statusCode: 400, statusMessage: 'Room not found or unavailable' })
             }
 
-            // 2. 冲突检查
             const conflict = await tx.booking.findFirst({
                 where: {
                     roomId,
@@ -62,7 +57,6 @@ export default defineEventHandler(async (event) => {
                 throw createError({ statusCode: 400, statusMessage: 'Time slot conflicts with an existing booking' })
             }
 
-            // 3. 自动审批逻辑
             const autoApprovalRules = await (tx as any).autoApprovalRule.findMany({ where: { status: true } })
             let finalStatus = 'pending'
             let autoRemark = remark || ''
@@ -91,7 +85,6 @@ export default defineEventHandler(async (event) => {
                 }
             }
 
-            // 4. 创建预约
             return await tx.booking.create({
                 data: {
                     roomId,
@@ -108,6 +101,16 @@ export default defineEventHandler(async (event) => {
                     room: { select: { name: true } }
                 }
             })
+        })
+
+        await logSensitiveAction(event, 'booking_create', user, result.id, 'booking', {
+            roomName: result.room.name,
+            organizationId: result.organization.id,
+            organizationName: result.organization.name,
+            startTime: result.startTime,
+            endTime: result.endTime,
+            purpose: result.purpose,
+            status: result.status
         })
 
         return sendSuccess(event, {
