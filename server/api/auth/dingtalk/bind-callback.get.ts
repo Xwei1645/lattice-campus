@@ -13,20 +13,50 @@ export default defineEventHandler(async (event) => {
 
         const query = getQuery(event)
         const code = query.code as string || query.authCode as string
-        const userId = parseInt(query.userId as string)
+        const state = query.state as string
 
         if (!code) {
-            throw createError({
-                statusCode: 400,
-                statusMessage: '授权码缺失'
-            })
+            return {
+                success: false,
+                message: '授权码缺失'
+            }
         }
 
+        // 验证 state 参数（CSRF 防护）
+        const savedState = getCookie(event, 'dingtalk_state')
+        if (!state || !savedState) {
+            return {
+                success: false,
+                message: '授权状态已过期，请重新绑定'
+            }
+        }
+
+        // 提取实际的 state 和 userId（绑定模式下 state 格式为 bind_userId_actualState）
+        let actualState = state
+        let userId: number | null = null
+        if (state.startsWith('bind_')) {
+            const parts = state.split('_')
+            if (parts.length >= 3) {
+                userId = parseInt(parts[1])
+                actualState = parts.slice(2).join('_')
+            }
+        }
+
+        if (actualState !== savedState) {
+            return {
+                success: false,
+                message: '授权状态验证失败，请重新绑定'
+            }
+        }
+
+        // 验证通过后清除 state cookie
+        deleteCookie(event, 'dingtalk_state', { path: '/' })
+
         if (!userId || isNaN(userId)) {
-            throw createError({
-                statusCode: 400,
-                statusMessage: '用户ID无效'
-            })
+            return {
+                success: false,
+                message: '用户ID无效'
+            }
         }
 
         // 获取钉钉用户信息
@@ -38,10 +68,10 @@ export default defineEventHandler(async (event) => {
         })
 
         if (existingUser && existingUser.id !== userId) {
-            throw createError({
-                statusCode: 400,
-                statusMessage: `该钉钉账号已被用户 ${existingUser.account} 绑定`
-            })
+            return {
+                success: false,
+                message: '该钉钉账号已被其他用户绑定'
+            }
         }
 
         // 检查目标用户是否存在
@@ -50,10 +80,10 @@ export default defineEventHandler(async (event) => {
         })
 
         if (!targetUser) {
-            throw createError({
-                statusCode: 404,
-                statusMessage: '用户不存在'
-            })
+            return {
+                success: false,
+                message: '用户不存在'
+            }
         }
 
         // 执行绑定
@@ -68,20 +98,29 @@ export default defineEventHandler(async (event) => {
             user: {
                 id: targetUser.id,
                 account: targetUser.account,
-                name: targetUser.name,
-                dingTalkOpenId: dingInfo.openId
+                name: targetUser.name
             }
         }
     } catch (error: any) {
         console.error('[DingTalk Bind Error]:', error)
-        
-        if (error.statusCode) {
-            throw error
+
+        if (error.statusCode === 401) {
+            return {
+                success: false,
+                message: '请先登录管理员账号'
+            }
         }
-        
-        throw createError({
-            statusCode: 500,
-            statusMessage: '绑定失败: ' + (error.message || '未知错误')
-        })
+
+        if (error.statusCode === 403) {
+            return {
+                success: false,
+                message: '无权限执行此操作'
+            }
+        }
+
+        return {
+            success: false,
+            message: '绑定失败，请稍后重试'
+        }
     }
 })

@@ -114,13 +114,9 @@
     <script>
         // 获取 URL 参数
         const urlParams = new URLSearchParams(window.location.search);
-        const authCode = urlParams.get('authCode');
+        const authCode = urlParams.get('authCode') || urlParams.get('code');
         const state = urlParams.get('state');
         const error = urlParams.get('error');
-
-        // 判断是登录还是绑定流程
-        const isBindFlow = state && state.startsWith('bind_');
-        const bindUserId = isBindFlow ? state.split('_')[1] : null;
 
         // 关闭窗口
         function closeWindow() {
@@ -130,10 +126,10 @@
         // 显示成功状态
         function showSuccess(user) {
             document.getElementById('spinner').style.display = 'none';
-            document.getElementById('title').textContent = isBindFlow ? '绑定成功' : '登录成功';
-            document.getElementById('status').textContent = isBindFlow ? '钉钉账号绑定成功' : '正在返回原页面...';
+            document.getElementById('title').textContent = '登录成功';
+            document.getElementById('status').textContent = '正在返回原页面...';
             document.getElementById('closeBtn').style.display = 'inline-block';
-            
+
             // 插入成功图标
             const container = document.getElementById('container');
             const icon = document.createElement('div');
@@ -141,22 +137,13 @@
             icon.innerHTML = '✓';
             container.insertBefore(icon, document.getElementById('title'));
 
-            // 通知父窗口
+            // 通知父窗口（弹窗模式）- 使用明确的 origin
             if (window.opener) {
-                if (isBindFlow) {
-                    // 绑定流程：通知绑定页面
-                    window.opener.postMessage({
-                        type: 'dingtalk_bind_complete',
-                        success: true
-                    }, '*');
-                } else {
-                    // 登录流程：通知登录页面
-                    window.opener.postMessage({
-                        type: 'dingtalk_bridge_result',
-                        success: true,
-                        user: user
-                    }, '*');
-                }
+                window.opener.postMessage({
+                    type: 'dingtalk_login_complete',
+                    success: true,
+                    user: user
+                }, window.location.origin);
             }
 
             // 3秒后自动关闭
@@ -166,10 +153,10 @@
         // 显示错误状态
         function showError(errorCode, message) {
             document.getElementById('spinner').style.display = 'none';
-            document.getElementById('title').textContent = isBindFlow ? '绑定失败' : '登录失败';
-            document.getElementById('status').textContent = message || (isBindFlow ? '绑定过程中出现错误' : '登录过程中出现错误');
+            document.getElementById('title').textContent = '登录失败';
+            document.getElementById('status').textContent = message || '登录过程中出现错误';
             document.getElementById('closeBtn').style.display = 'inline-block';
-            
+
             // 插入错误图标
             const container = document.getElementById('container');
             const icon = document.createElement('div');
@@ -177,31 +164,23 @@
             icon.innerHTML = '✕';
             container.insertBefore(icon, document.getElementById('title'));
 
-            // 显示详细错误信息
+            // 显示详细错误信息 - 使用 textContent 防止 XSS
             if (message) {
                 const errorContainer = document.getElementById('error-container');
-                errorContainer.innerHTML = '<div class="error-message">' + message + '</div>';
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'error-message';
+                errorDiv.textContent = message;
+                errorContainer.appendChild(errorDiv);
             }
 
-            // 通知父窗口
+            // 通知父窗口（弹窗模式）- 使用明确的 origin
             if (window.opener) {
-                if (isBindFlow) {
-                    // 绑定流程：通知绑定页面
-                    window.opener.postMessage({
-                        type: 'dingtalk_bind_complete',
-                        success: false,
-                        error: errorCode,
-                        message: message
-                    }, '*');
-                } else {
-                    // 登录流程：通知登录页面
-                    window.opener.postMessage({
-                        type: 'dingtalk_bridge_result',
-                        success: false,
-                        error: errorCode,
-                        message: message
-                    }, '*');
-                }
+                window.opener.postMessage({
+                    type: 'dingtalk_login_complete',
+                    success: false,
+                    error: errorCode,
+                    message: message
+                }, window.location.origin);
             }
         }
 
@@ -209,12 +188,14 @@
         async function processLogin() {
             if (error) {
                 const messages = {
-                    'dingtalk_user_not_found': '钉钉用户尚未绑定系统账号，请联系管理员关联 OpenID',
+                    'dingtalk_user_not_found': '该钉钉账号尚未绑定系统账号，请联系管理员',
                     'dingtalk_auth_failed': '钉钉授权失败，请稍后重试',
                     'account_disabled': '该账号已被禁用',
-                    'dingtalk_code_missing': '授权码缺失，请重新扫码'
+                    'dingtalk_code_missing': '授权码缺失，请重新扫码',
+                    'dingtalk_state_missing': '授权状态已过期，请重新登录',
+                    'dingtalk_state_invalid': '授权状态验证失败，请重新登录'
                 };
-                showError(error, messages[error] || (isBindFlow ? '绑定失败' : '登录失败'));
+                showError(error, messages[error] || '登录失败');
                 return;
             }
 
@@ -229,45 +210,12 @@
                 const data = await response.json();
 
                 if (data.success) {
-                    if (isBindFlow && bindUserId) {
-                        // 绑定流程：调用绑定 API
-                        await processBind(data.user.dingTalkOpenId);
-                    } else {
-                        // 登录流程
-                        showSuccess(data.user);
-                    }
+                    showSuccess(data.user);
                 } else {
                     showError(data.error, data.message);
                 }
             } catch (err) {
                 console.error('Login error:', err);
-                showError('network_error', '网络错误，请检查网络连接后重试');
-            }
-        }
-
-        // 处理绑定
-        async function processBind(dingTalkOpenId) {
-            try {
-                const response = await fetch('/api/users/bind-dingtalk', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        userId: parseInt(bindUserId),
-                        dingTalkOpenId: dingTalkOpenId
-                    })
-                });
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    showSuccess(null);
-                } else {
-                    showError('bind_failed', data.message || '绑定失败');
-                }
-            } catch (err) {
-                console.error('Bind error:', err);
                 showError('network_error', '网络错误，请检查网络连接后重试');
             }
         }
