@@ -89,7 +89,7 @@
                 </div>
                 <div class="row-info-box">
                   <div class="row-p">{{ item.purpose }}</div>
-                  <div class="row-o">{{ item.organizationName }}</div>
+                  <div class="row-org">{{ item.organizationName }}</div>
                 </div>
               </div>
               <div v-if="upcomingBookings.length === 0" class="td-no-data">
