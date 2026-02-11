@@ -1,6 +1,5 @@
 import { db } from '../../utils/prisma'
 import { requireAdmin } from '../../utils/auth'
-import { logSensitiveAction } from '../../utils/audit'
 
 export default defineEventHandler(async (event) => {
     const currentUser = await requireAdmin(event)
@@ -25,10 +24,6 @@ export default defineEventHandler(async (event) => {
 
     await db.notice.delete({
         where: { id: Number(id) }
-    })
-
-    await logSensitiveAction(event, 'notice_delete', currentUser, notice.id, 'notice', {
-        title: notice.title
     })
 
     return { success: true }

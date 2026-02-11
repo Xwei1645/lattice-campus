@@ -1,6 +1,5 @@
 import { db } from '../../utils/prisma'
 import { requireAuth } from '../../utils/auth'
-import { logSensitiveAction } from '../../utils/audit'
 
 export default defineEventHandler(async (event) => {
     const user = await requireAuth(event)
@@ -25,13 +24,6 @@ export default defineEventHandler(async (event) => {
                 description,
                 status: true
             }
-        })
-
-        await logSensitiveAction(event, 'room_create', user, room.id, 'room', {
-            name: room.name,
-            capacity: room.capacity,
-            location: room.location,
-            description: room.description
         })
 
         return room

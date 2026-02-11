@@ -1,6 +1,5 @@
 import { db } from '../../utils/prisma'
 import { createSession, setSessionCookie } from '../../utils/auth'
-import { logLogin, logLoginFailed } from '../../utils/audit'
 import bcrypt from 'bcryptjs'
 
 export default defineEventHandler(async (event) => {
@@ -28,7 +27,6 @@ export default defineEventHandler(async (event) => {
         })
 
         if (!user) {
-            await logLoginFailed(event, account, 'Invalid account or password')
             throw createError({
                 statusCode: 401,
                 statusMessage: 'Invalid account or password'
@@ -38,7 +36,6 @@ export default defineEventHandler(async (event) => {
         const isPasswordValid = await bcrypt.compare(password, user.password)
 
         if (!isPasswordValid) {
-            await logLoginFailed(event, account, 'Invalid account or password')
             throw createError({
                 statusCode: 401,
                 statusMessage: 'Invalid account or password'
@@ -46,7 +43,6 @@ export default defineEventHandler(async (event) => {
         }
 
         if (!user.status) {
-            await logLoginFailed(event, account, 'Account is disabled')
             throw createError({
                 statusCode: 403,
                 statusMessage: 'Account is disabled'
@@ -55,15 +51,6 @@ export default defineEventHandler(async (event) => {
 
         const sessionToken = await createSession(user.id)
         setSessionCookie(event, sessionToken)
-
-        await logLogin(event, {
-            id: user.id,
-            account: user.account,
-            name: user.name,
-            role: user.role,
-            status: user.status,
-            organizations: user.organizations
-        }, 'password')
 
         return {
             id: user.id,

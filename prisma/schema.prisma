@@ -24,7 +24,6 @@ model User {
   sessions      Session[]
   feedbacks     Feedback[]
   notices       Notice[]
-  auditLogs     AuditLog[]
 
   @@map("users")
 }
@@ -153,24 +152,3 @@ model SystemSetting {
   @@map("system_settings")
 }
 
-model AuditLog {
-  id          Int      @id @default(autoincrement())
-  actionType  String
-  userId      Int?
-  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
-  userName    String?
-  userRole    String?
-  targetId    Int?
-  targetType  String?
-  details     String?  @db.Text
-  ipAddress   String?
-  userAgent   String?  @db.Text
-  status      String   @default("success")
-  errorMessage String?  @db.Text
-  createTime  DateTime @default(now())
-
-  @@map("audit_logs")
-  @@index([userId])
-  @@index([actionType])
-  @@index([createTime])
-}
