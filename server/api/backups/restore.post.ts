@@ -1,6 +1,5 @@
 import { requireSuperAdmin } from '../../utils/auth'
 import { restoreBackup } from '../../utils/backup'
-import { logSensitiveAction } from '../../utils/audit'
 
 export default defineEventHandler(async (event) => {
     const currentUser = await requireSuperAdmin(event)
@@ -16,10 +15,6 @@ export default defineEventHandler(async (event) => {
 
     try {
         await restoreBackup(fileName)
-
-        await logSensitiveAction(event, 'backup_restore', currentUser, undefined, 'backup', {
-            fileName
-        })
 
         return {
             success: true,

@@ -93,10 +93,6 @@
           <template #icon><CalendarIcon /></template>
           查看我的预约
         </t-button>
-        <t-button v-if="isSuperAdmin" theme="default" variant="outline" @click="$router.push('/audit-log-management')">
-          <template #icon><FileIcon /></template>
-          查看系统日志
-        </t-button>
       </t-space>
     </t-card>
 

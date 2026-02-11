@@ -134,7 +134,7 @@ const columns: PrimaryTableCol[] = [
   { colKey: 'userName', title: '申请人' },
   { colKey: 'time', title: '预约时间', width: 300 },
   { colKey: 'purpose', title: '用途' },
-  { colKey: 'createTime', title: '申请时间', width: 180 },
+  { colKey: 'createTime', title: '申请时间', width: 200 },
   { colKey: 'status', title: '状态', width: 100 },
   { colKey: 'operation', title: '操作', width: 150, fixed: 'right' },
 ]
