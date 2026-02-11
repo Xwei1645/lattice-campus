@@ -31,6 +31,7 @@ export function handleError(error: any) {
 
     // 处理 Zod 校验错误
     if (error instanceof ZodError) {
+        console.error('[Validation Error]:', JSON.stringify(error.issues, null, 2))
         throw createError({
             statusCode: 400,
             statusMessage: 'Validation Error',

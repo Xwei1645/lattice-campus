@@ -59,7 +59,7 @@
 
         <t-form-item label="使用组织" name="organizationId">
           <t-select v-model="formData.organizationId" placeholder="请选择使用组织" variant="filled">
-            <t-option v-for="org in userOrganizations" :key="org.id" :value="org.id" :label="org.name" />
+            <t-option v-for="org in organizationOptions" :key="org.id" :value="org.id" :label="org.name" />
           </t-select>
         </t-form-item>
 
@@ -181,6 +181,16 @@ const { data: userData, refresh: refreshUser } = await useFetch<any>('/api/auth/
 });
 
 const userOrganizations = computed(() => userData.value?.organizations || []);
+const isAdmin = computed(() => ['super_admin', 'admin'].includes(userData.value?.role || ''));
+
+// 获取全量组织列表（仅管理员需要，但为了逻辑简单可以统一获取或按需获取）
+const { data: allOrgsRes } = await useFetch<any>('/api/organizations');
+const allOrganizations = computed(() => allOrgsRes.value?.data || []);
+
+const organizationOptions = computed(() => {
+  if (isAdmin.value) return allOrganizations.value;
+  return userOrganizations.value;
+});
 
 // 监听用户信息变化并同步到 localStorage
 watch(userData, (val) => {
@@ -230,9 +240,9 @@ const roomOptions = computed(() => roomsRes.value?.data || []);
 
 // 方法
 const handleCreateBooking = () => {
-  // 如果用户只有一个组织，自动预选
-  if (userOrganizations.value.length === 1) {
-    formData.organizationId = userOrganizations.value[0].id;
+  // 如果用户只有一个组织可供选择，自动预选
+  if (organizationOptions.value.length === 1) {
+    formData.organizationId = organizationOptions.value[0].id;
   }
   visible.value = true;
 };
@@ -273,7 +283,9 @@ const onSubmit = async ({ validateResult, firstError }: any) => {
         remark: '',
       });
     } catch (error: any) {
-      MessagePlugin.error(error.data?.statusMessage || '提交失败');
+      console.error('Submit booking error:', error);
+      const detailError = error.data?.data?.errors?.[0]?.message || error.data?.statusMessage || '提交失败';
+      MessagePlugin.error(detailError);
     } finally {
       submitLoading.value = false;
     }
