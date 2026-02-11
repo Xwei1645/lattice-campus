@@ -225,6 +225,7 @@ const getStatusTheme = (status: string): "success" | "warning" | "danger" | "def
 }
 
 const isSuperAdmin = computed(() => {
+  if (typeof window === 'undefined') return false;
   const userStr = localStorage.getItem('user');
   if (!userStr) return false;
   try {
