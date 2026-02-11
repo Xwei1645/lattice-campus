@@ -13,7 +13,17 @@ export default defineEventHandler(async (event) => {
 
         const query = getQuery(event)
         const code = query.code as string || query.authCode as string
-        const userId = parseInt(query.userId as string)
+        const state = query.state as string || ''
+
+        // 从 state 中解析用户ID
+        // state 格式: bind_{userId}_{timestamp}
+        let userId: number | null = null
+        if (state.startsWith('bind_')) {
+            const parts = state.split('_')
+            if (parts.length >= 2) {
+                userId = parseInt(parts[1])
+            }
+        }
 
         if (!code) {
             throw createError({
@@ -25,7 +35,7 @@ export default defineEventHandler(async (event) => {
         if (!userId || isNaN(userId)) {
             throw createError({
                 statusCode: 400,
-                statusMessage: '用户ID无效'
+                statusMessage: '用户ID无效或缺失'
             })
         }
 

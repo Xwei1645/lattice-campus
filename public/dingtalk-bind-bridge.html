@@ -115,7 +115,7 @@
         // 获取 URL 参数
         const urlParams = new URLSearchParams(window.location.search);
         const authCode = urlParams.get('code') || urlParams.get('authCode');
-        const userId = urlParams.get('userId');
+        const state = urlParams.get('state') || '';
         const error = urlParams.get('error');
 
         // 关闭窗口
@@ -129,7 +129,7 @@
             document.getElementById('title').textContent = '绑定成功';
             document.getElementById('status').textContent = '钉钉账号绑定成功，正在关闭窗口...';
             document.getElementById('closeBtn').style.display = 'inline-block';
-            
+
             // 插入成功图标
             const container = document.getElementById('container');
             const icon = document.createElement('div');
@@ -137,9 +137,9 @@
             icon.innerHTML = '✓';
             container.insertBefore(icon, document.getElementById('title'));
 
-            // 通知父窗口（iframe 中的 dingtalk-bind.html）
-            if (window.parent && window.parent !== window) {
-                window.parent.postMessage({
+            // 通知父窗口（如果是从 iframe 打开的）
+            if (window.opener && window.opener !== window) {
+                window.opener.postMessage({
                     type: 'dingtalk_bind_result',
                     success: true
                 }, '*');
@@ -155,7 +155,7 @@
             document.getElementById('title').textContent = '绑定失败';
             document.getElementById('status').textContent = message || '绑定过程中出现错误';
             document.getElementById('closeBtn').style.display = 'inline-block';
-            
+
             // 插入错误图标
             const container = document.getElementById('container');
             const icon = document.createElement('div');
@@ -169,9 +169,9 @@
                 errorContainer.innerHTML = '<div class="error-message">' + message + '</div>';
             }
 
-            // 通知父窗口（iframe 中的 dingtalk-bind.html）
-            if (window.parent && window.parent !== window) {
-                window.parent.postMessage({
+            // 通知父窗口（如果是从 iframe 打开的）
+            if (window.opener && window.opener !== window) {
+                window.opener.postMessage({
                     type: 'dingtalk_bind_result',
                     success: false,
                     error: errorCode,
@@ -192,14 +192,16 @@
                 return;
             }
 
-            if (!userId) {
-                showError('no_user', '未指定用户ID');
+            if (!state) {
+                showError('no_state', '未获取到状态参数');
                 return;
             }
 
             try {
-                // 调用后端绑定 API
-                const response = await fetch('/api/auth/dingtalk/bind-callback?code=' + encodeURIComponent(authCode) + '&userId=' + encodeURIComponent(userId));
+                // 调用后端绑定 API，传递 code 和 state，携带 credentials 确保 Cookie 被设置
+                const response = await fetch('/api/auth/dingtalk/bind-callback?code=' + encodeURIComponent(authCode) + '&state=' + encodeURIComponent(state), {
+                    credentials: 'include'
+                });
                 const data = await response.json();
 
                 if (data.success) {
