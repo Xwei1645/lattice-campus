@@ -5,7 +5,7 @@ import { randomBytes } from 'crypto'
 export default defineEventHandler(async (event) => {
     const user = await requireAuth(event)
 
-    if (!['root', 'super_admin', 'admin'].includes(user.role)) {
+    if (!['super_admin', 'admin'].includes(user.role)) {
         throw createError({
             statusCode: 403,
             statusMessage: '没有权限'

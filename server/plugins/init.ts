@@ -6,7 +6,7 @@ export default defineNitroPlugin(async (nitroApp) => {
         const userCount = await db.user.count()
 
         if (userCount === 0) {
-            console.log('No users found. Creating default root admin...')
+            console.log('No users found. Creating default super admin...')
 
             const hashedPassword = await bcrypt.hash('admin123456', 10)
 

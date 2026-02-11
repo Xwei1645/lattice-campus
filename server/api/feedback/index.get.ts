@@ -5,7 +5,7 @@ import { sendSuccess, handleError } from '../../utils/api'
 export default defineEventHandler(async (event) => {
     try {
         const user = await requireAuth(event)
-        const isAdmin = ['root', 'super_admin', 'admin'].includes(user.role)
+        const isAdmin = ['super_admin', 'admin'].includes(user.role)
 
         const feedbacks = await db.feedback.findMany({
             where: isAdmin ? {} : { userId: user.id },

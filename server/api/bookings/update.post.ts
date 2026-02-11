@@ -24,7 +24,7 @@ export default defineEventHandler(async (event) => {
             throw createError({ statusCode: 404, statusMessage: 'Booking not found' })
         }
 
-        const isAdmin = ['root', 'super_admin', 'admin'].includes(user.role)
+        const isAdmin = ['super_admin', 'admin'].includes(user.role)
 
         if (!isAdmin) {
             if (booking.userId !== user.id) {

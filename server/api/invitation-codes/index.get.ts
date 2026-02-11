@@ -7,7 +7,7 @@ export default defineEventHandler(async (event) => {
         const user = await requireAuth(event)
 
         // 只有超级管理员和管理员可以管理邀请码
-        if (!['root', 'super_admin', 'admin'].includes(user.role)) {
+        if (!['super_admin', 'admin'].includes(user.role)) {
             throw createError({
                 statusCode: 403,
                 statusMessage: '没有权限'

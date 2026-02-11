@@ -20,7 +20,7 @@ export default defineEventHandler(async (event) => {
         const validatedData = bookingSchema.parse(body)
         const { roomId, organizationId, date, timeRange, purpose, remark } = validatedData
 
-        const isAdmin = ['root', 'super_admin', 'admin'].includes(user.role)
+        const isAdmin = ['super_admin', 'admin'].includes(user.role)
         if (!isAdmin && !isUserInOrganization(user, organizationId)) {
             throw createError({
                 statusCode: 403,
