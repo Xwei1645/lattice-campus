@@ -1,5 +1,6 @@
 import { db } from '../../utils/prisma'
 import { requireAuth } from '../../utils/auth'
+import { logSensitiveAction } from '../../utils/audit'
 
 export default defineEventHandler(async (event) => {
     const user = await requireAuth(event)
@@ -26,15 +27,11 @@ export default defineEventHandler(async (event) => {
 
         const isAdmin = ['root', 'super_admin', 'admin'].includes(user.role)
 
-        // 权限检查：
-        // - 管理员可以更新任何预订状态
-        // - 用户只能取消自己的预订
         if (!isAdmin) {
             if (booking.userId !== user.id) {
                 throw createError({ statusCode: 403, statusMessage: 'Forbidden' })
             }
 
-            // 普通用户只能取消预订
             if (status !== 'cancelled') {
                 throw createError({
                     statusCode: 403,
@@ -68,6 +65,19 @@ export default defineEventHandler(async (event) => {
                     }
                 }
             }
+        })
+
+        await logSensitiveAction(event, status === 'cancelled' ? 'booking_cancel' : 'booking_update', user, updatedBooking.id, 'booking', {
+            roomName: updatedBooking.room.name,
+            organizationId: updatedBooking.organization.id,
+            organizationName: updatedBooking.organization.name,
+            userId: updatedBooking.user.id,
+            userName: updatedBooking.user.name,
+            startTime: updatedBooking.startTime,
+            endTime: updatedBooking.endTime,
+            purpose: updatedBooking.purpose,
+            oldStatus: booking.status,
+            newStatus: updatedBooking.status
         })
 
         return {

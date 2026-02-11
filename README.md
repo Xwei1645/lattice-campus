@@ -138,6 +138,16 @@ npx prisma migrate deploy --config prisma.config.ts
 
 ---
 
+## 后端架构优化 (最新更新)
+
+项目近期引入了以下技术改进，旨在提升 API 的健壮性与可维护性：
+
+- **数据校验 (Zod)**：引入 `zod` 依赖，为后端 API 提供强类型的解析与校验，通过 Zod schema 解析/校验替换了原有的手动 if 检查，增强了接口抵御非法输入的能力。
+- **响应标准化**：封装了 `sendSuccess` 与 `handleError` 工具函数，全站 API 响应将遵循 `{ success: boolean, data?: any, message?: string }` 的统一格式。
+- **并发安全**：在核心业务（如预约创建）中引入了 Prisma 事务 (`$transaction`)，确保冲突检查与写入操作的原子性，彻底解决并发场景下的双重预约问题。
+
+---
+
 ## 本地开发指南
 
 <details>

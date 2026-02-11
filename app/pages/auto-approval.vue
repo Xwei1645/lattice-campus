@@ -14,46 +14,48 @@
     </div>
       
     <t-card :bordered="false" class="content-card">
-      <t-table
-        row-key="id"
-        :data="rules"
-        :columns="ruleColumns"
-        :loading="rulesLoading"
-        :hover="true"
-        :pagination="pagination"
-      >
-        <template #conditions="{ row }">
-          <div class="rule-conditions">
-            <t-tag v-if="row.organizationName" variant="light" size="small">组织: {{ row.organizationName }}</t-tag>
-            <t-tag v-if="row.roomName" variant="light" size="small">场地: {{ row.roomName }}</t-tag>
-            <t-tag v-if="row.userName" variant="light" size="small">用户: {{ row.userName }}</t-tag>
-            <t-tag v-if="row.maxDuration" variant="light" size="small">时长 ≤ {{ row.maxDuration }}min</t-tag>
-            <t-tag v-if="row.startHour || row.endHour" variant="light" size="small">
-              时间: {{ row.startHour || '00:00' }} - {{ row.endHour || '23:59' }}
+      <t-skeleton :loading="rulesLoading" :row-col="tableSkeleton" animation="gradient">
+        <t-table
+          row-key="id"
+          :data="rules"
+          :columns="ruleColumns"
+          :loading="rulesLoading"
+          :hover="true"
+          :pagination="pagination"
+        >
+          <template #conditions="{ row }">
+            <div class="rule-conditions">
+              <t-tag v-if="row.organizationName" variant="light" size="small">组织: {{ row.organizationName }}</t-tag>
+              <t-tag v-if="row.roomName" variant="light" size="small">场地: {{ row.roomName }}</t-tag>
+              <t-tag v-if="row.userName" variant="light" size="small">用户: {{ row.userName }}</t-tag>
+              <t-tag v-if="row.maxDuration" variant="light" size="small">时长 ≤ {{ row.maxDuration }}min</t-tag>
+              <t-tag v-if="row.startHour || row.endHour" variant="light" size="small">
+                时间: {{ row.startHour || '00:00' }} - {{ row.endHour || '23:59' }}
+              </t-tag>
+              <span v-if="!row.organizationName && !row.roomName && !row.userName && !row.maxDuration && !row.startHour && !row.endHour" style="color: var(--td-text-color-placeholder)">无限制</span>
+            </div>
+          </template>
+          <template #action="{ row }">
+            <t-tag :theme="row.action === 'approve' ? 'success' : 'danger'" variant="light">
+              {{ row.action === 'approve' ? '通过' : '驳回' }}
             </t-tag>
-            <span v-if="!row.organizationName && !row.roomName && !row.userName && !row.maxDuration && !row.startHour && !row.endHour" style="color: var(--td-text-color-placeholder)">无限制</span>
-          </div>
-        </template>
-        <template #action="{ row }">
-          <t-tag :theme="row.action === 'approve' ? 'success' : 'danger'" variant="light">
-            {{ row.action === 'approve' ? '通过' : '驳回' }}
-          </t-tag>
-        </template>
-        <template #status="{ row }">
-          <t-switch v-model="row.status" @change="(val) => handleRuleStatusChange(row, val)" />
-        </template>
-        <template #createTime="{ row }">
-          {{ formatDateTime(row.createTime) }}
-        </template>
-        <template #operation="{ row }">
-          <t-space>
-            <t-link theme="primary" hover="color" @click="handleEditRule(row)">编辑</t-link>
-            <t-popconfirm content="确认删除该规则吗？" @confirm="handleDeleteRule(row)">
-              <t-link theme="danger" hover="color">删除</t-link>
-            </t-popconfirm>
-          </t-space>
-        </template>
-      </t-table>
+          </template>
+          <template #status="{ row }">
+            <t-switch v-model="row.status" @change="(val) => handleRuleStatusChange(row, val)" />
+          </template>
+          <template #createTime="{ row }">
+            {{ formatDateTime(row.createTime) }}
+          </template>
+          <template #operation="{ row }">
+            <t-space>
+              <t-link theme="primary" hover="color" @click="handleEditRule(row)">编辑</t-link>
+              <t-popconfirm content="确认删除该规则吗？" @confirm="handleDeleteRule(row)">
+                <t-link theme="danger" hover="color">删除</t-link>
+              </t-popconfirm>
+            </t-space>
+          </template>
+        </t-table>
+      </t-skeleton>
     </t-card>
 
     <!-- 新增/编辑规则对话框 -->
@@ -149,6 +151,16 @@ const ruleColumns: PrimaryTableCol[] = [
   { colKey: 'operation', title: '操作', width: 150, fixed: 'right' }
 ]
 
+// 骨架屏配置
+const tableSkeleton = Array(6).fill([
+  { width: '20%' },
+  { width: '30%' },
+  { width: '10%' },
+  { width: '10%' },
+  { width: '20%' },
+  { width: '10%' },
+]);
+
 const pagination = reactive({
   defaultCurrent: 1,
   defaultPageSize: 10,
@@ -158,7 +170,8 @@ const pagination = reactive({
 const fetchRules = async () => {
   rulesLoading.value = true
   try {
-    rules.value = await $fetch<any>('/api/auto-approval')
+    const res: any = await $fetch('/api/auto-approval')
+    rules.value = res.data || []
     pagination.total = rules.value.length
   } catch (error: any) {
     MessagePlugin.error('获取规则失败：' + error.message)
@@ -173,14 +186,14 @@ const roomOptions = ref<any[]>([])
 
 const fetchOptions = async () => {
   try {
-    const [orgs, users, rooms] = await Promise.all([
+    const [orgRes, userRes, roomRes] = await Promise.all([
       $fetch<any>('/api/organizations'),
       $fetch<any>('/api/users'),
       $fetch<any>('/api/rooms')
     ])
-    organizationOptions.value = orgs.map((i: any) => ({ label: i.name, value: i.id }))
-    userOptions.value = users.map((i: any) => ({ label: `${i.name} (${i.account})`, value: i.id }))
-    roomOptions.value = rooms.map((i: any) => ({ label: i.name, value: i.id }))
+    organizationOptions.value = orgRes.data?.map((i: any) => ({ label: i.name, value: i.id })) || []
+    userOptions.value = userRes.data?.map((i: any) => ({ label: `${i.name} (${i.account})`, value: i.id })) || []
+    roomOptions.value = roomRes.data?.map((i: any) => ({ label: i.name, value: i.id })) || []
   } catch (error) {
     console.error('Failed to fetch options', error)
   }

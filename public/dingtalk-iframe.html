@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>钉钉登录</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: transparent;
+            min-height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 10px;
+        }
+        .container {
+            text-align: center;
+            width: 100%;
+            max-width: 280px;
+        }
+        .title {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 16px;
+        }
+        .qr-container {
+            background: white;
+            padding: 16px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            display: inline-block;
+            margin-bottom: 12px;
+        }
+        #qrcode {
+            width: 200px;
+            height: 200px;
+        }
+        #qrcode img {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+        .loading {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 200px;
+            height: 200px;
+            gap: 12px;
+        }
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid #f3f3f3;
+            border-top-color: #0052d9;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .tip {
+            font-size: 13px;
+            color: #999;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="title">请使用钉钉扫码登录</div>
+        <div class="qr-container">
+            <div id="qrcode"></div>
+        </div>
+        <p class="tip">正在生成二维码...</p>
+    </div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const authUrl = urlParams.get('authUrl');
+        
+        if (!authUrl) {
+            document.getElementById('qrcode').innerHTML = '<p style="color: red; font-size: 12px;">参数错误</p>';
+        } else {
+            document.getElementById('qrcode').innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+            
+            const script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js';
+            script.onload = function() {
+                const QRCode = window.QRCode;
+                const qrcodeDiv = document.getElementById('qrcode');
+                
+                if (QRCode) {
+                    qrcodeDiv.innerHTML = '';
+                    new QRCode(qrcodeDiv, {
+                        text: authUrl,
+                        width: 200,
+                        height: 200,
+                        colorDark: '#000000',
+                        colorLight: '#ffffff',
+                        correctLevel: QRCode.CorrectLevel.H
+                    });
+                    document.querySelector('.tip').textContent = '请使用钉钉扫码登录';
+                } else {
+                    qrcodeDiv.innerHTML = '<p style="color: red; font-size: 12px;">二维码生成失败</p>';
+                }
+            };
+            script.onerror = function() {
+                document.getElementById('qrcode').innerHTML = '<p style="color: red; font-size: 12px;">二维码加载失败</p>';
+            };
+            document.head.appendChild(script);
+        }
+
+        window.addEventListener('message', function(event) {
+            if (event.data && event.data.type === 'dingtalk_callback') {
+                window.parent.postMessage({
+                    type: 'dingtalk_result',
+                    success: event.data.success,
+                    user: event.data.user,
+                    message: event.data.message
+                }, '*');
+            }
+        });
+    </script>
+</body>
+</html>

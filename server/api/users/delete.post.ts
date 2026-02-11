@@ -1,70 +1,52 @@
+import { z } from 'zod'
 import { db } from '../../utils/prisma'
 import { requireAdmin } from '../../utils/auth'
+import { sendSuccess, handleError } from '../../utils/api'
+import { logSensitiveAction } from '../../utils/audit'
+
+const deleteSchema = z.object({
+    id: z.coerce.number().int().positive('无效的用户ID')
+})
 
 export default defineEventHandler(async (event) => {
-    // 只有管理员可以删除用户
-    const currentUser = await requireAdmin(event)
-
-    const body = await readBody(event)
-    const { id } = body
-
-    if (!id) {
-        throw createError({
-            statusCode: 400,
-            statusMessage: 'Missing user ID'
-        })
-    }
-
     try {
-        const user = await db.user.findUnique({
-            where: { id: parseInt(id) }
-        })
+        const currentUser = await requireAdmin(event)
+        const body = await readBody(event)
 
+        const { id } = deleteSchema.parse(body)
+
+        const user = await db.user.findUnique({ where: { id } })
         if (!user) {
-            throw createError({
-                statusCode: 404,
-                statusMessage: 'User not found'
-            })
+            throw createError({ statusCode: 404, statusMessage: 'User not found' })
         }
 
-        // 不能删除ID为1的超级管理员
         if (user.id === 1) {
-            throw createError({
-                statusCode: 403,
-                statusMessage: 'Cannot delete the primary super administrator'
-            })
+            throw createError({ statusCode: 403, statusMessage: 'Forbidden: Cannot delete the primary super administrator' })
         }
 
-        // 不能删除自己
         if (user.id === currentUser.id) {
-            throw createError({
-                statusCode: 403,
-                statusMessage: 'Cannot delete yourself'
-            })
+            throw createError({ statusCode: 403, statusMessage: 'Forbidden: Cannot delete yourself' })
         }
 
-        // 权限控制：不能删除比自己权限更高的用户
         const roleHierarchy = ['user', 'admin', 'super_admin']
         const currentRoleIndex = roleHierarchy.indexOf(currentUser.role)
         const targetUserRoleIndex = roleHierarchy.indexOf(user.role)
 
         if (targetUserRoleIndex >= currentRoleIndex && currentUser.role !== 'super_admin') {
-            throw createError({
-                statusCode: 403,
-                statusMessage: 'Cannot delete user with higher or equal role'
-            })
+            throw createError({ statusCode: 403, statusMessage: 'Forbidden: Cannot delete user with higher or equal role' })
         }
 
-        await db.user.delete({
-            where: { id: parseInt(id) }
+        await db.user.delete({ where: { id } })
+
+        await logSensitiveAction(event, 'user_delete', currentUser, user.id, 'user', {
+            account: user.account,
+            name: user.name,
+            role: user.role
         })
 
-        return { success: true, message: 'User deleted successfully' }
-    } catch (error: any) {
-        if (error.statusCode) throw error
-        throw createError({
-            statusCode: 500,
-            statusMessage: error.message
-        })
+        return sendSuccess(event, null, '用户已成功删除')
+    } catch (error) {
+        return handleError(error)
     }
 })
+

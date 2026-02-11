@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>绑定钉钉账号</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: transparent;
+            min-height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 10px;
+        }
+        .container {
+            text-align: center;
+            width: 100%;
+            max-width: 280px;
+        }
+        .title {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 16px;
+        }
+        .qr-container {
+            background: white;
+            padding: 16px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            display: inline-block;
+            margin-bottom: 12px;
+        }
+        #qrcode {
+            width: 200px;
+            height: 200px;
+        }
+        #qrcode img {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+        .loading {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 200px;
+            height: 200px;
+            gap: 12px;
+        }
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid #f3f3f3;
+            border-top-color: #0052d9;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .tip {
+            font-size: 13px;
+            color: #999;
+        }
+        .status {
+            margin-top: 16px;
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            display: none;
+        }
+        .status.success {
+            display: block;
+            background: #f6ffed;
+            color: #52c41a;
+            border: 1px solid #b7eb8f;
+        }
+        .status.error {
+            display: block;
+            background: #fff2f0;
+            color: #ff4d4f;
+            border: 1px solid #ffccc7;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="title" id="title">请使用钉钉扫码完成绑定</div>
+        <div class="qr-container" id="qrContainer">
+            <div id="qrcode"></div>
+        </div>
+        <p class="tip" id="tip">正在生成二维码...</p>
+        <div class="status" id="status"></div>
+    </div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const authUrl = urlParams.get('authUrl');
+        const userId = urlParams.get('userId');
+        
+        if (!authUrl || !userId) {
+            document.getElementById('title').textContent = '参数错误';
+            document.getElementById('qrcode').innerHTML = '<p style="color: red; font-size: 12px; padding: 40px;">缺少必要参数</p>';
+            document.getElementById('tip').style.display = 'none';
+        } else {
+            // 显示加载状态
+            document.getElementById('qrcode').innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+            
+            // 加载二维码库
+            const script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js';
+            script.onload = function() {
+                const QRCode = window.QRCode;
+                const qrcodeDiv = document.getElementById('qrcode');
+                
+                if (QRCode) {
+                    qrcodeDiv.innerHTML = '';
+                    new QRCode(qrcodeDiv, {
+                        text: authUrl,
+                        width: 200,
+                        height: 200,
+                        colorDark: '#000000',
+                        colorLight: '#ffffff',
+                        correctLevel: QRCode.CorrectLevel.H
+                    });
+                    document.getElementById('tip').textContent = '扫码后请在手机上确认绑定';
+                } else {
+                    qrcodeDiv.innerHTML = '<p style="color: red; font-size: 12px;">二维码生成失败</p>';
+                }
+            };
+            script.onerror = function() {
+                document.getElementById('qrcode').innerHTML = '<p style="color: red; font-size: 12px;">二维码加载失败</p>';
+            };
+            document.head.appendChild(script);
+
+            // 监听来自桥接页面的绑定结果
+            window.addEventListener('message', function(event) {
+                const data = event.data;
+                
+                if (data && data.type === 'dingtalk_bind_result') {
+                    const statusDiv = document.getElementById('status');
+                    const qrContainer = document.getElementById('qrContainer');
+                    const tip = document.getElementById('tip');
+                    const title = document.getElementById('title');
+                    
+                    if (data.success) {
+                        // 绑定成功
+                        title.textContent = '绑定成功';
+                        qrContainer.style.display = 'none';
+                        tip.style.display = 'none';
+                        statusDiv.textContent = '钉钉账号绑定成功！';
+                        statusDiv.className = 'status success';
+                        
+                        // 通知父窗口
+                        if (window.parent) {
+                            window.parent.postMessage({
+                                type: 'dingtalk_bind_result',
+                                success: true
+                            }, '*');
+                        }
+                    } else {
+                        // 绑定失败
+                        title.textContent = '绑定失败';
+                        statusDiv.textContent = data.message || '绑定过程中出现错误，请重试';
+                        statusDiv.className = 'status error';
+                        
+                        // 3秒后恢复二维码
+                        setTimeout(function() {
+                            statusDiv.className = 'status';
+                            statusDiv.style.display = 'none';
+                            title.textContent = '请使用钉钉扫码完成绑定';
+                            qrContainer.style.display = 'inline-block';
+                            tip.style.display = 'block';
+                        }, 3000);
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
