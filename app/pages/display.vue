@@ -126,6 +126,11 @@ const route = useRoute()
 const loading = ref(true)
 const error = ref('')
 const roomInfo = ref<any>(null)
+
+useHead({
+  title: computed(() => roomInfo.value ? `${roomInfo.value.name} - 场地展示` : '场地展示')
+})
+
 const bookings = ref<any[]>([])
 const viewMode = ref<'status' | 'schedule'>('status')
 
