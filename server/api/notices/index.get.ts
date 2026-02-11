@@ -30,10 +30,18 @@ export default defineEventHandler(async (event) => {
             } as any) // 类型断言以避免 include 潜在的提示问题
         ])
 
-        return sendSuccess(event, {
+        const response = sendSuccess(event, {
             total,
             notices
         }, '获取通知列表成功')
+
+        // Temporary backward-compatible shape: keep standardized response
+        // while also exposing total/notices at the top level.
+        return {
+            ...response,
+            total,
+            notices
+        }
     } catch (error) {
         return handleError(error)
     }
