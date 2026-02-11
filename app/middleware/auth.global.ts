@@ -41,7 +41,7 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
                 '/backup-management'
             ]
             if (adminRoutes.includes(to.path)) {
-                if (!['root', 'super_admin', 'admin'].includes(user.role)) {
+                if (!['super_admin', 'admin'].includes(user.role)) {
                     return navigateTo('/')
                 }
 

@@ -5,7 +5,7 @@ import { sendSuccess, handleError } from '../../utils/api'
 export default defineEventHandler(async (event) => {
     try {
         const user = await requireAuth(event)
-        if (!['root', 'super_admin', 'admin'].includes(user.role)) {
+        if (!['super_admin', 'admin'].includes(user.role)) {
             throw createError({ statusCode: 403, statusMessage: 'Forbidden' })
         }
 

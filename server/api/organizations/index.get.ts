@@ -6,7 +6,7 @@ export default defineEventHandler(async (event) => {
     try {
         // 需要登录才能查看组织列表
         const user = await requireAuth(event)
-        const isAdmin = ['root', 'super_admin', 'admin'].includes(user.role)
+        const isAdmin = ['super_admin', 'admin'].includes(user.role)
 
         const organizations = await db.organization.findMany({
             where: isAdmin ? undefined : {

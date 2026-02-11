@@ -9,7 +9,7 @@ export default defineEventHandler(async (event) => {
         const query = getQuery(event)
         const scope = query.scope as string
 
-        const isAdmin = ['root', 'super_admin', 'admin'].includes(user.role)
+        const isAdmin = ['super_admin', 'admin'].includes(user.role)
 
         // 如果是管理员，或者请求 scope 为 all，则查询所有预约
         // 否则只查询自己的预约

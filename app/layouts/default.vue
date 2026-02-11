@@ -253,7 +253,7 @@ onMounted(() => {
 
 const isAdmin = computed(() => {
   const role = userInfo.value?.role;
-  return ['root', 'super_admin', 'admin'].includes(role);
+  return ['super_admin', 'admin'].includes(role);
 });
 
 const isSuperAdmin = computed(() => {
@@ -299,7 +299,6 @@ const passwordRules: any = {
 
 const getRoleName = (role: string) => {
   const map: Record<string, string> = {
-    root: '根管理员',
     super_admin: '超级管理员',
     admin: '管理员',
     user: '普通用户',
