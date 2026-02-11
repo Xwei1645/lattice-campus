@@ -8,21 +8,21 @@ export default defineEventHandler(async (event) => {
     const bindMode = query.bind === 'true'
     const redirect = query.redirect === 'true'
 
+    // 获取当前请求的 host，确保回调地址与请求来源一致
+    const reqUrl = getRequestURL(event)
+    const protocol = reqUrl.protocol
+    const host = reqUrl.host // 包含域名和端口
+    const baseUrl = `${protocol}//${host}`
+
     // 构建回调地址
     let customRedirectUri: string | undefined
 
     if (bindMode) {
         // 绑定模式：回调到绑定桥接页面
-        const host = process.env.NODE_ENV === 'production'
-            ? (process.env.APP_URL || '')
-            : 'http://localhost:3000'
-        customRedirectUri = `${host}/dingtalk-bind-bridge.html`
+        customRedirectUri = `${baseUrl}/dingtalk-bind-bridge.html`
     } else if (isIframeMode || useBridge) {
         // 登录桥接模式
-        const host = process.env.NODE_ENV === 'production'
-            ? (process.env.APP_URL || '')
-            : 'http://localhost:3000'
-        customRedirectUri = `${host}/dingtalk-bridge.html`
+        customRedirectUri = `${baseUrl}/dingtalk-bridge.html`
     }
 
     // 生成授权 URL
