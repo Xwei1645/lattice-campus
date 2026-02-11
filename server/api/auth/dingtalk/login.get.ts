@@ -1,9 +1,63 @@
 import { dingtalk } from '../../../utils/dingtalk'
 import crypto from 'crypto'
 
+// 签名密钥（应该从环境变量获取）
+const STATE_SIGN_SECRET = process.env.STATE_SIGN_SECRET || 
+    'default-secret-change-in-production'
+
 // 生成密码学安全的随机 state 字符串
 function generateState(): string {
     return crypto.randomBytes(32).toString('hex')
+}
+
+/**
+ * 对state数据进行签名
+ * 防止参数被篡改
+ */
+function signState(data: string): string {
+    const hmac = crypto.createHmac('sha256', STATE_SIGN_SECRET)
+    hmac.update(data)
+    return hmac.digest('hex').substring(0, 16) // 取前16位
+}
+
+/**
+ * 创建带签名的绑定状态
+ */
+function createBindState(userId: string, randomState: string): string {
+    const data = `${userId}:${randomState}`
+    const signature = signState(data)
+    return `bind_${userId}_${randomState}_${signature}`
+}
+
+/**
+ * 验证绑定状态签名
+ */
+export function verifyBindState(state: string): { 
+    valid: boolean
+    userId?: string 
+    randomState?: string 
+} {
+    const parts = state.split('_')
+    
+    // 格式: bind_userId_randomState_signature
+    if (parts.length !== 4 || parts[0] !== 'bind') {
+        return { valid: false }
+    }
+
+    const [, userId, randomState, signature] = parts
+    
+    // 验证签名
+    const expectedSignature = signState(`${userId}:${randomState}`)
+    
+    if (signature !== expectedSignature) {
+        return { valid: false }
+    }
+
+    return { 
+        valid: true, 
+        userId, 
+        randomState 
+    }
 }
 
 export default defineEventHandler(async (event) => {
@@ -14,8 +68,8 @@ export default defineEventHandler(async (event) => {
     const redirect = query.redirect === 'true'
 
     // 生成随机 state 并存储在 cookie 中（用于 CSRF 防护）
-    const state = generateState()
-    setCookie(event, 'dingtalk_state', state, {
+    const randomState = generateState()
+    setCookie(event, 'dingtalk_state', randomState, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
@@ -23,9 +77,24 @@ export default defineEventHandler(async (event) => {
         path: '/'
     })
 
-    // 如果是绑定模式，在 state 中附加用户ID信息
+    // 如果是绑定模式，使用签名保护state参数
+    let finalState: string
     const bindUserId = query.bindUserId as string
-    const finalState = bindMode && bindUserId ? `bind_${bindUserId}_${state}` : state
+    
+    if (bindMode && bindUserId) {
+        // 验证bindUserId格式（必须是数字）
+        if (!/^\d+$/.test(bindUserId)) {
+            throw createError({
+                statusCode: 400,
+                statusMessage: '无效的用户ID'
+            })
+        }
+        
+        // 创建带签名的绑定状态
+        finalState = createBindState(bindUserId, randomState)
+    } else {
+        finalState = randomState
+    }
 
     // 构建回调地址
     let customRedirectUri: string | undefined

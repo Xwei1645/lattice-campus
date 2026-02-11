@@ -12,7 +12,8 @@ export default defineEventHandler(async (event) => {
         })
     }
 
-    const { count, role, organizationId, expiresAt, maxUses } = await readBody(event)
+    const { count, role, organizationId, expiresAt, maxUses } = 
+        await readBody(event)
 
     if (!count || count < 1) {
         throw createError({
@@ -21,14 +22,24 @@ export default defineEventHandler(async (event) => {
         })
     }
 
+    // 限制单次生成数量
+    if (count > 100) {
+        throw createError({
+            statusCode: 400,
+            statusMessage: '单次最多生成 100 个邀请码'
+        })
+    }
+
     try {
         const generatedCodes = []
         for (let i = 0; i < count; i++) {
-            const code = randomBytes(4).toString('hex').toUpperCase() // 8 chars code
+            // 增加邀请码长度到16位（8字节 -> 16个十六进制字符）
+            const code = randomBytes(8).toString('hex').toUpperCase()
             generatedCodes.push({
                 code,
                 role: role || 'user',
-                organizationId: organizationId ? parseInt(organizationId) : null,
+                organizationId: organizationId ? 
+                    parseInt(organizationId) : null,
                 expiresAt: expiresAt ? new Date(expiresAt) : null,
                 maxUses: maxUses ? parseInt(maxUses) : 1
             })

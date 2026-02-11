@@ -15,8 +15,12 @@ export function generateSessionToken(): string {
 
 /**
  * 创建用户会话并存入数据库
+ * 登录时会销毁该用户的旧会话，防止会话固定攻击
  */
 export async function createSession(userId: number): Promise<string> {
+    // 先销毁该用户的所有旧会话（防止会话固定攻击）
+    await destroyUserSessions(userId)
+
     const token = generateSessionToken()
     const expiresAt = new Date(Date.now() + SESSION_MAX_AGE * 1000)
 
@@ -32,6 +36,20 @@ export async function createSession(userId: number): Promise<string> {
     cleanupExpiredSessions().catch(console.error)
 
     return token
+}
+
+/**
+ * 销毁用户的所有会话
+ * 用于登录时防止会话固定攻击
+ */
+export async function destroyUserSessions(userId: number): Promise<void> {
+    try {
+        await db.session.deleteMany({
+            where: { userId }
+        })
+    } catch {
+        // 忽略错误
+    }
 }
 
 /**
@@ -73,10 +91,11 @@ export function getSessionToken(event: H3Event): string | undefined {
 export function setSessionCookie(event: H3Event, token: string): void {
     setCookie(event, SESSION_COOKIE_NAME, token, {
         httpOnly: true,
-        // 开发环境下为 false，生产环境下建议开启，但如果未使用 HTTPS 部署则必须为 false
-        // 为了兼容性，这里可以根据请求协议动态判断或通过环境变量控制
-        secure: process.env.NODE_ENV === 'production' && (event.node.req.headers['x-forwarded-proto'] === 'https' || (event.node.req.socket as any).encrypted),
-        sameSite: 'lax',
+        // 开发环境下为 false，生产环境下建议开启
+        secure: process.env.NODE_ENV === 'production' && 
+            (event.node.req.headers['x-forwarded-proto'] === 'https' || 
+            (event.node.req.socket as any).encrypted),
+        sameSite: 'strict', // 改为 strict 增强安全性
         maxAge: SESSION_MAX_AGE,
         path: '/'
     })
@@ -223,14 +242,20 @@ export async function requireSuperAdmin(event: H3Event): Promise<AuthUser> {
 /**
  * 检查用户是否属于指定组织
  */
-export function isUserInOrganization(user: AuthUser, organizationId: number): boolean {
+export function isUserInOrganization(
+    user: AuthUser, 
+    organizationId: number
+): boolean {
     return user.organizations.some(org => org.id === organizationId)
 }
 
 /**
  * 要求用户属于指定组织（或是管理员）
  */
-export async function requireOrganizationAccess(event: H3Event, organizationId: number): Promise<AuthUser> {
+export async function requireOrganizationAccess(
+    event: H3Event, 
+    organizationId: number
+): Promise<AuthUser> {
     const user = await requireAuth(event)
 
     // 管理员可以访问所有组织
