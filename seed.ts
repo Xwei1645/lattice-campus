@@ -1,17 +1,27 @@
-import { db } from '../../utils/prisma'
+import { config } from 'dotenv'
+config()
+
+import { PrismaClient } from '@prisma/client'
+import { PrismaPg } from '@prisma/adapter-pg'
+import pg from 'pg'
 import bcrypt from 'bcryptjs'
 
-export default defineEventHandler(async (event) => {
-    // 仅开发环境可用
-    if (!process.dev) {
-        throw createError({
-            statusCode: 403,
-            statusMessage: 'Forbidden: Only available in development environment'
-        })
+function createPrismaClient() {
+    if (!process.env.DATABASE_URL) {
+        throw new Error('DATABASE_URL environment variable is not set. Please configure it in your .env file.')
     }
+    const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL })
+    const adapter = new PrismaPg(pool)
+    return new PrismaClient({ adapter })
+}
+
+const db = createPrismaClient()
+
+async function seed() {
+    console.log('🌱 Starting seed...')
 
     try {
-        // 清理现有数据 (按顺序删除以避免外键约束问题)
+        console.log('📦 Cleaning existing data...')
         await db.booking.deleteMany()
         await db.autoApprovalRule.deleteMany()
         await db.room.deleteMany()
@@ -20,14 +30,14 @@ export default defineEventHandler(async (event) => {
         await db.user.deleteMany({
             where: {
                 account: {
-                    not: 'system' // 保留系统管理员
+                    not: 'system'
                 }
             }
         })
 
         const hashedPassword = await bcrypt.hash('123456', 10)
 
-        // 1. 创建组织
+        console.log('🏢 Creating organizations...')
         const orgs = await Promise.all([
             db.organization.create({ data: { name: '计算机学院', description: '负责计算机科学与技术相关教学科研' } }),
             db.organization.create({ data: { name: '艺术学院', description: '负责艺术设计与表演相关教学科研' } }),
@@ -35,7 +45,7 @@ export default defineEventHandler(async (event) => {
             db.organization.create({ data: { name: '后勤处', description: '校园基础设施保障部门' } })
         ])
 
-        // 2. 创建房间
+        console.log('🏠 Creating rooms...')
         const rooms = await Promise.all([
             db.room.create({ data: { name: '教一 101', capacity: 50, location: '教学楼一楼', description: '多媒体教室' } }),
             db.room.create({ data: { name: '实验楼 202', capacity: 30, location: '实验楼二楼', description: '计算机实验室' } }),
@@ -43,7 +53,7 @@ export default defineEventHandler(async (event) => {
             db.room.create({ data: { name: '会议室 305', capacity: 15, location: '行政楼三楼', description: '小型会议室' } })
         ])
 
-        // 3. 创建用户
+        console.log('👥 Creating users...')
         const users = await Promise.all([
             db.user.create({
                 data: {
@@ -77,13 +87,13 @@ export default defineEventHandler(async (event) => {
             })
         ])
 
-        // 4. 创建自动审批规则
+        console.log('📋 Creating auto-approval rules...')
         await db.autoApprovalRule.createMany({
             data: [
                 {
                     name: '计算机学院优先规则',
                     organizationId: orgs[0].id,
-                    roomId: rooms[1].id, // 实验楼 202
+                    roomId: rooms[1].id,
                     action: 'approve',
                     status: true
                 },
@@ -98,28 +108,32 @@ export default defineEventHandler(async (event) => {
             ]
         })
 
-        // 5. 批量创建预约 (覆盖前一周、当周、后两周)
+        console.log('📅 Creating bookings...')
         const now = new Date()
         const oneDay = 24 * 60 * 60 * 1000
-        const bookings = []
+        const bookings: Array<{
+            roomId: number
+            organizationId: number
+            userId: number
+            startTime: Date
+            endTime: Date
+            purpose: string
+            status: string
+            remark: string | null
+        }> = []
 
-        // 状态池
         const pastStatuses = ['approved', 'approved', 'approved', 'rejected']
         const futureStatuses = ['pending', 'pending', 'approved', 'cancelled']
-
-        // 用途池
         const purposes = ['部门例会', '社团活动', '学术讲座', '班级会议', '期末复习', '项目研讨', '面试', '彩排']
 
-        // 遍历前 7 天到后 14 天
         for (let i = -7; i <= 14; i++) {
             const currentDate = new Date(now.getTime() + i * oneDay)
             currentDate.setHours(0, 0, 0, 0)
 
-            // 每天随机选 2-3 个场地
-            const selectedRooms = rooms.sort(() => 0.5 - Math.random()).slice(0, Math.random() > 0.5 ? 3 : 2)
+            const shuffledRooms = [...rooms].sort(() => 0.5 - Math.random())
+            const selectedRooms = shuffledRooms.slice(0, Math.random() > 0.5 ? 3 : 2)
 
             for (const room of selectedRooms) {
-                // 每个场地每天 1-4 场预约
                 const sessionCount = Math.floor(Math.random() * 4) + 1
                 const timeSlots = [
                     { start: 8, end: 10 },
@@ -167,21 +181,17 @@ export default defineEventHandler(async (event) => {
             await db.booking.create({ data: b })
         }
 
-        return {
-            success: true,
-            message: '示例数据加载成功',
-            details: {
-                users: users.length,
-                orgs: orgs.length,
-                rooms: rooms.length,
-                bookings: bookings.length
-            }
-        }
-    } catch (error: any) {
-        console.error('Seed error:', error)
-        throw createError({
-            statusCode: 500,
-            statusMessage: error.message || 'Internal Server Error'
-        })
+        console.log('\n✅ Seed completed successfully!')
+        console.log(`   Users: ${users.length}`)
+        console.log(`   Organizations: ${orgs.length}`)
+        console.log(`   Rooms: ${rooms.length}`)
+        console.log(`   Bookings: ${bookings.length}`)
+    } catch (error) {
+        console.error('❌ Seed failed:', error)
+        process.exit(1)
+    } finally {
+        await db.$disconnect()
     }
-})
+}
+
+seed()

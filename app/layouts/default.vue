@@ -86,10 +86,6 @@
             <template #icon><InfoCircleIcon /></template>
             关于
           </t-menu-item>
-          <t-menu-item v-if="showDebug" value="/debug" to="/debug">
-            <template #icon><BugIcon /></template>
-            调试
-          </t-menu-item>
         </t-menu>
       </t-aside>
       <t-layout>
@@ -194,7 +190,6 @@ import {
   ChatBubbleHelpIcon,
   FileIcon,
   InfoCircleIcon,
-  BugIcon,
   CheckIcon,
 } from 'tdesign-icons-vue-next';
 import { onMounted, ref, reactive } from 'vue';
@@ -203,10 +198,6 @@ import { formatDateTime } from '~/utils/format';
 const route = useRoute();
 const router = useRouter();
 
-const isDev = import.meta.env.DEV;
-const showDebug = useState('showDebug', () => false);
-
-// 使用响应式对象存储用户信息
 const userInfo = ref<any>(null);
 
 // 通知弹窗
@@ -233,9 +224,7 @@ const fetchPopupNotice = async () => {
     }
 };
 
-// 在客户端从localStorage加载用户信息
 onMounted(() => {
-  showDebug.value = localStorage.getItem('showDebugMenu') === 'true';
   const userStr = localStorage.getItem('user');
   if (userStr) {
     try {
@@ -252,11 +241,6 @@ const isAdmin = computed(() => {
   return ['super_admin', 'admin'].includes(role);
 });
 
-const isSuperAdmin = computed(() => {
-  return userInfo.value?.role === 'super_admin';
-});
-
-// 个人信息逻辑
 const profileVisible = ref(false);
 const passwordVisible = ref(false);
 const passwordLoading = ref(false);
