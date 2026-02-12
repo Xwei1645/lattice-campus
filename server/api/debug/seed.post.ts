@@ -140,9 +140,8 @@ export default defineEventHandler(async (event) => {
                         ? pastStatuses[Math.floor(Math.random() * pastStatuses.length)]
                         : futureStatuses[Math.floor(Math.random() * futureStatuses.length)]
 
-                    const user = users[Math.floor(Math.random() * users.length)]
+                    const user = users[Math.floor(Math.random() * users.length)]!
 
-                    // 映射用户到其对应的组织 ID
                     let orgId = orgs[0].id
                     if (user.account === 'teacher1') orgId = orgs[0].id
                     else if (user.account === 'teacher2') orgId = orgs[1].id
@@ -156,7 +155,7 @@ export default defineEventHandler(async (event) => {
                         userId: user.id,
                         startTime,
                         endTime,
-                        purpose: purposes[Math.floor(Math.random() * purposes.length)],
+                        purpose: purposes[Math.floor(Math.random() * purposes.length)]!,
                         status,
                         remark: status === 'rejected' ? '场地冲突或不符合规定' : null
                     })
