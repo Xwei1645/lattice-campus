@@ -19,9 +19,6 @@ export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
   runtimeConfig: {
-    // 仅在服务端可见
-    backupInterval: 12 * 60 * 60 * 1000, // 默认 12 小时
-    backupMaxKeep: 10, // 默认保留 10 个备份
     public: {
       buildInfo: {
         version: pkg.version || '1.0.0',

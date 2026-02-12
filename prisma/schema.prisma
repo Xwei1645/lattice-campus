@@ -144,11 +144,3 @@ model Notice {
   @@map("notices")
 }
 
-model SystemSetting {
-  id    Int    @id @default(autoincrement())
-  key   String @unique
-  value String
-
-  @@map("system_settings")
-}
-

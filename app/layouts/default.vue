@@ -79,10 +79,6 @@
               <template #icon><ChatBubbleHelpIcon /></template>
               反馈管理
             </t-menu-item>
-            <t-menu-item v-if="isSuperAdmin" value="/backup-management" to="/backup-management">
-              <template #icon><CloudDownloadIcon /></template>
-              数据备份
-            </t-menu-item>
           </template>
 
           <t-divider style="margin: 8px 0" />
@@ -196,7 +192,6 @@ import {
   RootListIcon,
   NotificationIcon,
   ChatBubbleHelpIcon,
-  CloudDownloadIcon,
   FileIcon,
   InfoCircleIcon,
   BugIcon,

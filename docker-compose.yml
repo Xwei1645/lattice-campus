@@ -11,8 +11,6 @@ services:
       - .env
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
-    volumes:
-      - backups:/app/backups
     depends_on:
       db:
         condition: service_healthy
@@ -36,4 +34,3 @@ services:
 
 volumes:
   postgres_data:
-  backups:

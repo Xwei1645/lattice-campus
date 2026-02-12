@@ -25,7 +25,6 @@ logs
 
 # Backups
 backups/
-!server/api/backups/
 
 # Database
 *.db

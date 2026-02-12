@@ -41,8 +41,8 @@ FROM node:22-alpine AS runner
 
 WORKDIR /app
 
-# Prisma 运行时需要 OpenSSL, 备份功能需要 postgresql-client
-RUN apk add --no-cache openssl postgresql16-client
+# Prisma 运行时需要 OpenSSL
+RUN apk add --no-cache openssl
 
 ENV NODE_ENV=production
 ENV PORT=3000
