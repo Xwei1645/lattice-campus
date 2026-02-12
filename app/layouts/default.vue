@@ -2,6 +2,7 @@
   <t-layout class="app-layout">
     <t-header class="app-header">
       <div class="logo-container">
+        <img src="/favicon.svg" alt="Logo" class="logo-icon" />
         <span class="logo-text">WZHS Booking</span>
       </div>
       <t-head-menu theme="light" value="item1" class="header-menu">
@@ -417,6 +418,15 @@ const handleMenuClick = (value: any) => {
   font-weight: bold;
   color: var(--td-brand-color);
   white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.logo-icon {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
 }
 
 .header-menu {

@@ -92,16 +92,19 @@ cp .env.example .env
 | `DINGTALK_CLIENT_ID` | 钉钉应用 ID（可选） |
 | `DINGTALK_CLIENT_SECRET` | 钉钉应用密钥（可选） |
 
-## 许可证
-
-本项目基于 [AGPLv3](LICENSE) 许可证开放源代码。
-
-## 问题反馈
-
-如有问题或建议，请在 [Issues](https://github.com/WZHS-Dev-Team/wzhs-booking/issues) 中反馈。
-
 ## 贡献者
 
 <a href="https://github.com/WZHS-Dev-Team/wzhs-booking/graphs/contributors">
   <img src="https://contributors-img.web.app/image?repo=WZHS-Dev-Team/wzhs-booking" alt="贡献者" width="100%"/>
 </a>
+
+部分设计素材由 [Douxiba](https://github.com/Douxiba/) 提供。
+
+## 问题反馈
+
+如有问题或建议，请在 [Issues](https://github.com/WZHS-Dev-Team/wzhs-booking/issues) 中反馈。
+
+## 许可证
+
+本项目基于 [AGPLv3](LICENSE) 许可证开放源代码。
+

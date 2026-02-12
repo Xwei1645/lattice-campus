@@ -7,8 +7,8 @@ const getGitHash = () => {
     return process.env.GIT_HASH;
   }
   try {
-    return execSync('git rev-parse --short HEAD', { 
-      stdio: ['ignore', 'pipe', 'ignore'] 
+    return execSync('git rev-parse --short HEAD', {
+      stdio: ['ignore', 'pipe', 'ignore']
     }).toString().trim();
   } catch (e) {
     return 'unknown';
@@ -48,6 +48,9 @@ export default defineNuxtConfig({
         { name: 'referrer', content: 'strict-origin-when-cross-origin' },
         // 禁用DNS预解析（根据需要调整）
         // { name: 'x-dns-prefetch-control', content: 'off' }
+      ],
+      link: [
+        { rel: 'icon', href: '/favicon.svg', type: 'image/svg+xml' },
       ]
     }
   },
