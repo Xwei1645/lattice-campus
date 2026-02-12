@@ -6,11 +6,13 @@ import { PrismaPg } from '@prisma/adapter-pg'
 import pg from 'pg'
 import bcrypt from 'bcryptjs'
 
+let pool: pg.Pool | null = null
+
 function createPrismaClient() {
     if (!process.env.DATABASE_URL) {
         throw new Error('DATABASE_URL environment variable is not set. Please configure it in your .env file.')
     }
-    const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL })
+    pool = new pg.Pool({ connectionString: process.env.DATABASE_URL })
     const adapter = new PrismaPg(pool)
     return new PrismaClient({ adapter })
 }
@@ -191,6 +193,7 @@ async function seed() {
         process.exit(1)
     } finally {
         await db.$disconnect()
+        if (pool) await pool.end()
     }
 }
 
