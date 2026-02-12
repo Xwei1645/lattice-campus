@@ -51,18 +51,102 @@ function getSafeFilePath(fileName: string): string {
 }
 
 /**
+ * 清理数据库连接 URL，移除 pg_dump/psql 不支持的参数
+ * Prisma 特有参数如 schema、pgbouncer 等需要移除
+ */
+function cleanDatabaseUrl(dbUrl: string): string {
+    try {
+        const url = new URL(dbUrl)
+        // 获取所有支持的参数
+        const supportedParams = [
+            'host', 'port', 'user', 'password', 'dbname',
+            'sslmode', 'sslcert', 'sslkey', 'sslrootcert',
+            'connect_timeout', 'client_encoding'
+        ]
+        
+        // 构建新的连接字符串
+        const params = new URLSearchParams()
+        url.searchParams.forEach((value, key) => {
+            if (supportedParams.includes(key.toLowerCase())) {
+                params.set(key, value)
+            }
+        })
+        
+        // 重新构建 URL
+        const cleanUrl = new URL(dbUrl)
+        cleanUrl.search = params.toString()
+        
+        return cleanUrl.toString()
+    } catch {
+        // 如果解析失败，返回原始 URL
+        return dbUrl
+    }
+}
+
+/**
+ * 获取 PostgreSQL 工具的完整路径
+ * 支持通过环境变量 PG_BIN_PATH 配置
+ * Windows 下自动检测常见安装路径
+ */
+function getPgToolPath(tool: string): string {
+    const pgBinPath = process.env.PG_BIN_PATH
+    const ext = process.platform === 'win32' ? '.exe' : ''
+    const toolName = `${tool}${ext}`
+    
+    // 如果配置了 PG_BIN_PATH，直接使用
+    if (pgBinPath) {
+        return path.join(pgBinPath, toolName)
+    }
+    
+    // Windows 下自动检测 PostgreSQL 安装路径
+    if (process.platform === 'win32') {
+        const possiblePaths = [
+            // Program Files 下的常见版本
+            'C:\\Program Files\\PostgreSQL\\17\\bin',
+            'C:\\Program Files\\PostgreSQL\\16\\bin',
+            'C:\\Program Files\\PostgreSQL\\15\\bin',
+            'C:\\Program Files\\PostgreSQL\\14\\bin',
+            'C:\\Program Files\\PostgreSQL\\13\\bin',
+            // Program Files (x86) 下的常见版本
+            'C:\\Program Files (x86)\\PostgreSQL\\17\\bin',
+            'C:\\Program Files (x86)\\PostgreSQL\\16\\bin',
+            'C:\\Program Files (x86)\\PostgreSQL\\15\\bin',
+        ]
+        
+        for (const binPath of possiblePaths) {
+            const toolPath = path.join(binPath, toolName)
+            if (fs.existsSync(toolPath)) {
+                return toolPath
+            }
+        }
+    }
+    
+    // 返回工具名，依赖系统 PATH
+    return tool
+}
+
+/**
  * 使用 spawn 安全执行命令
  * 避免命令注入风险
  */
 function executeCommand(
     command: string, 
     args: string[], 
-    env: NodeJS.ProcessEnv = {}
+    options: { cwd?: string } = {}
 ): Promise<void> {
     return new Promise((resolve, reject) => {
-        const proc = spawn(command, args, {
-            env: { ...process.env, ...env },
-            stdio: ['ignore', 'pipe', 'pipe']
+        // Windows 下使用 cmd.exe 执行，确保能找到命令
+        const useCmd = process.platform === 'win32'
+        const actualCommand = useCmd ? process.env.ComSpec || 'cmd.exe' : command
+        const actualArgs = useCmd 
+            ? ['/c', command, ...args] 
+            : args
+        
+        const proc = spawn(actualCommand, actualArgs, {
+            env: { ...process.env },
+            stdio: ['ignore', 'pipe', 'pipe'],
+            cwd: options.cwd,
+            windowsHide: true
         })
 
         let stderr = ''
@@ -126,11 +210,15 @@ export async function createBackup() {
         throw new Error('DATABASE_URL 未配置')
     }
 
+    // 清理连接字符串，移除不支持的参数
+    const cleanDbUrl = cleanDatabaseUrl(dbUrl)
+
     try {
         // 使用 spawn 安全执行 pg_dump
         // 参数化方式避免命令注入
-        await executeCommand('pg_dump', [
-            '--dbname', dbUrl,
+        const pgDumpPath = getPgToolPath('pg_dump')
+        await executeCommand(pgDumpPath, [
+            '--dbname', cleanDbUrl,
             '--file', filePath
         ])
         
@@ -157,11 +245,15 @@ export async function restoreBackup(fileName: string) {
         throw new Error('DATABASE_URL 未配置')
     }
 
+    // 清理连接字符串，移除不支持的参数
+    const cleanDbUrl = cleanDatabaseUrl(dbUrl)
+
     try {
         // 使用 spawn 安全执行 psql
         // 参数化方式避免命令注入
-        await executeCommand('psql', [
-            '--dbname', dbUrl,
+        const psqlPath = getPgToolPath('psql')
+        await executeCommand(psqlPath, [
+            '--dbname', cleanDbUrl,
             '--file', filePath
         ])
         
