@@ -2,105 +2,90 @@
   <div class="page-container">
     <div class="page-header">
       <h2 class="page-title">用户管理</h2>
-    </div>
-
-    <!-- 用户类型Tab -->
-    <t-tabs v-model="activeTab" class="user-tabs">
-      <t-tab-panel value="admin" label="管理员">
-        <div class="tab-header">
-          <div class="header-actions">
-            <t-input
-                v-model="searchQuery"
-                placeholder="搜索用户名/姓名"
-                clearable
-                variant="filled"
-                style="width: 200px"
-            />
+      <div class="header-actions">
+        <t-input-adornment>
+          <t-input v-model="searchQuery" placeholder="搜索用户名/姓名" clearable variant="filled" />
+          <template #append>
             <t-button theme="primary" @click="handleAddUser">
               <template #icon><AddIcon /></template>
               新增用户
             </t-button>
-          </div>
-        </div>
-        <t-card :bordered="false" class="content-card">
-          <t-skeleton :loading="loading" :row-col="tableSkeleton" animation="gradient">
-            <t-table
-              row-key="id"
-              :data="filteredUserData"
-              :columns="columns"
-              :hover="true"
-              :loading="loading"
-              :pagination="pagination"
-            >
-            <template #createTime="{ row }">
-              {{ formatDateTime(row.createTime) }}
-            </template>
-            <template #role="{ row }">
-              <t-tag :theme="getRoleTheme(row.role)" variant="light">
-                {{ getRoleName(row.role) }}
-              </t-tag>
-            </template>
-            <template #organizations="{ row }">
-              <t-space break-line :size="4">
-                <t-tag v-for="org in row.organizations" :key="org.id" variant="light">
-                  {{ org.name }}
-                </t-tag>
-              </t-space>
-            </template>
-            <template #dingtalk="{ row }">
-              <t-tag v-if="row.dingTalkOpenId" theme="success" variant="light">
-                <template #icon><t-icon name="check-circle" /></template>
-                已绑定
-              </t-tag>
-              <t-tag v-else theme="default" variant="light">
-                <template #icon><t-icon name="close-circle" /></template>
-                未绑定
-              </t-tag>
-            </template>
-            <template #status="{ row }">
-              <t-switch v-model="row.status" :label="['启用', '禁用']" @change="(val: any) => handleStatusChange(row, val)" />
-            </template>
-            <template #op="{ row }">
-              <t-link theme="primary" hover="color" style="margin-right: 16px" @click="handleEdit(row)">编辑</t-link>
-              <t-link theme="warning" hover="color" style="margin-right: 16px" @click="handleResetPassword(row)">重置密码</t-link>
-              <t-link 
-                v-if="row.dingTalkOpenId"
-                theme="danger" 
-                hover="color" 
-                style="margin-right: 16px"
-                @click="handleUnbindDingtalk(row)"
-              >
-                解绑钉钉
-              </t-link>
-              <t-link 
-                v-else
-                theme="success" 
-                hover="color" 
-                style="margin-right: 16px"
-                @click="handleBindDingtalk(row)"
-              >
-                绑定钉钉
-              </t-link>
-              <t-link 
-                v-if="currentUser && row.id !== 1 && row.id !== currentUser.id" 
-                theme="danger" 
-                hover="color" 
-                @click="handleDelete(row)"
-              >
-                删除
-              </t-link>
-            </template>
-          </t-table>
-        </t-skeleton>
-        </t-card>
-      </t-tab-panel>
-      <t-tab-panel value="teacher" label="教师">
-        <TeacherManagement />
-      </t-tab-panel>
-      <t-tab-panel value="student" label="学生">
-        <StudentManagement />
-      </t-tab-panel>
-    </t-tabs>
+          </template>
+        </t-input-adornment>
+      </div>
+    </div>
+
+    <t-card :bordered="false" class="content-card">
+      <t-skeleton :loading="loading" :row-col="tableSkeleton" animation="gradient">
+        <t-table
+          row-key="id"
+          :data="filteredUserData"
+          :columns="columns"
+          :hover="true"
+          :loading="loading"
+          :pagination="pagination"
+        >
+        <template #createTime="{ row }">
+          {{ formatDateTime(row.createTime) }}
+        </template>
+        <template #role="{ row }">
+          <t-tag :theme="getRoleTheme(row.role)" variant="light">
+            {{ getRoleName(row.role) }}
+          </t-tag>
+        </template>
+        <template #organizations="{ row }">
+          <t-space break-line :size="4">
+            <t-tag v-for="org in row.organizations" :key="org.id" variant="light">
+              {{ org.name }}
+            </t-tag>
+          </t-space>
+        </template>
+        <template #dingtalk="{ row }">
+          <t-tag v-if="row.dingTalkOpenId" theme="success" variant="light">
+            <template #icon><t-icon name="check-circle" /></template>
+            已绑定
+          </t-tag>
+          <t-tag v-else theme="default" variant="light">
+            <template #icon><t-icon name="close-circle" /></template>
+            未绑定
+          </t-tag>
+        </template>
+        <template #status="{ row }">
+          <t-switch v-model="row.status" :label="['启用', '禁用']" @change="(val: any) => handleStatusChange(row, val)" />
+        </template>
+        <template #op="{ row }">
+          <t-link theme="primary" hover="color" style="margin-right: 16px" @click="handleEdit(row)">编辑</t-link>
+          <t-link theme="warning" hover="color" style="margin-right: 16px" @click="handleResetPassword(row)">重置密码</t-link>
+          <t-link 
+            v-if="row.dingTalkOpenId"
+            theme="danger" 
+            hover="color" 
+            style="margin-right: 16px"
+            @click="handleUnbindDingtalk(row)"
+          >
+            解绑钉钉
+          </t-link>
+          <t-link 
+            v-else
+            theme="success" 
+            hover="color" 
+            style="margin-right: 16px"
+            @click="handleBindDingtalk(row)"
+          >
+            绑定钉钉
+          </t-link>
+          <t-link 
+            v-if="currentUser && row.id !== 1 && row.id !== currentUser.id" 
+            theme="danger" 
+            hover="color" 
+            @click="handleDelete(row)"
+          >
+            删除
+          </t-link>
+        </template>
+      </t-table>
+    </t-skeleton>
+    </t-card>
 
     <!-- 新增/编辑对话框 -->
     <t-dialog
@@ -202,9 +187,6 @@ import { ref, reactive, computed, onMounted, onUnmounted } from 'vue';
 import type { PrimaryTableCol, FormRules } from 'tdesign-vue-next';
 
 useHead({ title: '用户管理' })
-
-// 当前激活的Tab
-const activeTab = ref<'admin' | 'teacher' | 'student'>('admin');
 
 interface Organization {
   id: number;
@@ -591,15 +573,6 @@ const handleDelete = async (row: User) => {
 </script>
 
 <style scoped>
-.user-tabs {
-    margin-top: 16px;
-}
-
-.tab-header {
-    margin-bottom: 16px;
-    margin-top: 16px;
-}
-
 .header-actions {
   display: flex;
   gap: 16px;

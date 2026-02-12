@@ -10,20 +10,20 @@ datasource db {
 }
 
 model User {
-  id              Int      @id @default(autoincrement())
-  account         String   @unique
-  password        String
-  name            String
-  role            String   @default("user")
-  status          Boolean  @default(true)
-  createTime      DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  dingTalkOpenId  String?  @unique
-  organizations   Organization[]
-  bookings        Booking[]
-  sessions        Session[]
-  feedbacks       Feedback[]
-  notices         Notice[]
+  id         Int      @id @default(autoincrement())
+  account    String   @unique
+  password   String
+  name       String
+  role       String   @default("user")
+  status     Boolean  @default(true)
+  createTime DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  dingTalkOpenId String? @unique
+  organizations Organization[]
+  bookings      Booking[]
+  sessions      Session[]
+  feedbacks     Feedback[]
+  notices       Notice[]
 
   @@map("users")
 }
@@ -35,91 +35,18 @@ model Session {
   expiresAt DateTime
   createdAt DateTime @default(now())
 
-  @@index([userId])
   @@map("sessions")
 }
 
-// 老师表
-model Teacher {
-  id              Int      @id @default(autoincrement())
-  name            String
-  account         String?  @unique
-  password        String?
-  dingTalkOpenId  String?  @unique
-  status          String   @default("pending") // pending/active/disabled
-  createTime      DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  organizations   TeacherOrganization[]
-  bookings        Booking[]
-  sessions        TeacherSession[]
-
-  @@index([dingTalkOpenId])
-  @@map("teachers")
-}
-
-// 老师会话表
-model TeacherSession {
-  id        String   @id
-  teacherId Int
-  teacher   Teacher  @relation(fields: [teacherId], references: [id], onDelete: Cascade)
-  expiresAt DateTime
-  createdAt DateTime @default(now())
-
-  @@index([teacherId])
-  @@map("teacher_sessions")
-}
-
-// 老师-部门关联表
-model TeacherOrganization {
-  teacherId      Int
-  organizationId Int
-  teacher        Teacher      @relation(fields: [teacherId], references: [id], onDelete: Cascade)
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-
-  @@id([teacherId, organizationId])
-  @@map("teacher_organizations")
-}
-
-// 学生表
-model Student {
+model Organization {
   id          Int      @id @default(autoincrement())
-  name        String
-  studentId   String   @unique
-  account     String?  @unique
-  password    String?
-  seewoOpenId String?  @unique
-  status      String   @default("active") // active/disabled
+  name        String   @unique
+  description String?
+  users       User[]
+  bookings    Booking[]
+  invitationCodes InvitationCode[]
   createTime  DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  bookings    Booking[]
-  sessions    StudentSession[]
-
-  @@index([seewoOpenId])
-  @@map("students")
-}
-
-// 学生会话表
-model StudentSession {
-  id        String   @id
-  studentId Int
-  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  expiresAt DateTime
-  createdAt DateTime @default(now())
-
-  @@index([studentId])
-  @@map("student_sessions")
-}
-
-model Organization {
-  id              Int      @id @default(autoincrement())
-  name            String   @unique
-  description     String?
-  users           User[]
-  teachers        TeacherOrganization[]
-  bookings        Booking[]
-  invitationCodes InvitationCode[]
-  createTime      DateTime @default(now())
-  updatedAt       DateTime @updatedAt
 
   @@map("organizations")
 }
@@ -159,12 +86,8 @@ model Booking {
   room           Room         @relation(fields: [roomId], references: [id])
   organizationId Int
   organization   Organization @relation(fields: [organizationId], references: [id])
-  userId         Int?
-  user           User?        @relation(fields: [userId], references: [id])
-  teacherId      Int?
-  teacher        Teacher?     @relation(fields: [teacherId], references: [id])
-  studentId      Int?
-  student        Student?     @relation(fields: [studentId], references: [id])
+  userId         Int
+  user           User         @relation(fields: [userId], references: [id])
   startTime      DateTime
   endTime        DateTime
   purpose        String
@@ -173,9 +96,6 @@ model Booking {
   createTime     DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
 
-  @@index([userId])
-  @@index([teacherId])
-  @@index([studentId])
   @@map("bookings")
 }
 
