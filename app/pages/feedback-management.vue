@@ -11,6 +11,8 @@
         :columns="columns"
         :loading="loading"
         :hover="true"
+        :scroll="{ type: 'auto', x: 800 }"
+        table-layout="fixed"
       >
         <template #user="{ row }">
           {{ row.user?.name }} ({{ row.user?.account }})
@@ -92,12 +94,12 @@ const formData = reactive({
 
 const columns: PrimaryTableCol[] = [
   { colKey: 'id', title: 'ID', width: 70 },
-  { colKey: 'user', title: '反馈用户', cell: 'user' },
-  { colKey: 'type', title: '类型', cell: 'type' },
-  { colKey: 'content', title: '内容', ellipsis: true },
-  { colKey: 'status', title: '状态', cell: 'status' },
-  { colKey: 'createTime', title: '提交时间', cell: 'createTime' },
-  { colKey: 'operation', title: '操作', cell: 'operation', width: 120 }
+  { colKey: 'user', title: '反馈用户', width: 150, cell: 'user' },
+  { colKey: 'type', title: '类型', width: 120, cell: 'type' },
+  { colKey: 'content', title: '内容', width: 200, ellipsis: true },
+  { colKey: 'status', title: '状态', width: 100, cell: 'status' },
+  { colKey: 'createTime', title: '提交时间', width: 180, cell: 'createTime' },
+  { colKey: 'operation', title: '操作', width: 120, fixed: 'right', cell: 'operation' }
 ]
 
 // 骨架屏配置
@@ -206,5 +208,34 @@ onMounted(fetchFeedbacks)
   margin-top: 4px;
   white-space: pre-wrap;
   color: var(--td-text-color-primary);
+}
+
+/* 表格横向滚动 */
+:deep(.t-table__content) {
+    overflow-x: auto;
+}
+
+/* 移动端适配 */
+@media (max-width: 767px) {
+    :deep(.t-table) {
+        font-size: 13px;
+    }
+
+    :deep(.t-table th),
+    :deep(.t-table td) {
+        padding: 10px 12px !important;
+    }
+
+    .feedback-detail {
+        padding: 10px;
+    }
+
+    .detail-item {
+        margin-bottom: 6px;
+    }
+
+    :deep(.t-form-item) {
+        margin-bottom: 16px;
+    }
 }
 </style>

@@ -22,6 +22,8 @@
           :loading="loading"
           :hover="true"
           :pagination="pagination"
+          :scroll="{ type: 'auto', x: 800 }"
+          table-layout="fixed"
           @page-change="onPageChange"
         >
           <template #time="{ row }">
@@ -129,14 +131,14 @@ const filteredBookings = computed(() => {
 
 const columns: PrimaryTableCol[] = [
   { colKey: 'id', title: 'ID', width: 70 },
-  { colKey: 'roomName', title: '场地名称' },
-  { colKey: 'organizationName', title: '组织' },
-  { colKey: 'userName', title: '申请人' },
-  { colKey: 'time', title: '预约时间', width: 300 },
-  { colKey: 'purpose', title: '用途' },
-  { colKey: 'createTime', title: '申请时间', width: 200 },
+  { colKey: 'roomName', title: '场地名称', width: 140 },
+  { colKey: 'organizationName', title: '组织', width: 120 },
+  { colKey: 'userName', title: '申请人', width: 100 },
+  { colKey: 'time', title: '预约时间', width: 180 },
+  { colKey: 'purpose', title: '用途', width: 150 },
+  { colKey: 'createTime', title: '申请时间', width: 180 },
   { colKey: 'status', title: '状态', width: 100 },
-  { colKey: 'operation', title: '操作', width: 150, fixed: 'right' },
+  { colKey: 'operation', title: '操作', width: 120, fixed: 'right' },
 ]
 
 const onPageChange = (pageInfo: any) => {
@@ -229,5 +231,43 @@ onMounted(() => {
 .header-actions {
   display: flex;
   gap: 16px;
+}
+
+/* 表格横向滚动 */
+:deep(.t-table__content) {
+    overflow-x: auto;
+}
+
+/* 移动端适配 */
+@media (max-width: 767px) {
+    .page-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+    }
+
+    .header-actions {
+        overflow-x: auto;
+        padding-bottom: 4px;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .header-actions :deep(.t-radio-group) {
+        flex-wrap: nowrap;
+        min-width: max-content;
+    }
+
+    :deep(.t-table) {
+        font-size: 13px;
+    }
+
+    :deep(.t-table th),
+    :deep(.t-table td) {
+        padding: 10px 12px !important;
+    }
+
+    :deep(.t-dialog__body) {
+        padding: 16px;
+    }
 }
 </style>

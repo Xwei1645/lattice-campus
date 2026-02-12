@@ -24,6 +24,8 @@
           :loading="loading"
           :hover="true"
           :pagination="pagination"
+          :scroll="{ type: 'auto', x: 800 }"
+          table-layout="fixed"
           @page-change="onPageChange"
         >
           <template #status="{ row }">
@@ -221,12 +223,12 @@ const handleSubmit = async () => {
 
 const columns: PrimaryTableCol[] = [
   { colKey: 'id', title: 'ID', width: 70 },
-  { colKey: 'name', title: '场地名称' },
-  { colKey: 'capacity', title: '容纳人数' },
-  { colKey: 'location', title: '地点' },
-  { colKey: 'description', title: '描述' },
+  { colKey: 'name', title: '场地名称', width: 140 },
+  { colKey: 'capacity', title: '容纳人数', width: 100 },
+  { colKey: 'location', title: '地点', width: 150 },
+  { colKey: 'description', title: '描述', width: 200 },
   { colKey: 'status', title: '状态', width: 100 },
-  { colKey: 'createTime', title: '创建时间', width: 200 },
+  { colKey: 'createTime', title: '创建时间', width: 180 },
   { colKey: 'operation', title: '操作', width: 120, fixed: 'right' },
 ]
 
@@ -239,5 +241,53 @@ onMounted(() => {
 .header-actions {
   display: flex;
   gap: 16px;
+}
+
+/* 表格横向滚动 */
+:deep(.t-table__content) {
+    overflow-x: auto;
+}
+
+/* 移动端适配 */
+@media (max-width: 767px) {
+    .page-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+    }
+
+    .header-actions {
+        flex-direction: column;
+    }
+
+    .header-actions :deep(.t-input-adornment) {
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .header-actions :deep(.t-input-adornment .t-input) {
+        width: 100%;
+    }
+
+    .header-actions :deep(.t-input-adornment__append) {
+        margin-left: 0 !important;
+    }
+
+    .header-actions :deep(.t-input-adornment__append .t-button) {
+        width: 100%;
+    }
+
+    :deep(.t-table) {
+        font-size: 13px;
+    }
+
+    :deep(.t-table th),
+    :deep(.t-table td) {
+        padding: 10px 12px !important;
+    }
+
+    :deep(.t-form-item) {
+        margin-bottom: 16px;
+    }
 }
 </style>

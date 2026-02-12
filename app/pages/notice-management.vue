@@ -19,8 +19,9 @@
           :loading="loading"
           :hover="true"
           resizable
-          table-layout="auto"
+          table-layout="fixed"
           :pagination="pagination"
+          :scroll="{ type: 'auto', x: 800 }"
         >
           <template #showPopup="{ row }">
             <t-tag v-if="row.showPopup" theme="warning" variant="light">是</t-tag>
@@ -97,11 +98,11 @@ const rules: FormRules = {
 
 const columns: PrimaryTableCol[] = [
   { colKey: 'id', title: 'ID', width: 70 },
-  { colKey: 'title', title: '标题', ellipsis: true },
-  { colKey: 'showPopup', title: '弹窗提醒', cell: 'showPopup', width: 100 },
+  { colKey: 'title', title: '标题', width: 200, ellipsis: true },
+  { colKey: 'showPopup', title: '弹窗提醒', width: 100, cell: 'showPopup' },
   { colKey: 'creator.name', title: '发布者', width: 120 },
-  { colKey: 'createTime', title: '发布时间', cell: 'createTime', width: 180 },
-  { colKey: 'operation', title: '操作', cell: 'operation', width: 120 }
+  { colKey: 'createTime', title: '发布时间', width: 180, cell: 'createTime' },
+  { colKey: 'operation', title: '操作', width: 120, fixed: 'right', cell: 'operation' }
 ]
 
 // 骨架屏配置
@@ -202,3 +203,36 @@ const handleDelete = async (row: any) => {
 
 onMounted(fetchNotices)
 </script>
+
+<style scoped>
+/* 表格横向滚动 */
+:deep(.t-table__content) {
+    overflow-x: auto;
+}
+
+/* 移动端适配 */
+@media (max-width: 767px) {
+    .page-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+    }
+
+    .header-actions .t-button {
+        width: 100%;
+    }
+
+    :deep(.t-table) {
+        font-size: 13px;
+    }
+
+    :deep(.t-table th),
+    :deep(.t-table td) {
+        padding: 10px 12px !important;
+    }
+
+    :deep(.t-form-item) {
+        margin-bottom: 16px;
+    }
+}
+</style>

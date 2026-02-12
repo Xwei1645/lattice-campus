@@ -18,6 +18,8 @@
         :hover="true"
         :pagination="pagination"
         :loading="bookingsPending"
+        :scroll="{ type: 'auto', x: 800 }"
+        table-layout="fixed"
       >
         <template #status="{ row }">
           <t-tag v-if="row.status === 'approved'" theme="success" variant="light">已通过</t-tag>
@@ -137,10 +139,10 @@ useHead({ title: '我的预约' })
 // 表格列定义
 const columns: PrimaryTableCol[] = [
   { colKey: 'id', title: '编号', width: 80 },
-  { colKey: 'roomName', title: '预约地点' },
-  { colKey: 'organizationName', title: '使用组织' },
-  { colKey: 'formattedTime', title: '预约时间', width: 300 },
-  { colKey: 'purpose', title: '预约事项' },
+  { colKey: 'roomName', title: '预约地点', width: 140 },
+  { colKey: 'organizationName', title: '使用组织', width: 120 },
+  { colKey: 'formattedTime', title: '预约时间', width: 180 },
+  { colKey: 'purpose', title: '预约事项', width: 150 },
   { colKey: 'createTime', title: '申请时间', width: 180 },
   { colKey: 'status', title: '状态', width: 100, cell: 'status' },
   { colKey: 'action', title: '操作', width: 120, cell: 'action', fixed: 'right' },
@@ -314,4 +316,46 @@ const handleCancel = async (row: any) => {
 </script>
 
 <style scoped>
+/* 表格横向滚动 */
+:deep(.t-table__content) {
+    overflow-x: auto;
+}
+
+/* 移动端适配 */
+@media (max-width: 767px) {
+    .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .header-actions {
+        width: 100%;
+    }
+
+    .header-actions .t-button {
+        width: 100%;
+    }
+
+    :deep(.t-table) {
+        font-size: 13px;
+    }
+
+    :deep(.t-table th),
+    :deep(.t-table td) {
+        padding: 10px 12px !important;
+    }
+
+    :deep(.t-form-item) {
+        margin-bottom: 16px;
+    }
+
+    :deep(.t-descriptions) {
+        font-size: 13px;
+    }
+
+    :deep(.t-descriptions__label) {
+        min-width: 80px;
+    }
+}
 </style>

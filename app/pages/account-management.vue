@@ -7,92 +7,96 @@
     <!-- 用户类型Tab -->
     <t-tabs v-model="activeTab" class="user-tabs">
       <t-tab-panel value="admin" label="管理员">
-        <div class="tab-header">
-          <div class="header-actions">
-            <t-input
+        <div class="management-container">
+          <div class="management-header">
+            <div class="header-actions">
+              <t-input
                 v-model="searchQuery"
                 placeholder="搜索用户名/姓名"
                 clearable
                 variant="filled"
                 style="width: 200px"
-            />
-            <t-button theme="primary" @click="handleAddUser">
-              <template #icon><AddIcon /></template>
-              新增用户
-            </t-button>
+              />
+              <t-button theme="primary" @click="handleAddUser">
+                <template #icon><AddIcon /></template>
+                新增用户
+              </t-button>
+            </div>
           </div>
+          <t-card :bordered="false" class="content-card">
+            <t-skeleton :loading="loading" :row-col="tableSkeleton" animation="gradient">
+              <t-table
+                row-key="id"
+                :data="filteredUserData"
+                :columns="columns"
+                :hover="true"
+                :loading="loading"
+                :pagination="pagination"
+                :scroll="{ type: 'auto', x: 800 }"
+                table-layout="fixed"
+              >
+                <template #createTime="{ row }">
+                  {{ formatDateTime(row.createTime) }}
+                </template>
+                <template #role="{ row }">
+                  <t-tag :theme="getRoleTheme(row.role)" variant="light">
+                    {{ getRoleName(row.role) }}
+                  </t-tag>
+                </template>
+                <template #organizations="{ row }">
+                  <t-space break-line :size="4">
+                    <t-tag v-for="org in row.organizations" :key="org.id" variant="light">
+                      {{ org.name }}
+                    </t-tag>
+                  </t-space>
+                </template>
+                <template #dingtalk="{ row }">
+                  <t-tag v-if="row.dingTalkOpenId" theme="success" variant="light">
+                    <template #icon><t-icon name="check-circle" /></template>
+                    已绑定
+                  </t-tag>
+                  <t-tag v-else theme="default" variant="light">
+                    <template #icon><t-icon name="close-circle" /></template>
+                    未绑定
+                  </t-tag>
+                </template>
+                <template #status="{ row }">
+                  <t-switch v-model="row.status" :label="['启用', '禁用']" @change="(val: any) => handleStatusChange(row, val)" />
+                </template>
+                <template #op="{ row }">
+                  <t-link theme="primary" hover="color" style="margin-right: 16px" @click="handleEdit(row)">编辑</t-link>
+                  <t-link theme="warning" hover="color" style="margin-right: 16px" @click="handleResetPassword(row)">重置密码</t-link>
+                  <t-link 
+                    v-if="row.dingTalkOpenId"
+                    theme="danger" 
+                    hover="color" 
+                    style="margin-right: 16px"
+                    @click="handleUnbindDingtalk(row)"
+                  >
+                    解绑钉钉
+                  </t-link>
+                  <t-link 
+                    v-else
+                    theme="success" 
+                    hover="color" 
+                    style="margin-right: 16px"
+                    @click="handleBindDingtalk(row)"
+                  >
+                    绑定钉钉
+                  </t-link>
+                  <t-link 
+                    v-if="currentUser && row.id !== 1 && row.id !== currentUser.id" 
+                    theme="danger" 
+                    hover="color" 
+                    @click="handleDelete(row)"
+                  >
+                    删除
+                  </t-link>
+                </template>
+              </t-table>
+            </t-skeleton>
+          </t-card>
         </div>
-        <t-card :bordered="false" class="content-card">
-          <t-skeleton :loading="loading" :row-col="tableSkeleton" animation="gradient">
-            <t-table
-              row-key="id"
-              :data="filteredUserData"
-              :columns="columns"
-              :hover="true"
-              :loading="loading"
-              :pagination="pagination"
-            >
-            <template #createTime="{ row }">
-              {{ formatDateTime(row.createTime) }}
-            </template>
-            <template #role="{ row }">
-              <t-tag :theme="getRoleTheme(row.role)" variant="light">
-                {{ getRoleName(row.role) }}
-              </t-tag>
-            </template>
-            <template #organizations="{ row }">
-              <t-space break-line :size="4">
-                <t-tag v-for="org in row.organizations" :key="org.id" variant="light">
-                  {{ org.name }}
-                </t-tag>
-              </t-space>
-            </template>
-            <template #dingtalk="{ row }">
-              <t-tag v-if="row.dingTalkOpenId" theme="success" variant="light">
-                <template #icon><t-icon name="check-circle" /></template>
-                已绑定
-              </t-tag>
-              <t-tag v-else theme="default" variant="light">
-                <template #icon><t-icon name="close-circle" /></template>
-                未绑定
-              </t-tag>
-            </template>
-            <template #status="{ row }">
-              <t-switch v-model="row.status" :label="['启用', '禁用']" @change="(val: any) => handleStatusChange(row, val)" />
-            </template>
-            <template #op="{ row }">
-              <t-link theme="primary" hover="color" style="margin-right: 16px" @click="handleEdit(row)">编辑</t-link>
-              <t-link theme="warning" hover="color" style="margin-right: 16px" @click="handleResetPassword(row)">重置密码</t-link>
-              <t-link 
-                v-if="row.dingTalkOpenId"
-                theme="danger" 
-                hover="color" 
-                style="margin-right: 16px"
-                @click="handleUnbindDingtalk(row)"
-              >
-                解绑钉钉
-              </t-link>
-              <t-link 
-                v-else
-                theme="success" 
-                hover="color" 
-                style="margin-right: 16px"
-                @click="handleBindDingtalk(row)"
-              >
-                绑定钉钉
-              </t-link>
-              <t-link 
-                v-if="currentUser && row.id !== 1 && row.id !== currentUser.id" 
-                theme="danger" 
-                hover="color" 
-                @click="handleDelete(row)"
-              >
-                删除
-              </t-link>
-            </template>
-          </t-table>
-        </t-skeleton>
-        </t-card>
       </t-tab-panel>
       <t-tab-panel value="teacher" label="教师">
         <TeacherManagement />
@@ -183,7 +187,7 @@
               <t-button theme="primary" block size="large" @click="openDingtalkBind">
                 <template #icon>
                   <svg viewBox="0 0 1024 1024" width="1em" height="1em" fill="currentColor">
-                    <path d="M277.205 42.667l3.563.149c13.653 1.173 26.56 6.592 36.843 15.424l1.365 1.237 224.64 194.603 59.819 51.221 44.522 37.504 43.392 35.67 25.558 20.416 17.258 13.525 23.552 18.176 18.646 14.208 9.813 7.424c60.16 45.355 57.557 119.083 12.736 168.341l-5.312 5.547-37.93 37.867 1.343.661c26.112 13.803 32.235 50.56 6.294 73.387l-2.518 2.133-323.093 231.104-1.024.81a51.84 51.84 0 01-22.4 8.769l-4.053.426-2.56.064c-40.448 0-54.187-39.168-39.403-67.733l1.515-2.73 67.008-108.673h-5.44c-35.563 0-55.616-35.221-40.427-64.576l28.16-47.36-1.43-.256C337.366 672.384 272.492 612.245 254.7 550.7l-1.28-4.736a55.19 55.19 0 013.626-36.907l1.152-2.219-.597-.597c-44.373-45.973-69.013-108.736-65.216-174.677l.427-6.187c1.77-20.245 12.117-37.93 28.928-46.507l1.77-.853-.341-.768c-24.256-56.107-27.328-121.173-3.883-186.603l2.432-6.528c8.79-22.784 26.411-39.594 51.264-41.301l4.224-.15zm36.907 128.661c-5.76 0-10.453 4.395-13.44 12.245-31.232 81.664 46.165 159.958 95.232 201.664 49.067 41.728 122.155 80.214 167.19 100.459 1.493.747.575 2.73-.854 2.73a1.579 1.579 0 01-.704 0c-82.261-35.69-170.752-67.114-248.341-126.08a14.293 14.293 0 00-8.534-3.413c-4.864 0-8.618 3.862-9.301 11.883-5.76 69.077 66.24 139.35 131.605 164.843 35.072 12.16 71.467 20.224 108.416 24.085 1.856.213 1.451 2.901-.405 2.901h-.917c-50.475-.938-125.355-8.938-172.459-26.837a13.568 13.568 0 00-4.843-.96c-6.293 0-8.426 6.187-7.168 11.392 8.15 32.939 74.368 81.557 140.011 92.203 9.557 1.408 19.2 2.069 28.864 1.984h8.384c2.304 0 3.221 1.493 2.304 3.541l-20.267 34.197-4.906 8.278-21.355 36.053c-1.493 2.517-.576 4.565 2.581 4.565h58.262c2.709 0 4.394 1.707 2.986 3.968l-82.261 134.486c-2.176 3.712-1.024 6.784 1.963 6.784a8.021 8.021 0 00-4.629-1.835l229.355-179.2c3.242-2.56 2.432-5.696-2.07-5.696h-52.821c-3.413 0-4.224-2.347-1.856-4.608 1.579-1.536 27.69-27.179 50.987-50.368l6.869-6.87c8.96-8.98 17.067-17.151 22.507-22.783 21.312-22.08 32.213-62.55-3.862-89.984-111.957-85.419-255.68-212.928-394.24-334.272a18.581 18.58 0 00-11.307-5.205l-1.536-.085z"/>
+                    <path d="M277.205 42.667l3.563.149c13.653 1.173 26.56 6.592 36.843 15.424l1.365 1.237 224.64 194.603 59.819 51.221 44.522 37.504 43.392 35.67 25.558 20.416 17.258 13.525 23.552 18.176 18.646 14.208 9.813 7.424c60.16 45.355 57.557 119.083 12.736 168.341l-5.312 5.547-37.93 37.867 1.343.661c26.112 13.803 32.235 50.56 6.294 73.387l-2.518 2.133-323.093 231.104-1.024.81a51.84 51.84 0 01-22.4 8.769l-4.053.426-2.56.064c-40.448 0-54.187-39.168-39.403-67.733l1.515-2.73 67.008-108.673h-5.44c-35.563 0-55.616-35.221-40.427-64.576l28.16-47.36-1.43-.256C337.366 672.384 272.492 612.245 254.7 550.7l-1.28-4.736a55.19 55.19 0 013.626-36.907l1.152-2.219-.597-.597c-44.373-45.973-69.013-108.736-65.216-174.677l.427-6.187c1.77-20.245 12.117-37.93 28.928-46.507l1.77-.853-.341-.768c-24.256-56.107-27.328-121.173-3.883-186.603l2.432-6.528c8.79-22.784 26.411-39.594 51.264-41.301l4.224-.15zm36.907 128.661c-5.76 0-10.453 4.395-13.44 12.245-31.232 81.664 46.165 159.958 95.232 201.664 49.067 41.728 122.155 80.214 167.19 100.459 1.493.747.575 2.73-.854 2.73a1.579 1.579 0 01-.704 0c-82.261-35.69-170.752-67.114-248.341-126.08a14.293 14.293 0 00-8.534-3.413c-4.864 0-8.618 3.862-9.301 11.883-5.76 69.077 66.24 139.35 131.605 164.843 35.072 12.16 71.467 20.224 108.416 24.085 1.856.213 1.451 2.901-.405 2.901h-.917c-50.475-.938-125.355-8.938-172.459-26.837a13.568 13.568 0 00-4.843-.96c-6.293 0-8.426 6.187-7.168 11.392 8.15 32.939 74.368 81.557 140.011 92.203 9.557 1.408 19.2 2.069 28.864 1.984h8.384c2.304 0 3.221 1.493 2.304 3.541l-20.267 34.197-4.906 8.278-21.355 36.053c-1.493 2.517-.576 4.565 2.581 4.565h58.262c2.709 0 4.394 1.707 2.986 3.968l-82.261 134.486c-2.176 3.712-1.024 6.784 1.963 6.784a8.021 8.021 0 00-4.629-1.835l229.355-179.2c3.242-2.56 2.432-5.696-2.07-5.696h-52.821c-3.413 0-4.224-2.347-1.856-4.608 1.579-1.536 27.69-27.179 50.987-50.368l6.869-6.87c8.96-8.98 17.067-17.151 22.507-22.783 21.312-22.08 32.213-62.55-3.862-89.984-111.957-85.419-255.68-212.928-394.24-334.272a18.56 18.56 0 00-12.032-4.459z" />
                   </svg>
                 </template>
                 跳转钉钉授权绑定
@@ -264,15 +268,15 @@ const filteredUserData = computed(() => {
 });
 
 const columns: PrimaryTableCol[] = [
-  { colKey: 'id', title: 'ID', width: 80 },
-  { colKey: 'account', title: '用户名' },
-  { colKey: 'name', title: '姓名' },
-  { colKey: 'organizations', title: '所属组织', cell: 'organizations' },
-  { colKey: 'role', title: '角色', cell: 'role' },
-  { colKey: 'dingtalk', title: '钉钉绑定', width: 120, cell: 'dingtalk' },
-  { colKey: 'status', title: '状态', width: 120, cell: 'status' },
-  { colKey: 'createTime', title: '创建时间', width: 200, cell: 'createTime' },
-  { colKey: 'op', title: '操作', width: 320, fixed: 'right', cell: 'op' },
+  { colKey: 'id', title: 'ID', width: 70 },
+  { colKey: 'account', title: '用户名', width: 120 },
+  { colKey: 'name', title: '姓名', width: 100 },
+  { colKey: 'organizations', title: '所属组织', width: 150, cell: 'organizations' },
+  { colKey: 'role', title: '角色', width: 120, cell: 'role' },
+  { colKey: 'dingtalk', title: '钉钉绑定', width: 100, cell: 'dingtalk' },
+  { colKey: 'status', title: '状态', width: 100, cell: 'status' },
+  { colKey: 'createTime', title: '创建时间', width: 180, cell: 'createTime' },
+  { colKey: 'op', title: '操作', width: 120, fixed: 'right', cell: 'op' },
 ];
 
 const pagination = reactive({
@@ -595,14 +599,17 @@ const handleDelete = async (row: User) => {
     margin-top: 16px;
 }
 
-.tab-header {
+.management-container {
+    width: 100%;
+}
+
+.management-header {
     margin-bottom: 16px;
-    margin-top: 16px;
 }
 
 .header-actions {
   display: flex;
-  gap: 16px;
+  gap: 12px;
   flex-wrap: wrap;
 }
 
@@ -671,5 +678,57 @@ const handleDelete = async (row: User) => {
   color: var(--td-text-color-secondary);
   line-height: 1.6;
   margin: 0;
+}
+
+/* 表格横向滚动 */
+:deep(.t-table__content) {
+    overflow-x: auto;
+}
+
+/* 移动端适配 */
+@media (max-width: 767px) {
+    .management-header {
+        margin-bottom: 12px;
+    }
+
+    .header-actions {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .header-actions :deep(.t-input) {
+        width: 100% !important;
+    }
+
+    .header-actions :deep(.t-button) {
+        width: 100%;
+    }
+
+    :deep(.t-table) {
+        font-size: 12px;
+    }
+
+    :deep(.t-table th),
+    :deep(.t-table td) {
+        padding: 8px 10px !important;
+    }
+
+    :deep(.t-form-item) {
+        margin-bottom: 16px;
+    }
+
+    .bind-iframe {
+        height: 240px;
+    }
+
+    .bind-other-content {
+        padding: 16px;
+    }
+
+    .bind-other-info {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
 }
 </style>

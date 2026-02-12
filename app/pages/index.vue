@@ -379,4 +379,39 @@ const isSuperAdmin = computed(() => {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* 移动端适配 */
+@media (max-width: 767px) {
+    .dashboard-container {
+        padding: 16px;
+    }
+
+    .shadow-card:hover {
+        transform: none;
+    }
+
+    .booking-room {
+        font-size: 16px;
+    }
+
+    .notice-list-item {
+        padding: 10px 0;
+    }
+
+    .notice-item-content {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+    }
+
+    .notice-detail-meta {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .quick-actions-card {
+        margin-top: 12px;
+    }
+}
 </style>

@@ -1,6 +1,9 @@
 <template>
   <t-layout class="app-layout">
     <t-header class="app-header">
+      <div class="mobile-menu-btn" @click="drawerVisible = true">
+        <ViewListIcon class="menu-icon" />
+      </div>
       <div class="logo-container">
         <img src="/favicon.svg" alt="Logo" class="logo-icon" />
         <span class="logo-text">WZHS Booking</span>
@@ -8,11 +11,15 @@
       <t-head-menu theme="light" value="item1" class="header-menu">
         <template #operations>
           <div class="user-info-header">
-            <t-tag theme="primary" variant="light" class="role-tag">{{ getRoleName(userInfo?.role) }}</t-tag>
+            <t-tag theme="primary" variant="light" class="role-tag desktop-only">
+              {{ getRoleName(userInfo?.role) }}
+            </t-tag>
             <t-dropdown trigger="click" @click="handleDropdownClick">
               <t-link theme="default" class="user-name-link">
                 <UserCircleIcon class="user-avatar-icon" />
-                <span class="user-name-text">{{ userInfo?.name }} ({{ userInfo?.account }})</span>
+                <span class="user-name-text">
+                  {{ userInfo?.name }}<span class="desktop-only"> ({{ userInfo?.account }})</span>
+                </span>
                 <ChevronDownIcon class="chevron-icon" />
               </t-link>
               <t-dropdown-menu>
@@ -26,7 +33,7 @@
       </t-head-menu>
     </t-header>
     <t-layout>
-      <t-aside class="app-aside" width="180px">
+      <t-aside class="app-aside desktop-only" width="180px">
         <t-menu theme="light" :value="$route.path" @change="handleMenuClick" style="width: 100%">
           <t-menu-item value="/" to="/">
             <template #icon><HomeIcon /></template>
@@ -96,6 +103,85 @@
           </t-menu-item>
         </t-menu>
       </t-aside>
+
+      <t-drawer
+        v-model:visible="drawerVisible"
+        placement="left"
+        :footer="false"
+        header="菜单"
+        size="200px"
+        class="mobile-drawer"
+      >
+        <t-menu theme="light" :value="$route.path" @change="handleMenuClick" style="width: 100%">
+          <t-menu-item value="/" to="/">
+            <template #icon><HomeIcon /></template>
+            首页
+          </t-menu-item>
+          <t-menu-item value="/my-bookings" to="/my-bookings">
+            <template #icon><ViewModuleIcon /></template>
+            我的预约
+          </t-menu-item>
+          <t-menu-item value="/overview" to="/overview">
+            <template #icon><CalendarIcon /></template>
+            总览
+          </t-menu-item>
+          <t-menu-item value="/feedback" to="/feedback">
+            <template #icon><ChatIcon /></template>
+            意见反馈
+          </t-menu-item>
+
+          <template v-if="isAdmin">
+            <t-divider style="margin: 8px 0" />
+            <t-menu-item value="/booking-management" to="/booking-management">
+              <template #icon><AssignmentIcon /></template>
+              预约审批
+            </t-menu-item>
+            <t-menu-item value="/auto-approval" to="/auto-approval">
+              <template #icon><ControlPlatformIcon /></template>
+              自动审批规则
+            </t-menu-item>
+            <t-menu-item value="/room-management" to="/room-management">
+              <template #icon><LocationIcon /></template>
+              场地管理
+            </t-menu-item>
+            <t-menu-item value="/account-management" to="/account-management">
+              <template #icon><UserSettingIcon /></template>
+              用户管理
+            </t-menu-item>
+            <t-menu-item value="/organization-management" to="/organization-management">
+              <template #icon><UsergroupIcon /></template>
+              组织管理
+            </t-menu-item>
+            <t-menu-item value="/invitation-code-management" to="/invitation-code-management">
+              <template #icon><RootListIcon /></template>
+              邀请码管理
+            </t-menu-item>
+            <t-menu-item value="/notice-management" to="/notice-management">
+              <template #icon><NotificationIcon /></template>
+              通知管理
+            </t-menu-item>
+            <t-menu-item value="/feedback-management" to="/feedback-management">
+              <template #icon><ChatBubbleHelpIcon /></template>
+              反馈管理
+            </t-menu-item>
+            <t-menu-item v-if="isSuperAdmin" value="/backup-management" to="/backup-management">
+              <template #icon><CloudDownloadIcon /></template>
+              数据备份
+            </t-menu-item>
+          </template>
+
+          <t-divider style="margin: 8px 0" />
+          <t-menu-item value="/about" to="/about">
+            <template #icon><InfoCircleIcon /></template>
+            关于
+          </t-menu-item>
+          <t-menu-item v-if="showDebug" value="/debug" to="/debug">
+            <template #icon><BugIcon /></template>
+            调试
+          </t-menu-item>
+        </t-menu>
+      </t-drawer>
+
       <t-layout>
         <t-content class="app-content">
           <slot />
@@ -103,7 +189,6 @@
       </t-layout>
     </t-layout>
 
-    <!-- 个人信息对话框 -->
     <t-dialog
       v-model:visible="profileVisible"
       header="个人信息"
@@ -130,7 +215,6 @@
       </div>
     </t-dialog>
 
-    <!-- 修改密码对话框 -->
     <t-dialog
       v-model:visible="passwordVisible"
       header="修改密码"
@@ -153,7 +237,6 @@
       </div>
     </t-dialog>
 
-    <!-- 通知弹窗 -->
     <t-dialog
       v-model:visible="noticePopupVisible"
       :header="popupNotice?.title"
@@ -197,10 +280,10 @@ import {
   NotificationIcon,
   ChatBubbleHelpIcon,
   CloudDownloadIcon,
-  FileIcon,
   InfoCircleIcon,
   BugIcon,
   CheckIcon,
+  ViewListIcon,
 } from 'tdesign-icons-vue-next';
 import { onMounted, ref, reactive } from 'vue';
 import { formatDateTime } from '~/utils/format';
@@ -208,23 +291,21 @@ import { formatDateTime } from '~/utils/format';
 const route = useRoute();
 const router = useRouter();
 
-const isDev = import.meta.env.DEV;
+const drawerVisible = ref(false);
 const showDebug = useState('showDebug', () => false);
-
-// 使用响应式对象存储用户信息
 const userInfo = ref<any>(null);
 
-// 通知弹窗
 const noticePopupVisible = ref(false);
 const popupNotice = ref<any>(null);
 
 const fetchPopupNotice = async () => {
+    if (!userInfo.value) return
+
     try {
         const res: any = await $fetch('/api/notices', { query: { pageSize: 50 } });
         const notices = res.notices || [];
         const popup = notices.find((n: any) => n.showPopup);
         if (popup) {
-            // 简单的防重复：如果本次会话已经显示过该 ID，则不再显示
             const shownList = JSON.parse(sessionStorage.getItem('shown_notices') || '[]');
             if (!shownList.includes(popup.id)) {
                 popupNotice.value = popup;
@@ -234,11 +315,10 @@ const fetchPopupNotice = async () => {
             }
         }
     } catch (error) {
-        console.error('Failed to fetch popup notice:', error);
+        // 静默处理
     }
 };
 
-// 在客户端从localStorage加载用户信息
 onMounted(() => {
   showDebug.value = localStorage.getItem('showDebugMenu') === 'true';
   const userStr = localStorage.getItem('user');
@@ -261,7 +341,6 @@ const isSuperAdmin = computed(() => {
   return userInfo.value?.role === 'super_admin';
 });
 
-// 个人信息逻辑
 const profileVisible = ref(false);
 const passwordVisible = ref(false);
 const passwordLoading = ref(false);
@@ -275,7 +354,6 @@ const profileData = reactive({
   organizations: [] as any[],
 });
 
-// 修改密码逻辑
 const passwordData = reactive({
   oldPassword: '',
   newPassword: '',
@@ -313,7 +391,6 @@ const handleDropdownClick = async (data: any) => {
   } else if (data.value === 'password') {
     passwordVisible.value = true;
   } else if (data.value === 'profile') {
-    // 打开个人信息前，先获取最新数据
     try {
       const user: any = await $fetch('/api/auth/me');
       Object.assign(profileData, {
@@ -323,12 +400,10 @@ const handleDropdownClick = async (data: any) => {
         role: user.role,
         organizations: user.organizations || [],
       });
-      // 同步更新本地存储
       localStorage.setItem('user', JSON.stringify(user));
       userInfo.value = user;
       profileVisible.value = true;
     } catch (error) {
-      // 如果获取失败，使用缓存数据
       if (userInfo.value) {
         Object.assign(profileData, {
           id: userInfo.value.id,
@@ -358,7 +433,6 @@ const onPasswordSubmit = async ({ validateResult, firstError }: any) => {
       });
 
       MessagePlugin.success('密码修改成功');
-      // 重置密码表单并关闭对话框
       passwordData.oldPassword = '';
       passwordData.newPassword = '';
       passwordData.confirmPassword = '';
@@ -386,6 +460,7 @@ const handleLogout = async () => {
 
 const handleMenuClick = (value: any) => {
   router.push(value);
+  drawerVisible.value = false;
 };
 </script>
 
@@ -409,6 +484,27 @@ const handleMenuClick = (value: any) => {
   background-color: #fff;
   border-bottom: 1px solid var(--td-component-border);
   z-index: 100;
+}
+
+.mobile-menu-btn {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  margin-right: 8px;
+  cursor: pointer;
+  border-radius: var(--td-radius-default);
+  transition: background-color 0.2s;
+}
+
+.mobile-menu-btn:hover {
+  background-color: var(--td-bg-color-container-hover);
+}
+
+.mobile-menu-btn .menu-icon {
+  font-size: 24px;
+  color: var(--td-text-color-primary);
 }
 
 .logo-container {
@@ -479,22 +575,20 @@ const handleMenuClick = (value: any) => {
   overflow: hidden;
 }
 
-/* 强制菜单宽度跟随父容器，防止出现232px的默认宽度背景块 */
 :deep(.t-default-menu) {
   width: 100% !important;
 }
 
-/* 适配 180px 侧边栏的内边距 */
 :deep(.t-default-menu .t-menu__item) {
   padding-left: 16px;
   padding-right: 12px;
   margin-bottom: 4px;
 }
+
 :deep(.t-default-menu .t-menu__item .t-icon) {
   margin-right: 8px;
 }
 
-/* 修复侧边栏下方重复页脚问题 */
 .app-aside + .t-layout {
   flex: 1;
 }
@@ -514,7 +608,6 @@ const handleMenuClick = (value: any) => {
   min-height: 0;
 }
 
-/* 全局卡片样式统一 */
 .page-container {
   padding: 24px;
   display: flex;
@@ -532,7 +625,7 @@ const handleMenuClick = (value: any) => {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 8px;
-  min-height: 32px; /* 确保高度一致 */
+  min-height: 32px;
 }
 
 .page-title {
@@ -540,7 +633,7 @@ const handleMenuClick = (value: any) => {
   font-weight: 600;
   margin: 0;
   color: var(--td-text-color-primary);
-  line-height: 32px; /* 与普通按钮高度一致，确保对齐 */
+  line-height: 32px;
 }
 
 .content-card {
@@ -556,7 +649,6 @@ const handleMenuClick = (value: any) => {
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
 }
 
-/* 统一表格样式 */
 :deep(.t-table) {
   background-color: transparent;
 }
@@ -571,7 +663,10 @@ const handleMenuClick = (value: any) => {
   white-space: nowrap;
 }
 
-/* 移除默认 margin 并防止全屏滚动 */
+:deep(.t-table__content) {
+  overflow-x: auto;
+}
+
 body, html {
   margin: 0;
   padding: 0;
@@ -579,11 +674,66 @@ body, html {
   overflow: hidden;
 }
 
-.app-footer {
-  padding: 16px;
-  text-align: center;
-  color: var(--td-text-color-placeholder);
-  font-size: 12px;
-  background-color: var(--td-bg-color-page);
+:deep(.t-drawer__content) {
+  padding: 0;
+}
+
+:deep(.t-drawer__body) {
+  padding: 0;
+}
+
+.desktop-only {
+  display: inline;
+}
+
+/* 移动端适配 */
+@media (max-width: 767px) {
+  .mobile-menu-btn {
+    display: flex;
+  }
+
+  .desktop-only {
+    display: none !important;
+  }
+
+  .app-header {
+    padding: 0 12px;
+  }
+
+  .logo-container {
+    font-size: 16px;
+  }
+
+  .logo-icon {
+    width: 28px;
+    height: 28px;
+  }
+
+  .user-info-header {
+    gap: 8px;
+    padding-right: 0;
+  }
+
+  .user-name-text {
+    font-size: 13px;
+  }
+
+  .page-container {
+    padding: 12px;
+  }
+
+  .page-title {
+    font-size: 18px;
+  }
+
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .page-header .t-button {
+    width: 100%;
+  }
 }
 </style>

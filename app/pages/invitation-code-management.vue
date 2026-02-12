@@ -18,6 +18,8 @@
           :columns="columns"
           :loading="loading"
           :hover="true"
+          :scroll="{ type: 'auto', x: 800 }"
+          table-layout="fixed"
         >
           <template #organization="{ row }">
             {{ row.organization?.name || '所有组织' }}
@@ -104,7 +106,7 @@ const columns: PrimaryTableCol[] = [
   { colKey: 'expiresAt', title: '过期时间', width: 180 },
   { colKey: 'usage', title: '使用情况', width: 100 },
   { colKey: 'createTime', title: '创建时间', width: 180 },
-  { colKey: 'operation', title: '操作', width: 100, fixed: 'right' }
+  { colKey: 'operation', title: '操作', width: 120, fixed: 'right' }
 ]
 
 // 骨架屏配置
@@ -228,3 +230,36 @@ onMounted(() => {
   fetchOrganizations()
 })
 </script>
+
+<style scoped>
+/* 表格横向滚动 */
+:deep(.t-table__content) {
+    overflow-x: auto;
+}
+
+/* 移动端适配 */
+@media (max-width: 767px) {
+    .page-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+    }
+
+    .header-actions .t-button {
+        width: 100%;
+    }
+
+    :deep(.t-table) {
+        font-size: 13px;
+    }
+
+    :deep(.t-table th),
+    :deep(.t-table td) {
+        padding: 10px 12px !important;
+    }
+
+    :deep(.t-form-item) {
+        margin-bottom: 16px;
+    }
+}
+</style>

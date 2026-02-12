@@ -98,9 +98,12 @@ export default defineEventHandler(async (event) => {
 
     // 构建回调地址
     let customRedirectUri: string | undefined
+    // 从请求头获取实际的主机地址
+    const requestHost = getRequestHeader(event, 'host') || 'localhost:3000'
+    const protocol = process.env.NODE_ENV === 'production' ? 'https' : 'http'
     const host = process.env.NODE_ENV === 'production'
-        ? (process.env.APP_URL || '')
-        : 'http://localhost:3000'
+        ? (process.env.APP_URL || `${protocol}://${requestHost}`)
+        : `${protocol}://${requestHost}`
 
     if (bindMode) {
         // 绑定模式：回调到绑定桥接页面

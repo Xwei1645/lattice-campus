@@ -561,4 +561,105 @@ const getBookingsForCell = (roomId: number, dateStr: string) => {
 .booking-detail {
   padding: 8px 0;
 }
+
+/* 移动端适配 */
+@media (max-width: 767px) {
+    .page-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+    }
+
+    .header-left {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+    }
+
+    .header-left .t-space {
+        flex-wrap: wrap;
+    }
+
+    .filter-label {
+        font-size: 13px;
+    }
+
+    .header-left .t-date-range-picker {
+        width: 100% !important;
+    }
+
+    .header-left .t-select {
+        width: 100% !important;
+    }
+
+    .header-right {
+        justify-content: flex-start;
+    }
+
+    .legend-container {
+        flex-wrap: wrap;
+        height: auto;
+        padding: 8px 0;
+    }
+
+    .table-wrapper {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .schedule-table {
+        min-width: 600px;
+    }
+
+    .schedule-table th,
+    .schedule-table td {
+        padding: 6px 4px;
+        font-size: 12px;
+    }
+
+    .corner-cell {
+        width: 80px;
+    }
+
+    .corner-content {
+        min-height: 50px;
+    }
+
+    .corner-top,
+    .corner-bottom {
+        font-size: 10px;
+    }
+
+    .th-date,
+    .row-date {
+        font-size: 12px;
+    }
+
+    .th-weekday,
+    .row-weekday {
+        font-size: 10px;
+    }
+
+    .booking-item {
+        padding: 4px 6px;
+        font-size: 11px;
+    }
+
+    .booking-time {
+        font-size: 11px;
+    }
+
+    .booking-purpose {
+        font-size: 11px;
+    }
+
+    .booking-user {
+        font-size: 10px;
+    }
+
+    :deep(.t-descriptions__label) {
+        min-width: 70px;
+        font-size: 13px;
+    }
+}
 </style>

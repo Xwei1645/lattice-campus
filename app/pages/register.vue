@@ -87,7 +87,7 @@
         </p>
       </div>
     </div>
-    <p class="copyright">© 2025-2026 Xwei1645. All Rights Reserved.</p>
+    <p class="copyright">©2026 WZHS Dev Team. All Rights Reserved.</p>
   </div>
 </template>
 

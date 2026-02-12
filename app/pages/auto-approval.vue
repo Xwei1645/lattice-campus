@@ -22,6 +22,8 @@
           :loading="rulesLoading"
           :hover="true"
           :pagination="pagination"
+          :scroll="{ type: 'auto', x: 800 }"
+          table-layout="fixed"
         >
           <template #conditions="{ row }">
             <div class="rule-conditions">
@@ -58,7 +60,7 @@
       </t-skeleton>
     </t-card>
 
-    <!-- 新增/编辑规则对话框 -->
+    <!-- 新增/编辑规则对话框（仅客户端渲染） -->
     <t-dialog
       v-model:visible="ruleDialogVisible"
       :confirm-btn="{ content: '提交', loading: ruleSubmitLoading }"
@@ -75,7 +77,7 @@
         <t-form-item label="规则名称" name="name">
           <t-input v-model="ruleFormData.name" placeholder="例如：学生会预约自动通过" variant="filled" />
         </t-form-item>
-        
+
         <div class="form-grid">
           <t-form-item label="限定组织" name="organizationId">
             <t-select v-model="ruleFormData.organizationId" :options="organizationOptions" clearable filterable placeholder="不限" variant="filled" />
@@ -143,12 +145,12 @@ const ruleFormRules = {
 }
 
 const ruleColumns: PrimaryTableCol[] = [
-  { colKey: 'name', title: '规则名称' },
-  { colKey: 'conditions', title: '触发条件' },
+  { colKey: 'name', title: '规则名称', width: 150 },
+  { colKey: 'conditions', title: '触发条件', width: 280 },
   { colKey: 'action', title: '执行动作', width: 100 },
   { colKey: 'status', title: '状态', width: 100 },
   { colKey: 'createTime', title: '创建时间', width: 180 },
-  { colKey: 'operation', title: '操作', width: 150, fixed: 'right' }
+  { colKey: 'operation', title: '操作', width: 120, fixed: 'right' }
 ]
 
 // 骨架屏配置
@@ -300,5 +302,44 @@ onMounted(() => {
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
+}
+
+/* 表格横向滚动 */
+:deep(.t-table__content) {
+    overflow-x: auto;
+}
+
+/* 移动端适配 */
+@media (max-width: 767px) {
+    .page-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+    }
+
+    .header-actions .t-button {
+        width: 100%;
+    }
+
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    :deep(.t-table) {
+        font-size: 13px;
+    }
+
+    :deep(.t-table th),
+    :deep(.t-table td) {
+        padding: 10px 8px !important;
+    }
+
+    :deep(.t-dialog) {
+        width: 95% !important;
+    }
+
+    :deep(.t-form-item) {
+        margin-bottom: 16px;
+    }
 }
 </style>

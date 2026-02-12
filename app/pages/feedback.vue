@@ -211,4 +211,43 @@ onMounted(() => {
   font-size: 13px;
   color: var(--td-text-color-secondary);
 }
+
+/* 移动端适配 */
+@media (max-width: 767px) {
+    .page-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+    }
+
+    .header-actions .t-button {
+        width: 100%;
+    }
+
+    .feedback-header {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .feedback-time {
+        order: 3;
+        width: 100%;
+    }
+
+    .feedback-content {
+        font-size: 13px;
+    }
+
+    .feedback-reply {
+        padding: 10px;
+    }
+
+    .reply-content {
+        font-size: 12px;
+    }
+
+    :deep(.t-form-item) {
+        margin-bottom: 16px;
+    }
+}
 </style>

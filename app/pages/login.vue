@@ -147,7 +147,7 @@
             </div>
         </div>
 
-        <p class="copyright">© 2025-2026 Xwei1645. All Rights Reserved.</p>
+        <p class="copyright">©2026 WZHS Dev Team. All Rights Reserved.</p>
     </div>
 </template>
 
@@ -470,5 +470,58 @@ onUnmounted(() => {
 .seewo-login-btn:hover {
     background-color: #389e0d;
     border-color: #389e0d;
+}
+
+/* 移动端适配 */
+@media (max-width: 767px) {
+    .login-container {
+        padding: 16px;
+    }
+
+    .login-box {
+        padding: 24px 20px;
+    }
+
+    .login-header {
+        margin-bottom: 24px;
+    }
+
+    .logo-text {
+        font-size: 24px;
+    }
+
+    .sub-title {
+        font-size: 13px;
+    }
+
+    .login-divider {
+        margin: 20px 0;
+    }
+
+    .login-divider span {
+        padding: 0 12px;
+        font-size: 13px;
+    }
+
+    .admin-login-hint,
+    .teacher-login-hint,
+    .student-login-hint {
+        padding: 10px 12px;
+        font-size: 13px;
+    }
+
+    .login-footer {
+        margin-top: 20px;
+        padding-top: 12px;
+    }
+
+    .contact-admin {
+        font-size: 13px;
+    }
+
+    .copyright {
+        margin-top: 16px;
+        font-size: 11px;
+    }
 }
 </style>

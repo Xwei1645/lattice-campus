@@ -24,6 +24,8 @@
           :loading="loading"
           :hover="true"
           :pagination="pagination"
+          :scroll="{ type: 'auto', x: 800 }"
+          table-layout="fixed"
           @page-change="onPageChange"
         >
           <template #createTime="{ row }">
@@ -133,11 +135,11 @@ const pagination = reactive({
 
 const columns: PrimaryTableCol[] = [
   { colKey: 'id', title: 'ID', width: 80 },
-  { colKey: 'name', title: '组织名称' },
-  { colKey: 'users', title: '组织成员', cell: 'users' },
-  { colKey: 'description', title: '描述' },
+  { colKey: 'name', title: '组织名称', width: 150 },
+  { colKey: 'users', title: '组织成员', cell: 'users', width: 200 },
+  { colKey: 'description', title: '描述', width: 200 },
   { colKey: 'createTime', title: '创建时间', width: 180, cell: 'createTime' },
-  { colKey: 'operation', title: '操作', width: 150, fixed: 'right' }
+  { colKey: 'operation', title: '操作', width: 120, fixed: 'right' }
 ]
 
 // 骨架屏配置
@@ -240,5 +242,53 @@ onMounted(() => {
 .header-actions {
   display: flex;
   justify-content: flex-end;
+}
+
+/* 表格横向滚动 */
+:deep(.t-table__content) {
+    overflow-x: auto;
+}
+
+/* 移动端适配 */
+@media (max-width: 767px) {
+    .page-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+    }
+
+    .header-actions {
+        flex-direction: column;
+    }
+
+    .header-actions :deep(.t-input-adornment) {
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .header-actions :deep(.t-input-adornment .t-input) {
+        width: 100%;
+    }
+
+    .header-actions :deep(.t-input-adornment__append) {
+        margin-left: 0 !important;
+    }
+
+    .header-actions :deep(.t-input-adornment__append .t-button) {
+        width: 100%;
+    }
+
+    :deep(.t-table) {
+        font-size: 13px;
+    }
+
+    :deep(.t-table th),
+    :deep(.t-table td) {
+        padding: 10px 12px !important;
+    }
+
+    :deep(.t-form-item) {
+        margin-bottom: 16px;
+    }
 }
 </style>

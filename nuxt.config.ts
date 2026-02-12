@@ -79,10 +79,10 @@ export default defineNuxtConfig({
           // 内容安全策略（根据实际需求调整）
           'Content-Security-Policy': [
             "default-src 'self'",
-            "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://tdesign.gtimg.com",
             "style-src 'self' 'unsafe-inline'",
             "img-src 'self' data: https:",
-            "font-src 'self' data:",
+            "font-src 'self' data: https://tdesign.gtimg.com",
             "connect-src 'self'",
             "frame-ancestors 'none'",
             "base-uri 'self'",
