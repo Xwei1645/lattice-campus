@@ -1,4 +1,5 @@
 import { db } from '../../utils/prisma'
+import { sendSuccess, handleError } from '../../utils/api'
 
 export default defineEventHandler(async (event) => {
     try {
@@ -7,11 +8,8 @@ export default defineEventHandler(async (event) => {
                 createTime: 'desc'
             }
         })
-        return rooms
+        return sendSuccess(event, rooms, '获取场地列表成功')
     } catch (error: any) {
-        throw createError({
-            statusCode: 500,
-            statusMessage: error.message
-        })
+        return handleError(error)
     }
 })

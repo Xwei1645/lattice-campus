@@ -1,25 +1,30 @@
 import { db } from '../../utils/prisma'
 import { requireAuth } from '../../utils/auth'
+import { sendSuccess, handleError } from '../../utils/api'
 
 export default defineEventHandler(async (event) => {
-    const user = await requireAuth(event)
-    const isAdmin = ['root', 'super_admin', 'admin'].includes(user.role)
+    try {
+        const user = await requireAuth(event)
+        const isAdmin = ['super_admin', 'admin'].includes(user.role)
 
-    const feedbacks = await db.feedback.findMany({
-        where: isAdmin ? {} : { userId: user.id },
-        include: {
-            user: {
-                select: {
-                    id: true,
-                    name: true,
-                    account: true
+        const feedbacks = await db.feedback.findMany({
+            where: isAdmin ? {} : { userId: user.id },
+            include: {
+                user: {
+                    select: {
+                        id: true,
+                        name: true,
+                        account: true
+                    }
                 }
+            },
+            orderBy: {
+                createTime: 'desc'
             }
-        },
-        orderBy: {
-            createTime: 'desc'
-        }
-    })
+        })
 
-    return feedbacks
+        return sendSuccess(event, feedbacks, '获取反馈列表成功')
+    } catch (error) {
+        return handleError(error)
+    }
 })

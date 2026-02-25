@@ -30,3 +30,6 @@ backups/
 # Database
 *.db
 *.db-journal
+
+# Trae IDE
+.trae/

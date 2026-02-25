@@ -11,32 +11,34 @@
     </div>
 
     <t-card :bordered="false" class="content-card">
-      <t-table
-        row-key="id"
-        :data="notices"
-        :columns="columns"
-        :loading="loading"
-        :hover="true"
-        resizable
-        table-layout="auto"
-        :pagination="pagination"
-      >
-        <template #showPopup="{ row }">
-          <t-tag v-if="row.showPopup" theme="warning" variant="light">是</t-tag>
-          <span v-else>否</span>
-        </template>
-        <template #createTime="{ row }">
-          {{ formatDateTime(row.createTime) }}
-        </template>
-        <template #operation="{ row }">
-          <t-space>
-            <t-link theme="primary" hover="color" @click="handleEdit(row)">编辑</t-link>
-            <t-popconfirm content="确认删除该通知吗？" @confirm="handleDelete(row)">
-              <t-link theme="danger" hover="color">删除</t-link>
-            </t-popconfirm>
-          </t-space>
-        </template>
-      </t-table>
+      <t-skeleton :loading="loading" :row-col="tableSkeleton" animation="gradient">
+        <t-table
+          row-key="id"
+          :data="notices"
+          :columns="columns"
+          :loading="loading"
+          :hover="true"
+          resizable
+          table-layout="auto"
+          :pagination="pagination"
+        >
+          <template #showPopup="{ row }">
+            <t-tag v-if="row.showPopup" theme="warning" variant="light">是</t-tag>
+            <span v-else>否</span>
+          </template>
+          <template #createTime="{ row }">
+            {{ formatDateTime(row.createTime) }}
+          </template>
+          <template #operation="{ row }">
+            <t-space>
+              <t-link theme="primary" hover="color" @click="handleEdit(row)">编辑</t-link>
+              <t-popconfirm content="确认删除该通知吗？" @confirm="handleDelete(row)">
+                <t-link theme="danger" hover="color">删除</t-link>
+              </t-popconfirm>
+            </t-space>
+          </template>
+        </t-table>
+      </t-skeleton>
     </t-card>
 
     <!-- Add/Edit Dialog -->
@@ -102,6 +104,16 @@ const columns: PrimaryTableCol[] = [
   { colKey: 'operation', title: '操作', cell: 'operation', width: 120 }
 ]
 
+// 骨架屏配置
+const tableSkeleton = Array(6).fill([
+  { width: '70px' },
+  { width: '40%' },
+  { width: '100px' },
+  { width: '120px' },
+  { width: '180px' },
+  { width: '120px' },
+]);
+
 const pagination = reactive({
   current: 1,
   pageSize: 10,
@@ -123,8 +135,8 @@ const fetchNotices = async () => {
         pageSize: pagination.pageSize
       }
     })
-    notices.value = res.notices
-    pagination.total = res.total
+    notices.value = res.data?.notices || []
+    pagination.total = res.data?.total || 0
   } catch (error) {
     MessagePlugin.error('获取通知列表失败')
   } finally {

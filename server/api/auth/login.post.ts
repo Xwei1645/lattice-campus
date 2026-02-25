@@ -49,7 +49,6 @@ export default defineEventHandler(async (event) => {
             })
         }
 
-        // 创建session并设置httpOnly cookie
         const sessionToken = await createSession(user.id)
         setSessionCookie(event, sessionToken)
 

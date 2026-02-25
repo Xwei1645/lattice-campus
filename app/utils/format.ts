@@ -25,7 +25,7 @@ export const formatBookingTime = (startTime: string | Date, endTime: string | Da
 
 export const formatDateTime = (dateStr: string | Date) => {
     if (!dateStr) return '-'
-    return dayjs(dateStr).format('YYYY-MM-DD HH:mm')
+    return dayjs(dateStr).format('YYYY-MM-DD HH:mm:ss')
 }
 
 export const formatDate = (dateStr: string | Date) => {

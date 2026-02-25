@@ -33,23 +33,25 @@
         系统会根据上述设置周期性自动备份数据库。还原操作会导致当前数据被完全覆盖，请谨慎操作。
       </t-alert>
 
-      <t-table
-        row-key="name"
-        :data="backups"
-        :columns="columns"
-        :hover="true"
-        :loading="loading"
-        vertical-align="middle"
-      >
-        <template #size="{ row }">
-          {{ formatFileSize(row.size) }}
-        </template>
-        <template #op="{ row }">
-          <t-link theme="primary" hover="color" style="margin-right: 16px" @click="handleRename(row)">重命名</t-link>
-          <t-link theme="primary" hover="color" style="margin-right: 16px" @click="handleRestore(row)">还原</t-link>
-          <t-link theme="danger" hover="color" @click="handleDelete(row)">删除</t-link>
-        </template>
-      </t-table>
+      <t-skeleton :loading="loading" :row-col="tableSkeleton" animation="gradient">
+        <t-table
+          row-key="name"
+          :data="backups"
+          :columns="columns"
+          :hover="true"
+          :loading="loading"
+          vertical-align="middle"
+        >
+          <template #size="{ row }">
+            {{ formatFileSize(row.size) }}
+          </template>
+          <template #op="{ row }">
+            <t-link theme="primary" hover="color" style="margin-right: 16px" @click="handleRename(row)">重命名</t-link>
+            <t-link theme="primary" hover="color" style="margin-right: 16px" @click="handleRestore(row)">还原</t-link>
+            <t-link theme="danger" hover="color" @click="handleDelete(row)">删除</t-link>
+          </template>
+        </t-table>
+      </t-skeleton>
     </t-card>
 
     <!-- 重命名对话框 -->
@@ -102,14 +104,22 @@ const columns: PrimaryTableCol<TableRowData>[] = [
   { colKey: 'op', title: '操作', width: 150, fixed: 'right' }
 ]
 
+// 骨架屏配置
+const tableSkeleton = Array(5).fill([
+  { width: '40%' },
+  { width: '100px' },
+  { width: '180px' },
+  { width: '150px' },
+]);
+
 const fetchBackups = async () => {
   loading.value = true
   try {
-    const [backupsRes, settingsRes] = await Promise.all([
+    const [backupsRes, settingsRes]: [any, any] = await Promise.all([
       $fetch('/api/backups'),
       $fetch('/api/backups/settings')
     ])
-    backups.value = backupsRes
+    backups.value = backupsRes.data || []
     Object.assign(settings, settingsRes)
   } catch (error: any) {
     MessagePlugin.error(`获取数据失败: ${error.message}`)

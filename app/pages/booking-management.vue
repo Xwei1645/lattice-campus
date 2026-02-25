@@ -14,35 +14,37 @@
     </div>
 
     <t-card :bordered="false" class="content-card">
-      <t-table
-        row-key="id"
-        :data="filteredBookings"
-        :columns="columns"
-        :loading="loading"
-        :hover="true"
-        :pagination="pagination"
-        @page-change="onPageChange"
-      >
-        <template #time="{ row }">
-          {{ formatBookingTime(row.startTime, row.endTime) }}
-        </template>
-        <template #status="{ row }">
-          <t-tag :theme="getStatusTheme(row.status)" variant="light">
-            {{ getStatusLabel(row.status) }}
-          </t-tag>
-        </template>
-        <template #createTime="{ row }">
-          {{ formatDateTime(row.createTime) }}
-        </template>
-        <template #operation="{ row }">
-          <t-space v-if="row.status === 'pending'">
-            <t-link theme="primary" hover="color" @click="handleApprove(row)">通过</t-link>
-            <t-link theme="danger" hover="color" @click="handleReject(row)">驳回</t-link>
-          </t-space>
-          <t-link v-else-if="row.remark" theme="default" @click="showRemark(row)">查看备注</t-link>
-          <span v-else>-</span>
-        </template>
-      </t-table>
+      <t-skeleton :loading="loading" :row-col="tableSkeleton" animation="gradient">
+        <t-table
+          row-key="id"
+          :data="filteredBookings"
+          :columns="columns"
+          :loading="loading"
+          :hover="true"
+          :pagination="pagination"
+          @page-change="onPageChange"
+        >
+          <template #time="{ row }">
+            {{ formatBookingTime(row.startTime, row.endTime) }}
+          </template>
+          <template #status="{ row }">
+            <t-tag :theme="getStatusTheme(row.status)" variant="light">
+              {{ getStatusLabel(row.status) }}
+            </t-tag>
+          </template>
+          <template #createTime="{ row }">
+            {{ formatDateTime(row.createTime) }}
+          </template>
+          <template #operation="{ row }">
+            <t-space v-if="row.status === 'pending'">
+              <t-link theme="primary" hover="color" @click="handleApprove(row)">通过</t-link>
+              <t-link theme="danger" hover="color" @click="handleReject(row)">驳回</t-link>
+            </t-space>
+            <t-link v-else-if="row.remark" theme="default" @click="showRemark(row)">查看备注</t-link>
+            <span v-else>-</span>
+          </template>
+        </t-table>
+      </t-skeleton>
     </t-card>
 
 
@@ -91,11 +93,24 @@ const pagination = reactive({
   total: 0,
 })
 
+// 骨架屏配置
+const tableSkeleton = Array(8).fill([
+  { width: '40px' },
+  { width: '120px' },
+  { width: '100px' },
+  { width: '100px' },
+  { width: '250px' },
+  { width: '100px' },
+  { width: '150px' },
+  { width: '80px' },
+  { width: '120px' },
+]);
+
 const fetchBookings = async () => {
   loading.value = true
   try {
-    const data = await $fetch<any>('/api/bookings')
-    bookings.value = data as any[]
+    const res: any = await $fetch('/api/bookings')
+    bookings.value = res.data || []
     pagination.total = bookings.value.length
   } catch (error: any) {
     MessagePlugin.error('获取预约列表失败：' + error.message)
@@ -119,7 +134,7 @@ const columns: PrimaryTableCol[] = [
   { colKey: 'userName', title: '申请人' },
   { colKey: 'time', title: '预约时间', width: 300 },
   { colKey: 'purpose', title: '用途' },
-  { colKey: 'createTime', title: '申请时间', width: 180 },
+  { colKey: 'createTime', title: '申请时间', width: 200 },
   { colKey: 'status', title: '状态', width: 100 },
   { colKey: 'operation', title: '操作', width: 150, fixed: 'right' },
 ]

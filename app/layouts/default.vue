@@ -2,6 +2,7 @@
   <t-layout class="app-layout">
     <t-header class="app-header">
       <div class="logo-container">
+        <img src="/favicon.svg" alt="Logo" class="logo-icon" />
         <span class="logo-text">WZHS Booking</span>
       </div>
       <t-head-menu theme="light" value="item1" class="header-menu">
@@ -196,6 +197,7 @@ import {
   NotificationIcon,
   ChatBubbleHelpIcon,
   CloudDownloadIcon,
+  FileIcon,
   InfoCircleIcon,
   BugIcon,
   CheckIcon,
@@ -252,7 +254,7 @@ onMounted(() => {
 
 const isAdmin = computed(() => {
   const role = userInfo.value?.role;
-  return ['root', 'super_admin', 'admin'].includes(role);
+  return ['super_admin', 'admin'].includes(role);
 });
 
 const isSuperAdmin = computed(() => {
@@ -298,7 +300,6 @@ const passwordRules: any = {
 
 const getRoleName = (role: string) => {
   const map: Record<string, string> = {
-    root: '根管理员',
     super_admin: '超级管理员',
     admin: '管理员',
     user: '普通用户',
@@ -417,6 +418,15 @@ const handleMenuClick = (value: any) => {
   font-weight: bold;
   color: var(--td-brand-color);
   white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.logo-icon {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
 }
 
 .header-menu {

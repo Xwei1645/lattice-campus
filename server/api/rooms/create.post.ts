@@ -4,8 +4,7 @@ import { requireAuth } from '../../utils/auth'
 export default defineEventHandler(async (event) => {
     const user = await requireAuth(event)
 
-    // 权限检查
-    if (!['root', 'super_admin', 'admin'].includes(user.role)) {
+    if (!['super_admin', 'admin'].includes(user.role)) {
         throw createError({ statusCode: 403, statusMessage: 'Forbidden' })
     }
 
@@ -26,6 +25,7 @@ export default defineEventHandler(async (event) => {
                 status: true
             }
         })
+
         return room
     } catch (error: any) {
         if (error.code === 'P2002') {
