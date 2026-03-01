@@ -3,6 +3,9 @@
  * 拦截所有非 GET 请求，自动添加 CSRF token 到请求头
  */
 
+const CSRF_COOKIE_NAME = 'csrf_token'
+const CSRF_HEADER_NAME = 'x-csrf-token'
+
 export default defineNuxtPlugin({
     name: 'csrf',
     enforce: 'pre',
@@ -13,16 +16,17 @@ export default defineNuxtPlugin({
         }
 
         // 页面加载时确保 CSRF token 已存在
-        const { ensureCsrfToken } = await import(
-            '~/composables/useCsrf'
-        )
         await ensureCsrfToken()
 
         // 使用 ofetch 的全局拦截器
         const originalFetch = globalThis.$fetch
 
         // 重写全局 $fetch
-        globalThis.$fetch = createCsrfFetch(originalFetch) as typeof $fetch
+        globalThis.$fetch = createCsrfFetch(
+            originalFetch,
+            getCsrfToken,
+            getCsrfHeaderName
+        ) as typeof $fetch
     }
 })
 
@@ -32,32 +36,96 @@ export default defineNuxtPlugin({
  * @returns 包装后的 fetch 方法
  */
 function createCsrfFetch(
-    originalFetch: typeof $fetch
+    originalFetch: typeof $fetch,
+    getCsrfToken: () => string,
+    getCsrfHeaderName: () => string
 ) {
     return async (url: string, options?: any) => {
+        options = options || {}
+
         // 获取请求方法，默认为 GET
         const method = options?.method?.toUpperCase() || 'GET'
         
         // 仅对非安全方法添加 CSRF token
         if (!isSafeMethod(method)) {
-            // 获取 CSRF token
-            const token = getCsrfToken()
+            let token = getCsrfToken()
+
+            // 首次请求若还没有 token，先尝试获取
+            if (!token) {
+                await refreshCsrfToken(originalFetch)
+                token = getCsrfToken()
+            }
             
             if (token) {
-                // 确保 options 和 headers 存在
-                options = options || {}
                 const headers = normalizeHeaders(options.headers)
                 
                 // 添加 CSRF token 到请求头
                 options.headers = {
                     ...headers,
-                    'x-csrf-token': token
+                    [getCsrfHeaderName()]: token
                 }
             }
         }
         
-        // 调用原始的 fetch 方法
-        return originalFetch(url, options)
+        try {
+            return await originalFetch(url, options)
+        } catch (error: any) {
+            // CSRF 校验失败时，刷新 token 并重试一次
+            if (!isSafeMethod(method) && error?.status === 403) {
+                const message = String(error?.data?.message || error?.statusMessage || '')
+                if (message.includes('CSRF')) {
+                    await refreshCsrfToken(originalFetch)
+                    const retryToken = getCsrfToken()
+                    if (retryToken) {
+                        const headers = normalizeHeaders(options.headers)
+                        options.headers = {
+                            ...headers,
+                            [getCsrfHeaderName()]: retryToken
+                        }
+                        return originalFetch(url, options)
+                    }
+                }
+            }
+
+            throw error
+        }
+    }
+}
+
+function getCsrfHeaderName(): string {
+    return CSRF_HEADER_NAME
+}
+
+function getCsrfToken(): string {
+    const cookies = document.cookie.split(';')
+
+    for (const cookie of cookies) {
+        const [name, value] = cookie.trim().split('=')
+        if (name === CSRF_COOKIE_NAME) {
+            return decodeURIComponent(value || '')
+        }
+    }
+
+    return ''
+}
+
+async function ensureCsrfToken(): Promise<void> {
+    const existingToken = getCsrfToken()
+    if (existingToken) {
+        return
+    }
+
+    await refreshCsrfToken(globalThis.$fetch)
+}
+
+async function refreshCsrfToken(originalFetch: typeof $fetch): Promise<void> {
+    try {
+        await originalFetch('/api/csrf-token', {
+            method: 'GET',
+            credentials: 'same-origin'
+        })
+    } catch {
+        // 交由上层请求处理错误
     }
 }
 
@@ -94,19 +162,3 @@ function isSafeMethod(method: string): boolean {
     return safeMethods.includes(method.toUpperCase())
 }
 
-/**
- * 从 cookie 中读取 CSRF token
- * @returns CSRF token 字符串
- */
-function getCsrfToken(): string {
-    const cookies = document.cookie.split(';')
-    
-    for (const cookie of cookies) {
-        const [name, value] = cookie.trim().split('=')
-        if (name === 'csrf_token') {
-            return decodeURIComponent(value || '')
-        }
-    }
-    
-    return ''
-}

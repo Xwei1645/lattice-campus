@@ -1,4 +1,9 @@
-import { generateCsrfToken, getCsrfCookieName } from '../utils/csrf'
+import { 
+    generateCsrfToken,
+    getCsrfCookieName,
+    isValidCsrfTokenLength,
+    getCsrfCookieOptions
+} from '../utils/csrf'
 
 /**
  * 获取CSRF Token
@@ -9,15 +14,9 @@ export default defineEventHandler(async (event) => {
     let token = getCookie(event, getCsrfCookieName())
     
     // 如果没有token，生成新的
-    if (!token || token.length !== 64) {
+    if (!token || !isValidCsrfTokenLength(token)) {
         token = generateCsrfToken()
-        setCookie(event, getCsrfCookieName(), token, {
-            httpOnly: false,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'strict',
-            maxAge: 60 * 60 * 24,
-            path: '/'
-        })
+        setCookie(event, getCsrfCookieName(), token, getCsrfCookieOptions(event))
     }
 
     return {

@@ -3,8 +3,11 @@ import {
     validateCsrfToken, 
     getCsrfCookieName, 
     getCsrfHeaderName,
+    isValidCsrfTokenLength,
+    getCsrfCookieOptions,
     isCsrfExemptPath,
-    isSafeMethod
+    isSafeMethod,
+    isRequestOriginValid
 } from '../utils/csrf'
 import { createError, defineEventHandler, H3Event } from 'h3'
 
@@ -16,6 +19,11 @@ export default defineEventHandler(async (event: H3Event) => {
     const method = event.method
     const path = event.path
 
+    // 仅保护 API 路由，避免影响页面与静态资源请求
+    if (!path.startsWith('/api/')) {
+        return
+    }
+
     // 跳过安全方法和豁免路径
     if (isSafeMethod(method) || isCsrfExemptPath(path)) {
         // 确保CSRF Token存在
@@ -26,6 +34,17 @@ export default defineEventHandler(async (event: H3Event) => {
     // 验证CSRF Token
     const cookieToken = getCookie(event, getCsrfCookieName())
     const headerToken = getHeader(event, getCsrfHeaderName())
+
+    if (!isRequestOriginValid(event)) {
+        throw createError({
+            statusCode: 403,
+            statusMessage: 'CSRF Origin验证失败',
+            data: {
+                success: false,
+                message: '请求来源非法，请刷新页面重试'
+            }
+        })
+    }
 
     if (!validateCsrfToken(cookieToken || '', headerToken || '')) {
         throw createError({
@@ -49,14 +68,8 @@ async function ensureCsrfToken(event: H3Event): Promise<void> {
     let token = getCookie(event, getCsrfCookieName())
     
     // 如果没有token或token格式不正确，生成新的
-    if (!token || token.length !== 64) {
+    if (!token || !isValidCsrfTokenLength(token)) {
         token = generateCsrfToken()
-        setCookie(event, getCsrfCookieName(), token, {
-            httpOnly: false, // 需要前端读取
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'strict',
-            maxAge: 60 * 60 * 24, // 1天
-            path: '/'
-        })
+        setCookie(event, getCsrfCookieName(), token, getCsrfCookieOptions(event))
     }
 }
