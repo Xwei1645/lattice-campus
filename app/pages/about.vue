@@ -4,7 +4,7 @@
       <h2 class="page-title">关于</h2>
       <div class="header-actions">
         <t-button variant="outline" @click="diagnosticVisible = true">
-          <template #icon><t-icon name="info-circle" /></template>
+          <template #icon><InfoCircleIcon /></template>
           诊断信息
         </t-button>
       </div>
@@ -112,6 +112,7 @@
 
 <script setup lang="ts">
 import dayjs from 'dayjs'
+import { InfoCircleIcon } from 'tdesign-icons-vue-next'
 
 useHead({ title: '关于' })
 

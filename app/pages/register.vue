@@ -21,7 +21,7 @@
             variant="filled"
           >
             <template #prefix-icon>
-              <t-icon name="user" />
+              <UserIcon />
             </template>
           </t-input>
         </t-form-item>
@@ -34,7 +34,7 @@
             variant="filled"
           >
             <template #prefix-icon>
-              <t-icon name="user-circle" />
+              <UserCircleIcon />
             </template>
           </t-input>
         </t-form-item>
@@ -48,7 +48,7 @@
             variant="filled"
           >
             <template #prefix-icon>
-              <t-icon name="lock-on" />
+              <LockOnIcon />
             </template>
           </t-input>
         </t-form-item>
@@ -61,7 +61,7 @@
             variant="filled"
           >
             <template #prefix-icon>
-              <t-icon name="root-list" />
+              <RootListIcon />
             </template>
           </t-input>
         </t-form-item>
@@ -74,7 +74,7 @@
             size="large"
             :loading="loading"
           >
-            <template #icon><t-icon name="user-add" /></template>
+            <template #icon><UserAddIcon /></template>
             注册
           </t-button>
         </t-form-item>
@@ -95,6 +95,7 @@
 import { ref, reactive } from 'vue';
 import type { FormRules, SubmitContext } from 'tdesign-vue-next';
 import { MessagePlugin } from 'tdesign-vue-next'
+import { UserIcon, UserCircleIcon, LockOnIcon, RootListIcon, UserAddIcon } from 'tdesign-icons-vue-next'
 
 // 禁用默认布局
 definePageMeta({

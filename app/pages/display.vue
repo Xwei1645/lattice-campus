@@ -7,7 +7,7 @@
 
     <!-- 错误状态 -->
     <div v-else-if="error" class="center-state error-state">
-      <t-icon name="error-circle-filled" size="clamp(3rem, 5vw, 4rem)" />
+      <ErrorCircleFilledIcon size="clamp(3rem, 5vw, 4rem)" />
       <div class="error-text">{{ error }}</div>
       <div class="error-sub">请检查 URL 参数或联系管理员</div>
     </div>
@@ -37,10 +37,10 @@
               <div class="content-wrapper active">
                 <div class="main-title">{{ currentBooking.purpose }}</div>
                 <div class="sub-info organization">
-                  <t-icon name="usergroup" /> {{ currentBooking.organizationName }}
+                  <UsergroupIcon /> {{ currentBooking.organizationName }}
                 </div>
                 <div class="time-range highlight">
-                   <t-icon name="time" style="margin-right: 8px" />{{ formatTimeRange(currentBooking.startTime, currentBooking.endTime) }}
+                   <TimeIcon style="margin-right: 8px" />{{ formatTimeRange(currentBooking.startTime, currentBooking.endTime) }}
                 </div>
               </div>
             </template>
@@ -51,15 +51,15 @@
                   <div class="label-chip">即将开始</div>
                   <div class="main-title">{{ nextBooking.purpose }}</div>
                   <div class="sub-info organization">
-                    <t-icon name="usergroup" /> {{ nextBooking.organizationName }}
+                    <UsergroupIcon /> {{ nextBooking.organizationName }}
                   </div>
                   <div class="time-range">
-                     <t-icon name="time" style="margin-right: 8px" />{{ formatFullTime(nextBooking.startTime) }}-{{ formatTime(nextBooking.endTime) }}
+                     <TimeIcon style="margin-right: 8px" />{{ formatFullTime(nextBooking.startTime) }}-{{ formatTime(nextBooking.endTime) }}
                   </div>
                 </template>
                 <template v-else>
                   <div class="empty-state">
-                    <t-icon name="info-circle" size="clamp(4rem, 8vw, 6rem)" />
+                    <InfoCircleIcon size="clamp(4rem, 8vw, 6rem)" />
                     <div class="empty-text">今日后续无预约</div>
                   </div>
                 </template>
@@ -84,7 +84,7 @@
                 <div class="event-list">
                   <div v-for="item in groupedBookings[dateKey]" :key="item.id" class="event-card">
                     <div class="event-time-col">
-                       <t-icon name="time" class="list-icon" />
+                       <TimeIcon class="list-icon" />
                        <span class="event-time-text">
                          {{ formatTime(item.startTime) }}-{{ formatTime(item.endTime) }}
                        </span>
@@ -92,7 +92,7 @@
                     <div class="event-details-col">
                       <div class="event-name">{{ item.purpose }}</div>
                       <div class="event-org">
-                        <t-icon name="usergroup" class="org-icon" />
+                        <UsergroupIcon class="org-icon" />
                         {{ item.organizationName }}
                       </div>
                     </div>
@@ -101,7 +101,7 @@
               </div>
             </div>
             <div v-else class="empty-schedule-view">
-               <t-icon name="calendar" size="clamp(3rem, 5vw, 4rem)" />
+               <CalendarIcon size="clamp(3rem, 5vw, 4rem)" />
                <p>暂无后续安排</p>
             </div>
           </div>
@@ -116,6 +116,7 @@ import dayjs from 'dayjs'
 import 'dayjs/locale/zh-cn'
 import isBetween from 'dayjs/plugin/isBetween'
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { ErrorCircleFilledIcon, UsergroupIcon, TimeIcon, InfoCircleIcon, CalendarIcon } from 'tdesign-icons-vue-next'
 
 dayjs.extend(isBetween)
 dayjs.locale('zh-cn')

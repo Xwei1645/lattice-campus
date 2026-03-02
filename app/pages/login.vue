@@ -22,7 +22,7 @@
                         variant="filled"
                     >
                         <template #prefix-icon>
-                            <t-icon name="user" />
+                            <UserIcon />
                         </template>
                     </t-input>
                 </t-form-item>
@@ -36,7 +36,7 @@
                         variant="filled"
                     >
                         <template #prefix-icon>
-                            <t-icon name="lock-on" />
+                            <LockOnIcon />
                         </template>
                     </t-input>
                 </t-form-item>
@@ -55,7 +55,7 @@
                         size="large"
                         :loading="loading"
                     >
-                        <template #icon><t-icon name="login" /></template>
+                        <template #icon><LoginIcon /></template>
                         登录
                     </t-button>
                 </t-form-item>
@@ -107,6 +107,7 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted, onUnmounted } from 'vue';
 import type { FormRules } from 'tdesign-vue-next';
+import { UserIcon, LockOnIcon, LoginIcon } from 'tdesign-icons-vue-next';
 
 definePageMeta({
     layout: false,

@@ -42,11 +42,11 @@
         </template>
         <template #dingtalk="{ row }">
           <t-tag v-if="row.dingTalkOpenId" theme="success" variant="light">
-            <template #icon><t-icon name="check-circle" /></template>
+            <template #icon><CheckCircleIcon /></template>
             已绑定
           </t-tag>
           <t-tag v-else theme="default" variant="light">
-            <template #icon><t-icon name="close-circle" /></template>
+            <template #icon><CloseCircleIcon /></template>
             未绑定
           </t-tag>
         </template>
@@ -146,7 +146,7 @@
         <t-tabs v-model="bindDingtalkTab" class="bind-tabs">
           <t-tab-panel value="qrcode" label="扫码绑定">
             <div v-if="bindDingtalkLoading" class="bind-loading">
-              <t-icon name="loading" size="48px" />
+              <LoadingIcon size="48px" />
               <p>正在加载...</p>
             </div>
             <iframe
@@ -162,7 +162,7 @@
             <div class="bind-other-content">
               <p class="bind-hint">使用钉钉账号密码或通行密钥绑定</p>
               <div class="bind-other-info">
-                <t-icon name="tips" size="24px" class="info-icon" />
+                <TipsIcon size="24px" class="info-icon" />
                 <p class="info-text">点击按钮后将打开钉钉授权页面，登录完成后自动绑定到当前用户</p>
               </div>
               <t-button theme="primary" block size="large" @click="openDingtalkBind">
@@ -182,7 +182,7 @@
 </template>
 
 <script setup lang="ts">
-import { AddIcon } from 'tdesign-icons-vue-next';
+import { AddIcon, CheckCircleIcon, CloseCircleIcon, LoadingIcon, TipsIcon } from 'tdesign-icons-vue-next';
 import { ref, reactive, computed, onMounted, onUnmounted } from 'vue';
 import type { PrimaryTableCol, FormRules } from 'tdesign-vue-next';
 
