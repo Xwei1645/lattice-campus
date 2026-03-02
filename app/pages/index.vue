@@ -86,16 +86,6 @@
       </t-col>
     </t-row>
 
-    <!-- 快捷操作区域 -->
-    <t-card :bordered="false" class="quick-actions-card">
-      <t-space direction="vertical" :size="12">
-        <t-button theme="default" variant="outline" @click="$router.push('/my-bookings')">
-          <template #icon><CalendarIcon /></template>
-          查看我的预约
-        </t-button>
-      </t-space>
-    </t-card>
-
     <!-- 通知详情对话框 -->
     <t-dialog
       v-model:visible="noticeVisible"
