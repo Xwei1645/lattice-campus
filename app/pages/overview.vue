@@ -63,38 +63,37 @@
 
     <!-- 表格区域 -->
     <t-card :bordered="false" class="content-card table-card">
-      <t-skeleton :loading="roomsPending || bookingsPending" :row-col="overviewSkeleton" animation="gradient">
-        <div class="table-wrapper">
-          <table class="schedule-table">
-            <thead>
-              <tr v-if="!isSwapped">
-                <th class="corner-cell">
-                  <div class="corner-content">
-                    <span class="corner-top">场地</span>
-                    <span class="corner-line"></span>
-                    <span class="corner-bottom">日期</span>
-                  </div>
-                </th>
-                <th v-for="room in displayedRooms" :key="room.id">
-                  {{ room.name }}
-                </th>
-              </tr>
-              <tr v-else>
-                <th class="corner-cell">
-                  <div class="corner-content">
-                    <span class="corner-top">日期</span>
-                    <span class="corner-line"></span>
-                    <span class="corner-bottom">场地</span>
-                  </div>
-                </th>
-                <th v-for="day in weekDays" :key="day.dateStr">
-                  <div class="th-date">{{ day.dateStr }}</div>
-                  <div class="th-weekday">{{ day.weekday }}</div>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              <template v-if="!isSwapped">
+      <div class="table-wrapper">
+        <table class="schedule-table">
+          <thead>
+            <tr v-if="!isSwapped">
+              <th class="corner-cell">
+                <div class="corner-content">
+                  <span class="corner-top">场地</span>
+                  <span class="corner-line"></span>
+                  <span class="corner-bottom">日期</span>
+                </div>
+              </th>
+              <th v-for="room in displayedRooms" :key="room.id">
+                {{ room.name }}
+              </th>
+            </tr>
+            <tr v-else>
+              <th class="corner-cell">
+                <div class="corner-content">
+                  <span class="corner-top">日期</span>
+                  <span class="corner-line"></span>
+                  <span class="corner-bottom">场地</span>
+                </div>
+              </th>
+              <th v-for="day in weekDays" :key="day.dateStr">
+                <div class="th-date">{{ day.dateStr }}</div>
+                <div class="th-weekday">{{ day.weekday }}</div>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <template v-if="!isSwapped">
               <tr v-for="day in weekDays" :key="day.dateStr">
                 <td class="row-header">
                   <div class="row-date">{{ day.dateStr }}</div>
@@ -142,7 +141,6 @@
           </tbody>
         </table>
       </div>
-    </t-skeleton>
     </t-card>
 
     <!-- 预约详情对话框 -->
