@@ -3,6 +3,7 @@ import { db } from '../../../utils/prisma'
 import { requireAdmin } from '../../../utils/auth'
 import bcrypt from 'bcryptjs'
 import { sendSuccess, handleError } from '../../../utils/api'
+import { logSensitiveAction } from '../../../utils/audit'
 
 const resetPasswordSchema = z.object({
     password: z.string().min(6, '密码至少6个字符').max(20, '密码最多20个字符')
@@ -40,6 +41,12 @@ export default defineEventHandler(async (event) => {
         await db.user.update({
             where: { id: parseInt(id) },
             data: { password: hashedPassword }
+        })
+
+        await logSensitiveAction(event, 'user_reset_password', currentUser, user.id, 'user', {
+            account: user.account,
+            name: user.name,
+            role: user.role
         })
 
         return sendSuccess(event, null, '密码重置成功')

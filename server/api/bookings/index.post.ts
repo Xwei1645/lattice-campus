@@ -2,6 +2,7 @@ import { z } from 'zod'
 import { db } from '../../utils/prisma'
 import { requireAuth, isUserInOrganization } from '../../utils/auth'
 import { sendSuccess, handleError } from '../../utils/api'
+import { logSensitiveAction } from '../../utils/audit'
 
 const bookingSchema = z.object({
     roomId: z.coerce.number().int().positive('无效的场地ID'),
@@ -100,6 +101,16 @@ export default defineEventHandler(async (event) => {
                     room: { select: { name: true } }
                 }
             })
+        })
+
+        await logSensitiveAction(event, 'booking_create', user, result.id, 'booking', {
+            roomName: result.room.name,
+            organizationId: result.organization.id,
+            organizationName: result.organization.name,
+            startTime: result.startTime,
+            endTime: result.endTime,
+            purpose: result.purpose,
+            status: result.status
         })
 
         return sendSuccess(event, {

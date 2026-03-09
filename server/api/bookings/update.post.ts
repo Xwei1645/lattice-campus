@@ -1,5 +1,6 @@
 import { db } from '../../utils/prisma'
 import { requireAuth } from '../../utils/auth'
+import { logSensitiveAction } from '../../utils/audit'
 
 export default defineEventHandler(async (event) => {
     const user = await requireAuth(event)
@@ -64,6 +65,19 @@ export default defineEventHandler(async (event) => {
                     }
                 }
             }
+        })
+
+        await logSensitiveAction(event, status === 'cancelled' ? 'booking_cancel' : 'booking_update', user, updatedBooking.id, 'booking', {
+            roomName: updatedBooking.room.name,
+            organizationId: updatedBooking.organization.id,
+            organizationName: updatedBooking.organization.name,
+            userId: updatedBooking.user.id,
+            userName: updatedBooking.user.name,
+            startTime: updatedBooking.startTime,
+            endTime: updatedBooking.endTime,
+            purpose: updatedBooking.purpose,
+            oldStatus: booking.status,
+            newStatus: updatedBooking.status
         })
 
         return {

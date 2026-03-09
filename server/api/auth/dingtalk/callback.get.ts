@@ -1,6 +1,7 @@
 import { db } from '../../../utils/prisma'
 import { createSession, setSessionCookie } from '../../../utils/auth'
 import { dingtalk, type DingTalkUser } from '../../../utils/dingtalk'
+import { logLogin, logLoginFailed } from '../../../utils/audit'
 
 export default defineEventHandler(async (event) => {
     const query = getQuery(event)
@@ -92,8 +93,8 @@ export default defineEventHandler(async (event) => {
                 setResponseHeaders(event, {
                     'Content-Type': 'application/json'
                 })
-                return send(event, JSON.stringify({
-                    success: false,
+                return send(event, JSON.stringify({ 
+                    success: false, 
                     error: 'dingtalk_user_not_found',
                     message: '该钉钉账号尚未绑定系统账号，请联系管理员'
                 }))
@@ -102,13 +103,14 @@ export default defineEventHandler(async (event) => {
         }
 
         if (!user.status) {
+            await logLoginFailed(event, user.account, 'Account is disabled', 'dingtalk')
             if (isIframeMode || isBridgeMode) {
                 setResponseStatus(event, 200)
                 setResponseHeaders(event, {
                     'Content-Type': 'application/json'
                 })
-                return send(event, JSON.stringify({
-                    success: false,
+                return send(event, JSON.stringify({ 
+                    success: false, 
                     error: 'account_disabled',
                     message: '该账号已被禁用'
                 }))
@@ -119,13 +121,22 @@ export default defineEventHandler(async (event) => {
         const sessionToken = await createSession(user.id)
         setSessionCookie(event, sessionToken)
 
+        await logLogin(event, {
+            id: user.id,
+            account: user.account,
+            name: user.name,
+            role: user.role,
+            status: user.status,
+            organizations: []
+        }, 'dingtalk')
+
         if (isIframeMode || isBridgeMode) {
             setResponseStatus(event, 200)
             setResponseHeaders(event, {
                 'Content-Type': 'application/json'
             })
-            return send(event, JSON.stringify({
-                success: true,
+            return send(event, JSON.stringify({ 
+                success: true, 
                 user: {
                     id: user.id,
                     account: user.account,
@@ -139,19 +150,20 @@ export default defineEventHandler(async (event) => {
         return sendRedirect(event, '/')
     } catch (error) {
         console.error('[DingTalk Callback Error]:', error)
-
+        await logLoginFailed(event, 'unknown', 'DingTalk authentication failed', 'dingtalk')
+        
         if (isIframeMode || isBridgeMode) {
             setResponseStatus(event, 200)
             setResponseHeaders(event, {
                 'Content-Type': 'application/json'
             })
-            return send(event, JSON.stringify({
-                success: false,
+            return send(event, JSON.stringify({ 
+                success: false, 
                 error: 'dingtalk_auth_failed',
                 message: '钉钉登录失败，请稍后重试'
             }))
         }
-
+        
         return sendRedirect(event, '/login?error=dingtalk_auth_failed')
     }
 })

@@ -2,6 +2,7 @@ import { z } from 'zod'
 import { db } from '../../utils/prisma'
 import { requireAdmin } from '../../utils/auth'
 import { sendSuccess, handleError } from '../../utils/api'
+import { logSensitiveAction } from '../../utils/audit'
 
 const deleteSchema = z.object({
     id: z.coerce.number().int().positive('无效的用户ID')
@@ -36,6 +37,12 @@ export default defineEventHandler(async (event) => {
         }
 
         await db.user.delete({ where: { id } })
+
+        await logSensitiveAction(event, 'user_delete', currentUser, user.id, 'user', {
+            account: user.account,
+            name: user.name,
+            role: user.role
+        })
 
         return sendSuccess(event, null, '用户已成功删除')
     } catch (error) {

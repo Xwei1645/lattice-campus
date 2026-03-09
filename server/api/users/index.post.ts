@@ -3,6 +3,7 @@ import { db } from '../../utils/prisma'
 import { requireAdmin } from '../../utils/auth'
 import bcrypt from 'bcryptjs'
 import { sendSuccess, handleError } from '../../utils/api'
+import { logSensitiveAction } from '../../utils/audit'
 
 const userCreateSchema = z.object({
     account: z.string().min(4, '账号至少4个字符').max(20, '账号最多20个字符').regex(/^[a-zA-Z0-9_]+$/, '账号只能包含字母、数字和下划线'),
@@ -52,6 +53,13 @@ export default defineEventHandler(async (event) => {
             include: {
                 organizations: { select: { id: true, name: true } }
             }
+        })
+
+        await logSensitiveAction(event, 'user_create', currentUser, user.id, 'user', {
+            account: user.account,
+            name: user.name,
+            role: user.role,
+            organizationIds: user.organizations.map(o => o.id)
         })
 
         return sendSuccess(event, {
