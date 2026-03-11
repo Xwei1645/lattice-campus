@@ -1,6 +1,5 @@
 import { db } from '../../utils/prisma'
 import { requireAuth } from '../../utils/auth'
-import { logSensitiveAction } from '../../utils/audit'
 
 export default defineEventHandler(async (event) => {
     const user = await requireAuth(event)
@@ -36,13 +35,6 @@ export default defineEventHandler(async (event) => {
 
         await db.room.delete({
             where: { id: Number(id) }
-        })
-
-        await logSensitiveAction(event, 'room_delete', user, room.id, 'room', {
-            name: room.name,
-            capacity: room.capacity,
-            location: room.location,
-            description: room.description
         })
 
         return { success: true }

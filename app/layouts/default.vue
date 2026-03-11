@@ -79,10 +79,6 @@
               <template #icon><ChatBubbleHelpIcon /></template>
               反馈管理
             </t-menu-item>
-            <t-menu-item v-if="isSuperAdmin" value="/audit-log-management" to="/audit-log-management">
-              <template #icon><FileIcon /></template>
-              日志管理
-            </t-menu-item>
           </template>
 
           <t-divider style="margin: 8px 0" />

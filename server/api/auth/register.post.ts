@@ -1,6 +1,5 @@
 import { db } from '../../utils/prisma'
 import bcrypt from 'bcryptjs'
-import { logRegister } from '../../utils/audit'
 
 export default defineEventHandler(async (event) => {
     const body = await readBody(event)
@@ -59,7 +58,7 @@ export default defineEventHandler(async (event) => {
         }
 
         const hashedPassword = await bcrypt.hash(password, 10)
-        
+
         const user = await db.$transaction(async (tx) => {
             await tx.invitationCode.update({
                 where: { id: codeData.id },
@@ -79,8 +78,6 @@ export default defineEventHandler(async (event) => {
                 }
             })
         })
-
-        await logRegister(event, account, name, codeData.role)
 
         return {
             success: true,

@@ -253,7 +253,7 @@ const columns: PrimaryTableCol[] = [
   { colKey: 'role', title: '角色', cell: 'role' },
   { colKey: 'dingtalk', title: '钉钉绑定', width: 120, cell: 'dingtalk' },
   { colKey: 'status', title: '状态', width: 120, cell: 'status' },
-  { colKey: 'createTime', title: '创建时间', width: 180, cell: 'createTime' },
+  { colKey: 'createTime', title: '创建时间', width: 200, cell: 'createTime' },
   { colKey: 'op', title: '操作', width: 320, fixed: 'right', cell: 'op' },
 ];
 
@@ -272,7 +272,7 @@ const tableSkeleton = Array(8).fill([
   { width: '100px' },
   { width: '100px' },
   { width: '100px' },
-  { width: '150px' },
+  { width: '200px' },
   { width: '150px' },
 ]);
 

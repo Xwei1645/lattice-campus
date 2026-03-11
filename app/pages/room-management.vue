@@ -226,7 +226,7 @@ const columns: PrimaryTableCol[] = [
   { colKey: 'location', title: '地点' },
   { colKey: 'description', title: '描述' },
   { colKey: 'status', title: '状态', width: 100 },
-  { colKey: 'createTime', title: '创建时间', width: 180 },
+  { colKey: 'createTime', title: '创建时间', width: 200 },
   { colKey: 'operation', title: '操作', width: 120, fixed: 'right' },
 ]
 

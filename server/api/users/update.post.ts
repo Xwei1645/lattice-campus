@@ -2,7 +2,6 @@ import { z } from 'zod'
 import { db } from '../../utils/prisma'
 import { requireAdmin } from '../../utils/auth'
 import { sendSuccess, handleError } from '../../utils/api'
-import { logSensitiveAction } from '../../utils/audit'
 
 const userUpdateSchema = z.object({
     id: z.coerce.number().int().positive('无效的用户ID'),
@@ -62,14 +61,6 @@ export default defineEventHandler(async (event) => {
             include: {
                 organizations: { select: { id: true, name: true } }
             }
-        })
-
-        await logSensitiveAction(event, 'user_update', currentUser, user.id, 'user', {
-            account: user.account,
-            name: user.name,
-            role: user.role,
-            status: user.status,
-            organizationIds: user.organizations.map(o => o.id)
         })
 
         return sendSuccess(event, {
