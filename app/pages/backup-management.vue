@@ -76,6 +76,7 @@
 <script setup lang="ts">
 import { CloudUploadIcon } from 'tdesign-icons-vue-next';
 import { ref, reactive, onMounted } from 'vue'
+import { MessagePlugin } from 'tdesign-vue-next';
 import type { PrimaryTableCol, TableRowData } from 'tdesign-vue-next'
 
 useHead({ title: '数据备份' })

@@ -203,6 +203,7 @@
 <script setup lang="ts">
 import { AddIcon } from 'tdesign-icons-vue-next';
 import { ref, reactive, computed, onMounted, onUnmounted } from 'vue';
+import { MessagePlugin } from 'tdesign-vue-next';
 import type { PrimaryTableCol, FormRules } from 'tdesign-vue-next';
 
 useHead({ title: '用户管理' })

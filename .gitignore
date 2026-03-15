@@ -1,35 +1,37 @@
-# Nuxt dev/build outputs
-.output
-.data
-.nuxt
-.nitro
-.cache
-dist
+```
+# Dependencies
+node_modules/
 
-# Node dependencies
-node_modules
+# Build artifacts
+dist/
+build/
+.nuxt/
 
-# Logs
-logs
+# Logs and temp files
 *.log
+*.tmp
 
-# Misc
-.DS_Store
-.fleet
-.idea
-
-# Local env files
+# Environment variables
 .env
-.env.*
-!.env.example
+.env.local
+*.env.*
 
-# Backups
-backups/
-!server/api/backups/
+# Editors
+.vscode/
+.idea/
 
-# Database
-*.db
-*.db-journal
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
 
-# Trae IDE
-.trae/
+# Coverage
+coverage/
+htmlcov/
+.coverage
+
+# OS generated files
+.DS_Store
+Thumbs.db
+```
