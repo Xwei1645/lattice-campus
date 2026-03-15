@@ -79,6 +79,8 @@
 </template>
 
 <script setup lang="ts">
+import { ref, reactive, onMounted } from 'vue';
+import { MessagePlugin } from 'tdesign-vue-next';
 import type { PrimaryTableCol } from 'tdesign-vue-next'
 import { formatBookingTime, formatDateTime } from '~/utils/format'
 

@@ -24,6 +24,9 @@
 </template>
 
 <script setup lang="ts">
+import { ref } from 'vue';
+import { MessagePlugin, DialogPlugin } from 'tdesign-vue-next';
+
 useHead({ title: '调试' })
 
 const showDebug = useState('showDebug', () => false)
@@ -55,7 +58,7 @@ const handleHide = () => {
   showDebug.value = false
   localStorage.setItem('showDebugMenu', 'false')
   MessagePlugin.info('调试页面已隐藏')
-  navigateTo('/about')
+  useRouter().push('/about')
 }
 
 const loading = ref(false)

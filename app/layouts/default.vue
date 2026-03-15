@@ -285,8 +285,9 @@ import {
   CheckIcon,
   ViewListIcon,
 } from 'tdesign-icons-vue-next';
-import { onMounted, ref, reactive } from 'vue';
+import { onMounted, ref, reactive, computed } from 'vue';
 import { formatDateTime } from '~/utils/format';
+import { MessagePlugin } from 'tdesign-vue-next';
 
 const route = useRoute();
 const router = useRouter();
@@ -455,7 +456,7 @@ const handleLogout = async () => {
   }
   userInfo.value = null;
   localStorage.removeItem('user');
-  navigateTo('/login');
+  route.push('/login');
 };
 
 const handleMenuClick = (value: any) => {

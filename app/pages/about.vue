@@ -111,6 +111,7 @@
 </template>
 
 <script setup lang="ts">
+import { ref } from 'vue'
 import dayjs from 'dayjs'
 
 useHead({ title: '关于' })
@@ -179,7 +180,7 @@ const handleSecretClick = () => {
             showDebug.value = true
             localStorage.setItem('showDebugMenu', 'true')
             MessagePlugin.success('调试模式已激活')
-            navigateTo('/debug')
+            useRouter().push('/debug')
           }
         }
       } catch (e) {
