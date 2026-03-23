@@ -30,7 +30,7 @@
                 </t-tag>
               </div>
               <t-divider dashed />
-              <div class="booking-purpose">
+              <div class="booking-title">
                 <span class="label">活动标题：</span>
                 <span class="value ellipsis">{{ latestBooking.title }}</span>
               </div>
@@ -300,17 +300,17 @@ const isSuperAdmin = computed(() => {
   margin-bottom: 8px;
 }
 
-.booking-purpose {
+.booking-title {
   display: flex;
   font-size: 14px;
 }
 
-.booking-purpose .label {
+.booking-title .label {
   color: var(--td-text-color-secondary);
   white-space: nowrap;
 }
 
-.booking-purpose .value {
+.booking-title .value {
   color: var(--td-text-color-primary);
 }
 

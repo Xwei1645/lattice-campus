@@ -127,7 +127,7 @@ async function seed() {
 
         const pastStatuses = ['approved', 'approved', 'approved', 'rejected']
         const futureStatuses = ['pending', 'pending', 'approved', 'cancelled']
-        const purposes = ['部门例会', '社团活动', '学术讲座', '班级会议', '期末复习', '项目研讨', '面试', '彩排']
+        const eventTitles = ['部门例会', '社团活动', '学术讲座', '班级会议', '期末复习', '项目研讨', '面试', '彩排']
 
         for (let i = -7; i <= 14; i++) {
             const currentDate = new Date(now.getTime() + i * oneDay)
@@ -172,7 +172,7 @@ async function seed() {
                         userId: user.id,
                         startTime,
                         endTime,
-                        title: purposes[Math.floor(Math.random() * purposes.length)]!,
+                        title: eventTitles[Math.floor(Math.random() * eventTitles.length)]!,
                         status,
                         remark: status === 'rejected' ? '场地冲突或不符合规定' : null
                     })

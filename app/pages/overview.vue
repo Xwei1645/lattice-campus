@@ -110,7 +110,7 @@
                       @click="showDetail(booking)"
                     >
                       <div class="booking-time">{{ booking.startTimeStr }} - {{ booking.endTimeStr }}</div>
-                      <div class="booking-purpose">{{ booking.title }}</div>
+                      <div class="booking-title">{{ booking.title }}</div>
                       <div class="booking-user">{{ booking.organizationName }}</div>
                     </div>
                   </div>
@@ -131,7 +131,7 @@
                       @click="showDetail(booking)"
                     >
                       <div class="booking-time">{{ booking.startTimeStr }} - {{ booking.endTimeStr }}</div>
-                      <div class="booking-purpose">{{ booking.title }}</div>
+                      <div class="booking-title">{{ booking.title }}</div>
                       <div class="booking-user">{{ booking.organizationName }}</div>
                     </div>
                   </div>
@@ -545,7 +545,7 @@ const getBookingsForCell = (roomId: number, dateStr: string) => {
   margin-bottom: 2px;
 }
 
-.booking-purpose {
+.booking-title {
   font-weight: 500;
   margin-bottom: 2px;
   word-break: break-word;
