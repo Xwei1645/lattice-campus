@@ -48,6 +48,7 @@
         ref="form"
         :data="formData"
         :rules="rules"
+        class="booking-form"
         label-align="top"
         @submit="onSubmit"
       >
@@ -63,25 +64,33 @@
           </t-select>
         </t-form-item>
 
-        <div class="regular-activity-row">
-          <t-form-item label="周期预约" name="recurringEnabled" class="regular-switch-item">
-            <t-switch v-model="formData.recurringEnabled" :label="['关闭', '开启']" />
+        <div class="recurring-main-row">
+          <t-form-item label="周期预约" name="recurringEnabled" class="regular-switch-item" required-mark>
+            <t-switch v-model="formData.recurringEnabled" />
           </t-form-item>
+          <template v-if="formData.recurringEnabled">
+            <t-form-item label="预约日（星期）" name="recurringWeekday" class="weekday-control" :required="formData.recurringEnabled" required-mark>
+              <t-select v-model="formData.recurringWeekday" placeholder="请选择预约日" variant="filled">
+                <t-option v-for="item in weekdayOptions" :key="item.value" :value="item.value" :label="item.label" />
+              </t-select>
+            </t-form-item>
+            <t-form-item label="间隔（周）" name="recurringIntervalWeeks" class="recurring-interval-control" :required="formData.recurringEnabled" required-mark>
+              <t-input-number v-model="formData.recurringIntervalWeeks" :min="1" :max="8" theme="normal" />
+            </t-form-item>
+            <t-form-item label="循环次数" name="recurringCount" class="recurring-count-control" :required="formData.recurringEnabled" required-mark>
+              <t-input-number v-model="formData.recurringCount" :min="1" :max="52" theme="normal" />
+            </t-form-item>
+          </template>
         </div>
 
         <div class="date-time-row">
-          <t-form-item v-if="!formData.recurringEnabled" label="使用日期" name="date" class="date-control">
+          <t-form-item :label="formData.recurringEnabled ? '首次日期' : '使用日期'" name="date" class="date-control" required-mark>
             <t-date-picker 
               v-model="formData.date" 
               style="width: 100%" 
               :disable-date="{ before: new Date().toISOString().split('T')[0] }"
               variant="filled"
             />
-          </t-form-item>
-          <t-form-item v-else label="预约日（星期）" name="recurringWeekday" class="weekday-control">
-            <t-select v-model="formData.recurringWeekday" placeholder="请选择预约日" variant="filled">
-              <t-option v-for="item in weekdayOptions" :key="item.value" :value="item.value" :label="item.label" />
-            </t-select>
           </t-form-item>
           <t-form-item label="开始/结束时间" name="timeRange" class="time-control">
             <t-time-range-picker
@@ -96,17 +105,8 @@
         </div>
 
         <template v-if="formData.recurringEnabled">
-          <div class="recurring-config-row">
-            <t-form-item label="间隔（周）" name="recurringIntervalWeeks" class="recurring-interval-control">
-              <t-input-number v-model="formData.recurringIntervalWeeks" :min="1" :max="8" theme="normal" />
-            </t-form-item>
-            <t-form-item label="循环次数" name="recurringCount" class="recurring-count-control">
-              <t-input-number v-model="formData.recurringCount" :min="1" :max="52" theme="normal" />
-            </t-form-item>
-          </div>
-
-          <div v-if="recurringLastDateText" class="regular-hint">
-            最后一次日期：{{ recurringLastDateText }}
+          <div v-if="recurringRangeText" class="regular-hint">
+            {{ recurringRangeText }}
           </div>
         </template>
         <div v-if="!formData.recurringEnabled && conflictList.length > 0" class="conflict-tip">
@@ -300,18 +300,25 @@ const addDays = (date: Date, days: number) => {
 }
 
 const recurringLastDateText = computed(() => {
-  if (!formData.recurringEnabled || !formData.recurringWeekday || !formData.recurringCount || !formData.recurringIntervalWeeks) {
+  if (!formData.recurringEnabled || !formData.date || !formData.recurringWeekday || !formData.recurringCount || !formData.recurringIntervalWeeks) {
     return ''
   }
 
-  const today = new Date(`${toDateText(new Date())}T00:00:00`)
-  const jsWeekday = formData.recurringWeekday % 7
-  const diffDays = (jsWeekday - today.getDay() + 7) % 7
-  const firstDate = addDays(today, diffDays)
+  const firstDate = new Date(`${formData.date}T00:00:00`)
+  if (Number.isNaN(firstDate.getTime())) {
+    return ''
+  }
 
   const totalDays = (formData.recurringCount - 1) * formData.recurringIntervalWeeks * 7
   const lastDate = addDays(firstDate, totalDays)
   return toDateText(lastDate)
+})
+
+const recurringRangeText = computed(() => {
+  if (!recurringLastDateText.value) {
+    return ''
+  }
+  return `最后一次日期：${recurringLastDateText.value}`
 })
 
 const checkConflict = async () => {
@@ -355,6 +362,7 @@ watch(() => formData.recurringEnabled, (enabled) => {
 const rules: FormRules = {
   roomId: [{ required: true, message: '请选择场地', trigger: 'change' }],
   organizationId: [{ required: true, message: '请选择使用组织', trigger: 'change' }],
+  date: [{ required: true, message: '请选择日期', trigger: 'change' }],
   timeRange: [{ required: true, message: '请选择时间范围', trigger: 'change' }],
   purpose: [{ required: true, message: '请输入使用说明', trigger: 'blur' }],
 };
@@ -374,12 +382,12 @@ const handleCreateBooking = () => {
 
 const onSubmit = async ({ validateResult, firstError }: any) => {
   if (validateResult === true) {
-    if (!formData.recurringEnabled) {
-      if (!formData.date) {
-        MessagePlugin.error('请选择使用日期');
-        return;
-      }
+    if (!formData.date) {
+      MessagePlugin.error(formData.recurringEnabled ? '请选择首次日期' : '请选择使用日期');
+      return;
+    }
 
+    if (!formData.recurringEnabled) {
       const startTime = new Date(`${formData.date}T${formData.timeRange[0]}:00`);
       if (startTime < new Date()) {
         MessagePlugin.error('预约时间不能早于当前时间');
@@ -407,7 +415,7 @@ const onSubmit = async ({ validateResult, firstError }: any) => {
         body: {
           roomId: formData.roomId,
           organizationId: formData.organizationId,
-          date: formData.recurringEnabled ? undefined : formData.date,
+          date: formData.date,
           timeRange: formData.timeRange,
           purpose: formData.purpose,
           remark: formData.remark,
@@ -482,8 +490,9 @@ const handleCancel = async (row: any) => {
 
 .date-time-row {
   display: flex;
-  gap: 16px;
+  gap: 12px;
   align-items: flex-start;
+  margin-bottom: 8px;
 }
 
 .date-control {
@@ -506,31 +515,42 @@ const handleCancel = async (row: any) => {
   min-width: 0;
 }
 
-.recurring-config-row {
-  display: flex;
-  gap: 16px;
-  align-items: flex-start;
-}
-
 .recurring-interval-control {
   flex: 1;
   min-width: 0;
 }
 
-.regular-activity-row {
+.recurring-main-row {
   display: flex;
-  gap: 0;
+  gap: 12px;
   align-items: flex-start;
+  margin-bottom: 8px;
+}
+
+.recurring-main-row :deep(.t-form__controls-content) {
+  height: 32px;
+  display: flex;
+  align-items: center;
 }
 
 .regular-switch-item {
-  width: 100%;
+  flex: 1;
+  min-width: 0;
 }
 
 .regular-hint {
   color: var(--td-text-color-secondary);
   font-size: 12px;
   margin-top: 2px;
-  margin-bottom: 8px;
+  margin-bottom: 12px;
+}
+
+.booking-form :deep(.t-form__item) {
+  margin-bottom: 16px;
+}
+
+.date-time-row :deep(.t-form__item),
+.recurring-main-row :deep(.t-form__item) {
+  margin-bottom: 0;
 }
 </style>

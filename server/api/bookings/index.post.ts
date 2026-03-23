@@ -20,6 +20,13 @@ const bookingSchema = z.object({
     const isRecurring = Boolean(data.recurringBooking?.enabled)
 
     if (isRecurring) {
+        if (!data.date) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ['date'],
+                message: '周期预约必须选择首次日期'
+            })
+        }
         if (!data.recurringBooking?.weekday) {
             ctx.addIssue({
                 code: z.ZodIssueCode.custom,
@@ -106,16 +113,22 @@ export default defineEventHandler(async (event) => {
             const intervalWeeks = recurringBooking?.intervalWeeks as number
             const repeatCount = recurringBooking?.repeatCount as number
             const now = new Date()
+            const firstDateObj = new Date(`${date}T00:00:00`)
 
-            const todayDate = new Date(`${formatDate(now)}T00:00:00`)
+            if (Number.isNaN(firstDateObj.getTime())) {
+                throw createError({ statusCode: 400, statusMessage: 'Invalid first booking date' })
+            }
+
+            const firstDateStr = formatDate(firstDateObj)
+            const firstDateSlot = buildSlot(firstDateStr, timeRange[0], timeRange[1])
+
             const jsWeekday = weekday % 7
-            let diffDays = (jsWeekday - todayDate.getDay() + 7) % 7
-            let firstDateObj = addDays(todayDate, diffDays)
-            let firstDateSlot = buildSlot(formatDate(firstDateObj), timeRange[0], timeRange[1])
+            if (firstDateObj.getDay() !== jsWeekday) {
+                throw createError({ statusCode: 400, statusMessage: '首次日期与预约日（星期）不一致' })
+            }
 
-            if (diffDays === 0 && firstDateSlot.startTime < now) {
-                firstDateObj = addDays(firstDateObj, 7)
-                firstDateSlot = buildSlot(formatDate(firstDateObj), timeRange[0], timeRange[1])
+            if (firstDateSlot.startTime < now) {
+                throw createError({ statusCode: 400, statusMessage: '首次预约时间必须在当前时间之后' })
             }
 
             for (let index = 0; index < repeatCount; index++) {
