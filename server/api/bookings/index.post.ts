@@ -83,6 +83,11 @@ export default defineEventHandler(async (event) => {
 
         const validatedData = bookingSchema.parse(body)
         const { roomId, organizationId, date, timeRange, title, remark, recurringBooking } = validatedData
+        const [startAt, endAt] = timeRange
+
+        if (!startAt || !endAt) {
+            throw createError({ statusCode: 400, statusMessage: 'Invalid time range' })
+        }
 
         const isAdmin = ['super_admin', 'admin'].includes(user.role)
         if (!isAdmin && !isUserInOrganization(user, organizationId)) {
@@ -94,7 +99,7 @@ export default defineEventHandler(async (event) => {
 
         const isRecurringEnabled = Boolean(recurringBooking?.enabled)
         const sampleDate = formatDate(new Date())
-        const sampleSlot = buildSlot(sampleDate, timeRange[0], timeRange[1])
+        const sampleSlot = buildSlot(sampleDate, startAt, endAt)
 
         if (sampleSlot.startTime >= sampleSlot.endTime) {
             throw createError({ statusCode: 400, statusMessage: 'End time must be after start time' })
@@ -103,7 +108,7 @@ export default defineEventHandler(async (event) => {
         const slots: Array<{ date: string; startTime: Date; endTime: Date }> = []
 
         if (!isRecurringEnabled) {
-            const baseSlot = buildSlot(date as string, timeRange[0], timeRange[1])
+            const baseSlot = buildSlot(date as string, startAt, endAt)
             if (baseSlot.startTime < new Date()) {
                 throw createError({ statusCode: 400, statusMessage: 'Booking time must be in the future' })
             }
@@ -120,7 +125,7 @@ export default defineEventHandler(async (event) => {
             }
 
             const firstDateStr = formatDate(firstDateObj)
-            const firstDateSlot = buildSlot(firstDateStr, timeRange[0], timeRange[1])
+            const firstDateSlot = buildSlot(firstDateStr, startAt, endAt)
 
             const jsWeekday = weekday % 7
             if (firstDateObj.getDay() !== jsWeekday) {
@@ -138,7 +143,7 @@ export default defineEventHandler(async (event) => {
                 }
 
                 const currentDate = addDays(firstDateObj, index * intervalWeeks * 7)
-                slots.push(buildSlot(formatDate(currentDate), timeRange[0], timeRange[1]))
+                slots.push(buildSlot(formatDate(currentDate), startAt, endAt))
             }
         }
 
@@ -169,6 +174,9 @@ export default defineEventHandler(async (event) => {
 
             if (conflicts.length > 0) {
                 const firstConflict = conflicts[0]
+                if (!firstConflict) {
+                    throw createError({ statusCode: 500, statusMessage: 'Unexpected conflict state' })
+                }
                 const firstDate = formatDate(firstConflict.startTime)
                 throw createError({
                     statusCode: 400,
@@ -236,6 +244,9 @@ export default defineEventHandler(async (event) => {
 
         if (result.length === 1) {
             const single = result[0]
+            if (!single) {
+                throw createError({ statusCode: 500, statusMessage: 'Unexpected booking creation result' })
+            }
             return sendSuccess(event, {
                 id: single.id,
                 roomName: single.room.name,
@@ -256,12 +267,18 @@ export default defineEventHandler(async (event) => {
             return acc
         }, {})
 
+        const firstBooking = result[0]
+        const lastBooking = result[result.length - 1]
+        if (!firstBooking || !lastBooking) {
+            throw createError({ statusCode: 500, statusMessage: 'Unexpected recurring booking result' })
+        }
+
         return sendSuccess(event, {
             isRecurringBooking: true,
             totalCreated: result.length,
             bookingIds: result.map(item => item.id),
-            startDate: formatDate(result[0].startTime),
-            endDate: formatDate(result[result.length - 1].startTime),
+            startDate: formatDate(firstBooking.startTime),
+            endDate: formatDate(lastBooking.startTime),
             statusSummary
         }, `周期预约提交成功，共 ${result.length} 条`)
 

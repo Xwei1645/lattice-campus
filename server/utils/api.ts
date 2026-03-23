@@ -1,5 +1,6 @@
 import { ZodError } from 'zod'
 import { createError, H3Event } from 'h3'
+import { appLogger } from './logger'
 
 export interface ApiResponse<T = any> {
     success: boolean
@@ -75,17 +76,25 @@ function structuredLog(
     category: string,
     data: any
 ): void {
-    const timestamp = new Date().toISOString()
     const filteredData = filterSensitiveInfo(data)
-    
+
     const logEntry = {
-        timestamp,
         level,
         category,
         ...filteredData
     }
 
-    console.log(JSON.stringify(logEntry))
+    if (level === 'error') {
+        appLogger.error(logEntry, 'api.log')
+        return
+    }
+
+    if (level === 'warn') {
+        appLogger.warn(logEntry, 'api.log')
+        return
+    }
+
+    appLogger.info(logEntry, 'api.log')
 }
 
 /**

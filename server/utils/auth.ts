@@ -1,6 +1,7 @@
 import { H3Event, createError } from 'h3'
 import { db } from './prisma'
 import crypto from 'crypto'
+import { appLogger } from './logger'
 
 // Session配置
 const SESSION_COOKIE_NAME = 'session_token'
@@ -33,7 +34,12 @@ export async function createSession(userId: number): Promise<string> {
     })
 
     // 异步清理过期session
-    cleanupExpiredSessions().catch(console.error)
+    cleanupExpiredSessions().catch((error) => {
+        appLogger.warn({
+            category: 'auth.session',
+            error: error instanceof Error ? error.message : 'Unknown cleanup error'
+        }, 'Failed to cleanup expired sessions')
+    })
 
     return token
 }

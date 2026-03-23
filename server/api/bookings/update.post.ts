@@ -1,5 +1,6 @@
 import { db } from '../../utils/prisma'
 import { requireAuth } from '../../utils/auth'
+import { logAudit } from '../../utils/audit'
 
 export default defineEventHandler(async (event) => {
     const user = await requireAuth(event)
@@ -66,6 +67,22 @@ export default defineEventHandler(async (event) => {
             }
         })
 
+        await logAudit(event, {
+            action: 'booking.update-status',
+            resourceType: 'booking',
+            resourceId: updatedBooking.id,
+            result: 'success',
+            changedFields: ['status', 'remark'],
+            before: {
+                status: booking.status,
+                remark: booking.remark
+            },
+            after: {
+                status: updatedBooking.status,
+                remark: updatedBooking.remark
+            }
+        })
+
         return {
             id: updatedBooking.id,
             roomName: updatedBooking.room.name,
@@ -80,6 +97,14 @@ export default defineEventHandler(async (event) => {
             remark: updatedBooking.remark
         }
     } catch (error: any) {
+        await logAudit(event, {
+            action: 'booking.update-status',
+            resourceType: 'booking',
+            resourceId: Number(id) || null,
+            result: 'failed',
+            reason: error?.statusMessage || error?.message || 'Unknown error'
+        })
+
         if (error.statusCode) throw error
         throw createError({
             statusCode: 500,

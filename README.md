@@ -89,8 +89,16 @@ cp .env.example .env
 | 变量 | 说明 |
 |------|------|
 | `DATABASE_URL` | PostgreSQL 连接串 |
+| `LOG_LEVEL` | 日志级别（默认开发环境 `debug`，生产环境 `info`） |
 | `DINGTALK_CLIENT_ID` | 钉钉应用 ID（可选） |
 | `DINGTALK_CLIENT_SECRET` | 钉钉应用密钥（可选） |
+
+### 日志说明
+
+- 服务端日志已使用 `pino` 输出结构化 JSON 日志。
+- 普通日志：记录请求路径、状态码、耗时、IP、UA、错误信息等运行态数据。
+- 审计日志：记录写操作（非 GET/HEAD/OPTIONS）的行为主体、动作、资源类型、结果、来源信息。
+- 审计详情：在关键管理接口（如用户管理、预约状态变更）额外记录变更前后快照。
 
 ## 贡献者
 

@@ -2,6 +2,7 @@ import { z } from 'zod'
 import { db } from '../../utils/prisma'
 import { requireAdmin } from '../../utils/auth'
 import { sendSuccess, handleError } from '../../utils/api'
+import { logAudit } from '../../utils/audit'
 
 // 定义输入校验 Schema
 const orgUpdateSchema = z.object({
@@ -12,6 +13,8 @@ const orgUpdateSchema = z.object({
 })
 
 export default defineEventHandler(async (event) => {
+    let organizationId: number | null = null
+
     try {
         // 只有管理员可以更新组织
         await requireAdmin(event)
@@ -19,9 +22,17 @@ export default defineEventHandler(async (event) => {
 
         // Zod 校验
         const { id, name, description, userIds } = orgUpdateSchema.parse(body)
+        organizationId = id
 
         // 检查组织是否存在
-        const existingOrg = await db.organization.findUnique({ where: { id } })
+        const existingOrg = await db.organization.findUnique({
+            where: { id },
+            include: {
+                users: {
+                    select: { id: true }
+                }
+            }
+        })
         if (!existingOrg) {
             throw createError({ statusCode: 404, statusMessage: 'Organization not found' })
         }
@@ -55,8 +66,34 @@ export default defineEventHandler(async (event) => {
             }
         })
 
+        await logAudit(event, {
+            action: 'organization.update',
+            resourceType: 'organization',
+            resourceId: organization.id,
+            result: 'success',
+            changedFields: ['name', 'description', 'userIds'],
+            before: {
+                name: existingOrg.name,
+                description: existingOrg.description,
+                userIds: existingOrg.users.map(item => item.id)
+            },
+            after: {
+                name: organization.name,
+                description: organization.description,
+                userIds: organization.users.map(item => item.id)
+            }
+        })
+
         return sendSuccess(event, organization, '组织信息更新成功')
     } catch (error) {
+        await logAudit(event, {
+            action: 'organization.update',
+            resourceType: 'organization',
+            resourceId: organizationId,
+            result: 'failed',
+            reason: (error as any)?.statusMessage || (error as any)?.message || 'Unknown error'
+        })
+
         return handleError(error)
     }
 })

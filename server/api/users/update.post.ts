@@ -2,6 +2,7 @@ import { z } from 'zod'
 import { db } from '../../utils/prisma'
 import { requireAdmin } from '../../utils/auth'
 import { sendSuccess, handleError } from '../../utils/api'
+import { logAudit } from '../../utils/audit'
 
 const userUpdateSchema = z.object({
     id: z.coerce.number().int().positive('无效的用户ID'),
@@ -12,12 +13,15 @@ const userUpdateSchema = z.object({
 })
 
 export default defineEventHandler(async (event) => {
+    let targetUserId: number | null = null
+
     try {
         const currentUser = await requireAdmin(event)
         const body = await readBody(event)
 
         const validatedData = userUpdateSchema.parse(body)
         const { id, name, role, status, organizationIds } = validatedData
+        targetUserId = id
 
         const existingUser = await db.user.findUnique({ where: { id } })
         if (!existingUser) {
@@ -63,6 +67,25 @@ export default defineEventHandler(async (event) => {
             }
         })
 
+        await logAudit(event, {
+            action: 'user.update',
+            resourceType: 'user',
+            resourceId: user.id,
+            result: 'success',
+            changedFields: ['name', 'role', 'status', 'organizationIds'],
+            before: {
+                name: existingUser.name,
+                role: existingUser.role,
+                status: existingUser.status
+            },
+            after: {
+                name: user.name,
+                role: user.role,
+                status: user.status,
+                organizationIds: user.organizations.map(org => org.id)
+            }
+        })
+
         return sendSuccess(event, {
             id: user.id,
             account: user.account,
@@ -74,6 +97,14 @@ export default defineEventHandler(async (event) => {
         }, '用户信息更新成功')
 
     } catch (error) {
+        await logAudit(event, {
+            action: 'user.update',
+            resourceType: 'user',
+            resourceId: targetUserId,
+            result: 'failed',
+            reason: (error as any)?.statusMessage || (error as any)?.message || 'Unknown error'
+        })
+
         return handleError(error)
     }
 })

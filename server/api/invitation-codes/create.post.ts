@@ -1,39 +1,38 @@
 import { db } from '../../utils/prisma'
 import { requireAuth } from '../../utils/auth'
 import { randomBytes } from 'crypto'
+import { logAudit } from '../../utils/audit'
 
 export default defineEventHandler(async (event) => {
-    const user = await requireAuth(event)
-
-    if (!['super_admin', 'admin'].includes(user.role)) {
-        throw createError({
-            statusCode: 403,
-            statusMessage: '没有权限'
-        })
-    }
-
-    const { count, role, organizationId, expiresAt, maxUses } = 
-        await readBody(event)
-
-    if (!count || count < 1) {
-        throw createError({
-            statusCode: 400,
-            statusMessage: '生成的数量必须大于 0'
-        })
-    }
-
-    // 限制单次生成数量
-    if (count > 100) {
-        throw createError({
-            statusCode: 400,
-            statusMessage: '单次最多生成 100 个邀请码'
-        })
-    }
-
     try {
+        const user = await requireAuth(event)
+
+        if (!['super_admin', 'admin'].includes(user.role)) {
+            throw createError({
+                statusCode: 403,
+                statusMessage: '没有权限'
+            })
+        }
+
+        const { count, role, organizationId, expiresAt, maxUses } = 
+            await readBody(event)
+
+        if (!count || count < 1) {
+            throw createError({
+                statusCode: 400,
+                statusMessage: '生成的数量必须大于 0'
+            })
+        }
+
+        if (count > 100) {
+            throw createError({
+                statusCode: 400,
+                statusMessage: '单次最多生成 100 个邀请码'
+            })
+        }
+
         const generatedCodes = []
         for (let i = 0; i < count; i++) {
-            // 增加邀请码长度到16位（8字节 -> 16个十六进制字符）
             const code = randomBytes(8).toString('hex').toUpperCase()
             generatedCodes.push({
                 code,
@@ -49,14 +48,34 @@ export default defineEventHandler(async (event) => {
             data: generatedCodes
         })
 
+        await logAudit(event, {
+            action: 'invitation-code.create',
+            resourceType: 'invitation-code',
+            result: 'success',
+            after: {
+                count: result.count,
+                role: role || 'user',
+                organizationId: organizationId ? parseInt(organizationId) : null,
+                expiresAt: expiresAt || null,
+                maxUses: maxUses ? parseInt(maxUses) : 1
+            }
+        })
+
         return {
             success: true,
             count: result.count
         }
     } catch (error: any) {
+        await logAudit(event, {
+            action: 'invitation-code.create',
+            resourceType: 'invitation-code',
+            result: 'failed',
+            reason: error?.statusMessage || error?.message || 'Unknown error'
+        })
+
         throw createError({
-            statusCode: 500,
-            statusMessage: error.message
+            statusCode: error.statusCode || 500,
+            statusMessage: error.statusMessage || error.message
         })
     }
 })
