@@ -40,7 +40,7 @@
     <t-dialog
       v-model:visible="visible"
       header="新建预约"
-      :confirm-btn="{ content: '提交预约', loading: submitLoading, disabled: conflictList.length > 0 }"
+      :confirm-btn="{ content: '提交预约', loading: submitLoading, disabled: !formData.recurringEnabled && conflictList.length > 0 }"
       width="min(600px, 95%)"
       @confirm="() => form?.submit()"
     >
@@ -63,14 +63,25 @@
           </t-select>
         </t-form-item>
 
+        <div class="regular-activity-row">
+          <t-form-item label="周期预约" name="recurringEnabled" class="regular-switch-item">
+            <t-switch v-model="formData.recurringEnabled" :label="['关闭', '开启']" />
+          </t-form-item>
+        </div>
+
         <div class="date-time-row">
-          <t-form-item label="使用日期" name="date" class="date-control">
+          <t-form-item v-if="!formData.recurringEnabled" label="使用日期" name="date" class="date-control">
             <t-date-picker 
               v-model="formData.date" 
               style="width: 100%" 
               :disable-date="{ before: new Date().toISOString().split('T')[0] }"
               variant="filled"
             />
+          </t-form-item>
+          <t-form-item v-else label="预约日（星期）" name="recurringWeekday" class="weekday-control">
+            <t-select v-model="formData.recurringWeekday" placeholder="请选择预约日" variant="filled">
+              <t-option v-for="item in weekdayOptions" :key="item.value" :value="item.value" :label="item.label" />
+            </t-select>
           </t-form-item>
           <t-form-item label="开始/结束时间" name="timeRange" class="time-control">
             <t-time-range-picker
@@ -83,7 +94,22 @@
             />
           </t-form-item>
         </div>
-        <div v-if="conflictList.length > 0" class="conflict-tip">
+
+        <template v-if="formData.recurringEnabled">
+          <div class="recurring-config-row">
+            <t-form-item label="间隔（周）" name="recurringIntervalWeeks" class="recurring-interval-control">
+              <t-input-number v-model="formData.recurringIntervalWeeks" :min="1" :max="8" theme="normal" />
+            </t-form-item>
+            <t-form-item label="循环次数" name="recurringCount" class="recurring-count-control">
+              <t-input-number v-model="formData.recurringCount" :min="1" :max="52" theme="normal" />
+            </t-form-item>
+          </div>
+
+          <div v-if="recurringLastDateText" class="regular-hint">
+            最后一次日期：{{ recurringLastDateText }}
+          </div>
+        </template>
+        <div v-if="!formData.recurringEnabled && conflictList.length > 0" class="conflict-tip">
           冲突：与已有预约时间段重叠（
           <span v-for="(c, idx) in conflictList" :key="c.id">
             {{ formatTimeShort(c.startTime) }}-{{ formatTimeShort(c.endTime) }}
@@ -232,7 +258,21 @@ const formData = reactive({
   timeRange: [] as string[],
   purpose: '',
   remark: '',
+  recurringEnabled: false,
+  recurringWeekday: undefined as number | undefined,
+  recurringIntervalWeeks: 1,
+  recurringCount: 4,
 });
+
+const weekdayOptions = [
+  { label: '周一', value: 1 },
+  { label: '周二', value: 2 },
+  { label: '周三', value: 3 },
+  { label: '周四', value: 4 },
+  { label: '周五', value: 5 },
+  { label: '周六', value: 6 },
+  { label: '周日', value: 7 },
+]
 
 // 冲突检测结果
 const conflictList = ref<any[]>([])
@@ -246,8 +286,37 @@ const formatTimeShort = (iso: string) => {
   }
 }
 
+const toDateText = (date: Date) => {
+  const y = date.getFullYear()
+  const m = String(date.getMonth() + 1).padStart(2, '0')
+  const d = String(date.getDate()).padStart(2, '0')
+  return `${y}-${m}-${d}`
+}
+
+const addDays = (date: Date, days: number) => {
+  const next = new Date(date)
+  next.setDate(next.getDate() + days)
+  return next
+}
+
+const recurringLastDateText = computed(() => {
+  if (!formData.recurringEnabled || !formData.recurringWeekday || !formData.recurringCount || !formData.recurringIntervalWeeks) {
+    return ''
+  }
+
+  const today = new Date(`${toDateText(new Date())}T00:00:00`)
+  const jsWeekday = formData.recurringWeekday % 7
+  const diffDays = (jsWeekday - today.getDay() + 7) % 7
+  const firstDate = addDays(today, diffDays)
+
+  const totalDays = (formData.recurringCount - 1) * formData.recurringIntervalWeeks * 7
+  const lastDate = addDays(firstDate, totalDays)
+  return toDateText(lastDate)
+})
+
 const checkConflict = async () => {
   conflictList.value = []
+  if (formData.recurringEnabled) return
   if (!formData.roomId || !formData.date || !formData.timeRange || formData.timeRange.length < 2) return
 
   const start = `${formData.date}T${formData.timeRange[0]}:00`
@@ -275,10 +344,17 @@ watch(() => [formData.roomId, formData.date, formData.timeRange], () => {
   checkConflict()
 }, { deep: true })
 
+watch(() => formData.recurringEnabled, (enabled) => {
+  if (enabled) {
+    conflictList.value = []
+    return
+  }
+  checkConflict()
+})
+
 const rules: FormRules = {
   roomId: [{ required: true, message: '请选择场地', trigger: 'change' }],
   organizationId: [{ required: true, message: '请选择使用组织', trigger: 'change' }],
-  date: [{ required: true, message: '请选择日期', trigger: 'change' }],
   timeRange: [{ required: true, message: '请选择时间范围', trigger: 'change' }],
   purpose: [{ required: true, message: '请输入使用说明', trigger: 'blur' }],
 };
@@ -298,27 +374,57 @@ const handleCreateBooking = () => {
 
 const onSubmit = async ({ validateResult, firstError }: any) => {
   if (validateResult === true) {
-    const startTime = new Date(`${formData.date}T${formData.timeRange[0]}:00`);
-    if (startTime < new Date()) {
-      MessagePlugin.error('预约时间不能早于当前时间');
-      return;
+    if (!formData.recurringEnabled) {
+      if (!formData.date) {
+        MessagePlugin.error('请选择使用日期');
+        return;
+      }
+
+      const startTime = new Date(`${formData.date}T${formData.timeRange[0]}:00`);
+      if (startTime < new Date()) {
+        MessagePlugin.error('预约时间不能早于当前时间');
+        return;
+      }
+    } else {
+      if (!formData.recurringWeekday) {
+        MessagePlugin.error('请选择预约日');
+        return;
+      }
+      if (!formData.recurringIntervalWeeks || formData.recurringIntervalWeeks < 1) {
+        MessagePlugin.error('间隔至少为1周');
+        return;
+      }
+      if (!formData.recurringCount || formData.recurringCount < 1) {
+        MessagePlugin.error('循环次数至少为1');
+        return;
+      }
     }
 
     submitLoading.value = true;
     try {
-      await $fetch('/api/bookings', {
+      const res: any = await $fetch('/api/bookings', {
         method: 'POST',
         body: {
           roomId: formData.roomId,
           organizationId: formData.organizationId,
-          date: formData.date,
+          date: formData.recurringEnabled ? undefined : formData.date,
           timeRange: formData.timeRange,
           purpose: formData.purpose,
-          remark: formData.remark
+          remark: formData.remark,
+          recurringBooking: formData.recurringEnabled ? {
+            enabled: true,
+            weekday: formData.recurringWeekday,
+            intervalWeeks: formData.recurringIntervalWeeks,
+            repeatCount: formData.recurringCount
+          } : undefined
         }
       });
       
-      MessagePlugin.success('预约提交成功');
+      if (res?.data?.isRecurringBooking) {
+        MessagePlugin.success(`周期预约提交成功，共 ${res.data.totalCreated} 条`);
+      } else {
+        MessagePlugin.success('预约提交成功');
+      }
       visible.value = false;
       refreshBookings(); // 刷新列表
       
@@ -330,7 +436,12 @@ const onSubmit = async ({ validateResult, firstError }: any) => {
         timeRange: [],
         purpose: '',
         remark: '',
+        recurringEnabled: false,
+        recurringWeekday: undefined,
+        recurringIntervalWeeks: 1,
+        recurringCount: 4,
       });
+      conflictList.value = [];
     } catch (error: any) {
       console.error('Submit booking error:', error);
       const detailError = error.data?.data?.errors?.[0]?.message || error.data?.statusMessage || '提交失败';
@@ -376,10 +487,50 @@ const handleCancel = async (row: any) => {
 }
 
 .date-control {
-  width: 160px;
+  flex: 1;
+  min-width: 0;
+}
+
+.weekday-control {
+  flex: 1;
+  min-width: 0;
 }
 
 .time-control {
-  width: 320px;
+  flex: 2;
+  min-width: 0;
+}
+
+.recurring-count-control {
+  flex: 1;
+  min-width: 0;
+}
+
+.recurring-config-row {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.recurring-interval-control {
+  flex: 1;
+  min-width: 0;
+}
+
+.regular-activity-row {
+  display: flex;
+  gap: 0;
+  align-items: flex-start;
+}
+
+.regular-switch-item {
+  width: 100%;
+}
+
+.regular-hint {
+  color: var(--td-text-color-secondary);
+  font-size: 12px;
+  margin-top: 2px;
+  margin-bottom: 8px;
 }
 </style>

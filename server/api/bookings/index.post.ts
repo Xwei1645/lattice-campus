@@ -6,11 +6,68 @@ import { sendSuccess, handleError } from '../../utils/api'
 const bookingSchema = z.object({
     roomId: z.coerce.number().int().positive('无效的场地ID'),
     organizationId: z.coerce.number().int().positive('无效的组织ID'),
-    date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, '日期格式必须为 YYYY-MM-DD'),
+    date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, '日期格式必须为 YYYY-MM-DD').optional().nullable(),
     timeRange: z.array(z.string().regex(/^\d{2}:\d{2}(:\d{2})?$/)).length(2, '必须提供开始和结束时间'),
     purpose: z.string().min(2, '用途描述太短').max(200, '用途描述太长'),
-    remark: z.string().max(500, '备注太长').optional().nullable()
+    remark: z.string().max(500, '备注太长').optional().nullable(),
+    recurringBooking: z.object({
+        enabled: z.boolean().default(false),
+        weekday: z.coerce.number().int().min(1, '请选择预约日').max(7, '请选择预约日').optional(),
+        intervalWeeks: z.coerce.number().int().min(1, '间隔至少为1周').max(8, '间隔不能超过8周').optional(),
+        repeatCount: z.coerce.number().int().min(1, '循环次数至少为1').max(52, '循环次数不能超过52').optional()
+    }).optional()
+}).superRefine((data, ctx) => {
+    const isRecurring = Boolean(data.recurringBooking?.enabled)
+
+    if (isRecurring) {
+        if (!data.recurringBooking?.weekday) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ['recurringBooking', 'weekday'],
+                message: '周期预约必须选择预约日'
+            })
+        }
+        if (!data.recurringBooking?.intervalWeeks) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ['recurringBooking', 'intervalWeeks'],
+                message: '周期预约必须填写间隔'
+            })
+        }
+        if (!data.recurringBooking?.repeatCount) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ['recurringBooking', 'repeatCount'],
+                message: '周期预约必须填写循环次数'
+            })
+        }
+    } else if (!data.date) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ['date'],
+            message: '单次预约必须选择使用日期'
+        })
+    }
 })
+
+const addDays = (date: Date, days: number) => {
+    const next = new Date(date)
+    next.setDate(next.getDate() + days)
+    return next
+}
+
+const formatDate = (date: Date) => {
+    const y = date.getFullYear()
+    const m = String(date.getMonth() + 1).padStart(2, '0')
+    const d = String(date.getDate()).padStart(2, '0')
+    return `${y}-${m}-${d}`
+}
+
+const buildSlot = (date: string, startAt: string, endAt: string) => {
+    const startTime = new Date(`${date}T${startAt}:00`)
+    const endTime = new Date(`${date}T${endAt}:00`)
+    return { date, startTime, endTime }
+}
 
 export default defineEventHandler(async (event) => {
     try {
@@ -18,7 +75,7 @@ export default defineEventHandler(async (event) => {
         const body = await readBody(event)
 
         const validatedData = bookingSchema.parse(body)
-        const { roomId, organizationId, date, timeRange, purpose, remark } = validatedData
+        const { roomId, organizationId, date, timeRange, purpose, remark, recurringBooking } = validatedData
 
         const isAdmin = ['super_admin', 'admin'].includes(user.role)
         if (!isAdmin && !isUserInOrganization(user, organizationId)) {
@@ -28,14 +85,48 @@ export default defineEventHandler(async (event) => {
             })
         }
 
-        const startTime = new Date(`${date}T${timeRange[0]}:00`)
-        const endTime = new Date(`${date}T${timeRange[1]}:00`)
+        const isRecurringEnabled = Boolean(recurringBooking?.enabled)
+        const sampleDate = formatDate(new Date())
+        const sampleSlot = buildSlot(sampleDate, timeRange[0], timeRange[1])
 
-        if (startTime < new Date()) {
-            throw createError({ statusCode: 400, statusMessage: 'Booking time must be in the future' })
-        }
-        if (startTime >= endTime) {
+        if (sampleSlot.startTime >= sampleSlot.endTime) {
             throw createError({ statusCode: 400, statusMessage: 'End time must be after start time' })
+        }
+
+        const slots: Array<{ date: string; startTime: Date; endTime: Date }> = []
+
+        if (!isRecurringEnabled) {
+            const baseSlot = buildSlot(date as string, timeRange[0], timeRange[1])
+            if (baseSlot.startTime < new Date()) {
+                throw createError({ statusCode: 400, statusMessage: 'Booking time must be in the future' })
+            }
+            slots.push(baseSlot)
+        } else {
+            const weekday = recurringBooking?.weekday as number
+            const intervalWeeks = recurringBooking?.intervalWeeks as number
+            const repeatCount = recurringBooking?.repeatCount as number
+            const now = new Date()
+
+            const todayDate = new Date(`${formatDate(now)}T00:00:00`)
+            const jsWeekday = weekday % 7
+            let diffDays = (jsWeekday - todayDate.getDay() + 7) % 7
+            let firstDateObj = addDays(todayDate, diffDays)
+            let firstDateSlot = buildSlot(formatDate(firstDateObj), timeRange[0], timeRange[1])
+
+            if (diffDays === 0 && firstDateSlot.startTime < now) {
+                firstDateObj = addDays(firstDateObj, 7)
+                firstDateSlot = buildSlot(formatDate(firstDateObj), timeRange[0], timeRange[1])
+            }
+
+            for (let index = 0; index < repeatCount; index++) {
+                if (index === 0) {
+                    slots.push(firstDateSlot)
+                    continue
+                }
+
+                const currentDate = addDays(firstDateObj, index * intervalWeeks * 7)
+                slots.push(buildSlot(formatDate(currentDate), timeRange[0], timeRange[1]))
+            }
         }
 
         const result = await db.$transaction(async (tx) => {
@@ -44,76 +135,122 @@ export default defineEventHandler(async (event) => {
                 throw createError({ statusCode: 400, statusMessage: 'Room not found or unavailable' })
             }
 
-            const conflict = await tx.booking.findFirst({
+            const conflictOrConditions = slots.map(slot => ({
+                startTime: { lt: slot.endTime },
+                endTime: { gt: slot.startTime }
+            }))
+
+            const conflicts = await tx.booking.findMany({
                 where: {
                     roomId,
                     status: { notIn: ['cancelled', 'rejected'] },
-                    OR: [{ startTime: { lt: endTime }, endTime: { gt: startTime } }]
-                }
+                    OR: conflictOrConditions
+                },
+                select: {
+                    id: true,
+                    startTime: true,
+                    endTime: true
+                },
+                orderBy: { startTime: 'asc' }
             })
 
-            if (conflict) {
-                throw createError({ statusCode: 400, statusMessage: 'Time slot conflicts with an existing booking' })
+            if (conflicts.length > 0) {
+                const firstConflict = conflicts[0]
+                const firstDate = formatDate(firstConflict.startTime)
+                throw createError({
+                    statusCode: 400,
+                    statusMessage: `Time slot conflicts with existing bookings. First conflict on ${firstDate}, total ${conflicts.length}`
+                })
             }
 
             const autoApprovalRules = await (tx as any).autoApprovalRule.findMany({ where: { status: true } })
-            let finalStatus = 'pending'
-            let autoRemark = remark || ''
-            const durationMinutes = (endTime.getTime() - startTime.getTime()) / (1000 * 60)
-            const startHourStr = startTime.getHours().toString().padStart(2, '0') + ':' + startTime.getMinutes().toString().padStart(2, '0')
 
-            for (const rule of (autoApprovalRules as any[])) {
-                let match = true
-                if (rule.organizationId && rule.organizationId !== organizationId) match = false
-                if (rule.roomId && rule.roomId !== roomId) match = false
-                if (rule.userId && rule.userId !== user.id) match = false
-                if (rule.maxDuration && durationMinutes > rule.maxDuration) match = false
-                if (rule.startHour && startHourStr < rule.startHour) match = false
-                if (rule.endHour && startHourStr > rule.endHour) match = false
+            const evaluateAutoApproval = (startTime: Date, endTime: Date) => {
+                let finalStatus = 'pending'
+                let autoRemark = remark || ''
+                const durationMinutes = (endTime.getTime() - startTime.getTime()) / (1000 * 60)
+                const startHourStr = startTime.getHours().toString().padStart(2, '0') + ':' + startTime.getMinutes().toString().padStart(2, '0')
 
-                if (match) {
-                    if (rule.action === 'approve') {
-                        finalStatus = 'approved'
-                        autoRemark = (autoRemark ? autoRemark + ' | ' : '') + '系统自动通过: ' + rule.name
-                        break
-                    } else if (rule.action === 'reject') {
-                        finalStatus = 'rejected'
-                        autoRemark = (autoRemark ? autoRemark + ' | ' : '') + '系统自动驳回: ' + rule.name
-                        break
+                for (const rule of (autoApprovalRules as any[])) {
+                    let match = true
+                    if (rule.organizationId && rule.organizationId !== organizationId) match = false
+                    if (rule.roomId && rule.roomId !== roomId) match = false
+                    if (rule.userId && rule.userId !== user.id) match = false
+                    if (rule.maxDuration && durationMinutes > rule.maxDuration) match = false
+                    if (rule.startHour && startHourStr < rule.startHour) match = false
+                    if (rule.endHour && startHourStr > rule.endHour) match = false
+
+                    if (match) {
+                        if (rule.action === 'approve') {
+                            finalStatus = 'approved'
+                            autoRemark = (autoRemark ? autoRemark + ' | ' : '') + '系统自动通过: ' + rule.name
+                            break
+                        } else if (rule.action === 'reject') {
+                            finalStatus = 'rejected'
+                            autoRemark = (autoRemark ? autoRemark + ' | ' : '') + '系统自动驳回: ' + rule.name
+                            break
+                        }
                     }
                 }
+
+                return { finalStatus, autoRemark }
             }
 
-            return await tx.booking.create({
-                data: {
-                    roomId,
-                    organizationId,
-                    userId: user.id,
-                    startTime,
-                    endTime,
-                    purpose,
-                    remark: autoRemark,
-                    status: finalStatus
-                },
-                include: {
-                    organization: { select: { id: true, name: true } },
-                    room: { select: { name: true } }
-                }
-            })
+            const createdBookings = []
+            for (const slot of slots) {
+                const { finalStatus, autoRemark } = evaluateAutoApproval(slot.startTime, slot.endTime)
+                const created = await tx.booking.create({
+                    data: {
+                        roomId,
+                        organizationId,
+                        userId: user.id,
+                        startTime: slot.startTime,
+                        endTime: slot.endTime,
+                        purpose,
+                        remark: autoRemark,
+                        status: finalStatus
+                    },
+                    include: {
+                        organization: { select: { id: true, name: true } },
+                        room: { select: { name: true } }
+                    }
+                })
+                createdBookings.push(created)
+            }
+
+            return createdBookings
         })
 
+        if (result.length === 1) {
+            const single = result[0]
+            return sendSuccess(event, {
+                id: single.id,
+                roomName: single.room.name,
+                organizationId: single.organization.id,
+                organizationName: single.organization.name,
+                startTime: single.startTime,
+                endTime: single.endTime,
+                purpose: single.purpose,
+                status: single.status,
+                remark: single.remark,
+                createTime: single.createTime,
+                isRecurringBooking: false
+            }, '预约提交成功')
+        }
+
+        const statusSummary = result.reduce((acc: Record<string, number>, booking) => {
+            acc[booking.status] = (acc[booking.status] || 0) + 1
+            return acc
+        }, {})
+
         return sendSuccess(event, {
-            id: result.id,
-            roomName: result.room.name,
-            organizationId: result.organization.id,
-            organizationName: result.organization.name,
-            startTime: result.startTime,
-            endTime: result.endTime,
-            purpose: result.purpose,
-            status: result.status,
-            remark: result.remark,
-            createTime: result.createTime
-        }, '预约提交成功')
+            isRecurringBooking: true,
+            totalCreated: result.length,
+            bookingIds: result.map(item => item.id),
+            startDate: formatDate(result[0].startTime),
+            endDate: formatDate(result[result.length - 1].startTime),
+            statusSummary
+        }, `周期预约提交成功，共 ${result.length} 条`)
 
     } catch (error) {
         return handleError(error)
