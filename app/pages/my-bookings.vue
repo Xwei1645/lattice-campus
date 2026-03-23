@@ -40,7 +40,7 @@
     <t-dialog
       v-model:visible="visible"
       header="新建预约"
-      :confirm-btn="{ content: '提交预约', loading: submitLoading }"
+      :confirm-btn="{ content: '提交预约', loading: submitLoading, disabled: conflictList.length > 0 }"
       width="min(600px, 95%)"
       @confirm="() => form?.submit()"
     >
@@ -63,8 +63,8 @@
           </t-select>
         </t-form-item>
 
-        <div style="display: flex; gap: 16px">
-          <t-form-item label="使用日期" name="date" style="flex: 1">
+        <div class="date-time-row">
+          <t-form-item label="使用日期" name="date" class="date-control">
             <t-date-picker 
               v-model="formData.date" 
               style="width: 100%" 
@@ -72,7 +72,7 @@
               variant="filled"
             />
           </t-form-item>
-          <t-form-item label="开始/结束时间" name="timeRange" style="flex: 1">
+          <t-form-item label="开始/结束时间" name="timeRange" class="time-control">
             <t-time-range-picker
               v-model="formData.timeRange"
               format="HH:mm"
@@ -82,6 +82,14 @@
               variant="filled"
             />
           </t-form-item>
+        </div>
+        <div v-if="conflictList.length > 0" class="conflict-tip">
+          冲突：与已有预约时间段重叠（
+          <span v-for="(c, idx) in conflictList" :key="c.id">
+            {{ formatTimeShort(c.startTime) }}-{{ formatTimeShort(c.endTime) }}
+            <span v-if="idx < conflictList.length - 1">，</span>
+          </span>
+          ）
         </div>
 
         <t-form-item label="使用说明" name="purpose">
@@ -226,6 +234,47 @@ const formData = reactive({
   remark: '',
 });
 
+// 冲突检测结果
+const conflictList = ref<any[]>([])
+
+const formatTimeShort = (iso: string) => {
+  try {
+    const d = new Date(iso)
+    return d.toTimeString().slice(0,5)
+  } catch {
+    return iso
+  }
+}
+
+const checkConflict = async () => {
+  conflictList.value = []
+  if (!formData.roomId || !formData.date || !formData.timeRange || formData.timeRange.length < 2) return
+
+  const start = `${formData.date}T${formData.timeRange[0]}:00`
+  const end = `${formData.date}T${formData.timeRange[1]}:00`
+
+  try {
+    const res: any = await $fetch('/api/bookings/check', {
+      method: 'GET',
+      query: {
+        roomId: formData.roomId,
+        startTime: start,
+        endTime: end
+      }
+    })
+    conflictList.value = res.data || []
+  } catch (e) {
+    // 不阻塞提交，仅记录
+    console.error('check conflict failed', e)
+    conflictList.value = []
+  }
+}
+
+// 监听表单相关字段，实时检测冲突
+watch(() => [formData.roomId, formData.date, formData.timeRange], () => {
+  checkConflict()
+}, { deep: true })
+
 const rules: FormRules = {
   roomId: [{ required: true, message: '请选择场地', trigger: 'change' }],
   organizationId: [{ required: true, message: '请选择使用组织', trigger: 'change' }],
@@ -314,4 +363,23 @@ const handleCancel = async (row: any) => {
 </script>
 
 <style scoped>
+.conflict-tip {
+  color: #d93025;
+  font-size: 12px;
+  margin-top: 6px;
+}
+
+.date-time-row {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.date-control {
+  width: 160px;
+}
+
+.time-control {
+  width: 320px;
+}
 </style>
