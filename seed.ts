@@ -120,7 +120,7 @@ async function seed() {
             userId: number
             startTime: Date
             endTime: Date
-            purpose: string
+            title: string
             status: string
             remark: string | null
         }> = []
@@ -172,7 +172,7 @@ async function seed() {
                         userId: user.id,
                         startTime,
                         endTime,
-                        purpose: purposes[Math.floor(Math.random() * purposes.length)]!,
+                        title: purposes[Math.floor(Math.random() * purposes.length)]!,
                         status,
                         remark: status === 'rejected' ? '场地冲突或不符合规定' : null
                     })
@@ -181,7 +181,7 @@ async function seed() {
         }
 
         for (const b of bookings) {
-            await db.booking.create({ data: b })
+            await db.booking.create({ data: b as any })
         }
 
         console.log('\n✅ Seed completed successfully!')

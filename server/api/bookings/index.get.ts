@@ -57,7 +57,7 @@ export default defineEventHandler(async (event) => {
             userName: b.user.name,
             startTime: b.startTime,
             endTime: b.endTime,
-            purpose: b.purpose,
+            title: b.title,
             status: b.status,
             remark: b.remark,
             createTime: b.createTime

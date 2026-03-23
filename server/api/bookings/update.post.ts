@@ -75,7 +75,7 @@ export default defineEventHandler(async (event) => {
             userName: updatedBooking.user.name,
             startTime: updatedBooking.startTime,
             endTime: updatedBooking.endTime,
-            purpose: updatedBooking.purpose,
+            title: updatedBooking.title,
             status: updatedBooking.status,
             remark: updatedBooking.remark
         }

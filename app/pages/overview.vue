@@ -106,11 +106,11 @@
                       :key="booking.id"
                       class="booking-item"
                       :class="booking.status"
-                      :title="`${booking.startTimeStr} - ${booking.endTimeStr}\n${booking.purpose}\n${booking.organizationName}`"
+                      :title="`${booking.startTimeStr} - ${booking.endTimeStr}\n${booking.title}\n${booking.organizationName}`"
                       @click="showDetail(booking)"
                     >
                       <div class="booking-time">{{ booking.startTimeStr }} - {{ booking.endTimeStr }}</div>
-                      <div class="booking-purpose">{{ booking.purpose }}</div>
+                      <div class="booking-purpose">{{ booking.title }}</div>
                       <div class="booking-user">{{ booking.organizationName }}</div>
                     </div>
                   </div>
@@ -127,11 +127,11 @@
                       :key="booking.id"
                       class="booking-item"
                       :class="booking.status"
-                      :title="`${booking.startTimeStr} - ${booking.endTimeStr}\n${booking.purpose}\n${booking.organizationName}`"
+                      :title="`${booking.startTimeStr} - ${booking.endTimeStr}\n${booking.title}\n${booking.organizationName}`"
                       @click="showDetail(booking)"
                     >
                       <div class="booking-time">{{ booking.startTimeStr }} - {{ booking.endTimeStr }}</div>
-                      <div class="booking-purpose">{{ booking.purpose }}</div>
+                      <div class="booking-purpose">{{ booking.title }}</div>
                       <div class="booking-user">{{ booking.organizationName }}</div>
                     </div>
                   </div>
@@ -157,7 +157,7 @@
           <t-descriptions-item label="申请人">{{ currentBooking.userName }}</t-descriptions-item>
           <t-descriptions-item label="开始时间">{{ formatFullDateTime(currentBooking.startTime) }}</t-descriptions-item>
           <t-descriptions-item label="结束时间">{{ formatFullDateTime(currentBooking.endTime) }}</t-descriptions-item>
-          <t-descriptions-item label="用途">{{ currentBooking.purpose }}</t-descriptions-item>
+          <t-descriptions-item label="活动标题">{{ currentBooking.title }}</t-descriptions-item>
           <t-descriptions-item label="状态">
             <t-tag :theme="getStatusTheme(currentBooking.status)" variant="light">
               {{ getStatusLabel(currentBooking.status) }}
@@ -203,7 +203,7 @@ interface Booking {
   userName: string
   startTime: string | Date
   endTime: string | Date
-  purpose: string
+  title: string
   status: string
   remark?: string | null
   createTime: string | Date

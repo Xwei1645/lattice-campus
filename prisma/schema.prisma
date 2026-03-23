@@ -90,7 +90,7 @@ model Booking {
   user           User         @relation(fields: [userId], references: [id])
   startTime      DateTime
   endTime        DateTime
-  purpose        String
+  title          String
   remark         String?
   status         String       @default("pending")
   createTime     DateTime     @default(now())

@@ -52,6 +52,10 @@
         label-align="top"
         @submit="onSubmit"
       >
+        <t-form-item label="活动标题" name="title" required-mark>
+          <t-input v-model="formData.title" placeholder="请输入活动标题" variant="filled" />
+        </t-form-item>
+
         <t-form-item label="预约场地" name="roomId">
           <t-select v-model="formData.roomId" placeholder="请选择场地" variant="filled">
             <t-option v-for="item in roomOptions" :key="item.id" :value="item.id" :label="item.name" :disabled="!item.status" />
@@ -118,15 +122,6 @@
           ）
         </div>
 
-        <t-form-item label="使用说明" name="purpose">
-          <t-textarea
-            v-model="formData.purpose"
-            placeholder="请用简洁说明场地用途"
-            :autosize="{ minRows: 3, maxRows: 5 }"
-            variant="filled"
-          />
-        </t-form-item>
-
         <t-form-item label="备注" name="remark">
           <t-input v-model="formData.remark" placeholder="请填写备注（如有）" variant="filled" />
         </t-form-item>
@@ -147,7 +142,7 @@
         <t-descriptions-item label="预约地点">{{ currentBooking.roomName }}</t-descriptions-item>
         <t-descriptions-item label="使用组织">{{ currentBooking.organizationName }}</t-descriptions-item>
         <t-descriptions-item label="预约时间">{{ currentBooking.time }}</t-descriptions-item>
-        <t-descriptions-item label="预约事项">{{ currentBooking.purpose }}</t-descriptions-item>
+        <t-descriptions-item label="活动标题">{{ currentBooking.title }}</t-descriptions-item>
         <t-descriptions-item label="状态">
           <t-tag v-if="currentBooking.status === 'approved'" theme="success" variant="light">已通过</t-tag>
           <t-tag v-else-if="currentBooking.status === 'pending'" theme="warning" variant="light">待审批</t-tag>
@@ -174,7 +169,7 @@ const columns: PrimaryTableCol[] = [
   { colKey: 'roomName', title: '预约地点' },
   { colKey: 'organizationName', title: '使用组织' },
   { colKey: 'formattedTime', title: '预约时间', width: 300 },
-  { colKey: 'purpose', title: '预约事项' },
+  { colKey: 'title', title: '活动标题' },
   { colKey: 'createTime', title: '申请时间', width: 180 },
   { colKey: 'status', title: '状态', width: 100, cell: 'status' },
   { colKey: 'action', title: '操作', width: 120, cell: 'action', fixed: 'right' },
@@ -256,7 +251,7 @@ const formData = reactive({
   organizationId: undefined as number | undefined,
   date: '',
   timeRange: [] as string[],
-  purpose: '',
+  title: '',
   remark: '',
   recurringEnabled: false,
   recurringWeekday: undefined as number | undefined,
@@ -364,7 +359,7 @@ const rules: FormRules = {
   organizationId: [{ required: true, message: '请选择使用组织', trigger: 'change' }],
   date: [{ required: true, message: '请选择日期', trigger: 'change' }],
   timeRange: [{ required: true, message: '请选择时间范围', trigger: 'change' }],
-  purpose: [{ required: true, message: '请输入使用说明', trigger: 'blur' }],
+  title: [{ required: true, message: '请输入活动标题', trigger: 'blur' }],
 };
 
 const { data: roomsRes, pending: roomsPending } = await useFetch<any>('/api/rooms');
@@ -417,7 +412,7 @@ const onSubmit = async ({ validateResult, firstError }: any) => {
           organizationId: formData.organizationId,
           date: formData.date,
           timeRange: formData.timeRange,
-          purpose: formData.purpose,
+          title: formData.title,
           remark: formData.remark,
           recurringBooking: formData.recurringEnabled ? {
             enabled: true,
@@ -442,7 +437,7 @@ const onSubmit = async ({ validateResult, firstError }: any) => {
         organizationId: undefined,
         date: '',
         timeRange: [],
-        purpose: '',
+        title: '',
         remark: '',
         recurringEnabled: false,
         recurringWeekday: undefined,

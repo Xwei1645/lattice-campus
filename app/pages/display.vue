@@ -35,7 +35,7 @@
           <main class="main-content">
             <template v-if="currentBooking">
               <div class="content-wrapper active">
-                <div class="main-title">{{ currentBooking.purpose }}</div>
+                <div class="main-title">{{ currentBooking.title }}</div>
                 <div class="sub-info organization">
                   <UsergroupIcon /> {{ currentBooking.organizationName }}
                 </div>
@@ -49,7 +49,7 @@
               <div class="content-wrapper idle">
                 <template v-if="nextBooking">
                   <div class="label-chip">即将开始</div>
-                  <div class="main-title">{{ nextBooking.purpose }}</div>
+                  <div class="main-title">{{ nextBooking.title }}</div>
                   <div class="sub-info organization">
                     <UsergroupIcon /> {{ nextBooking.organizationName }}
                   </div>
@@ -90,7 +90,7 @@
                        </span>
                     </div>
                     <div class="event-details-col">
-                      <div class="event-name">{{ item.purpose }}</div>
+                      <div class="event-name">{{ item.title }}</div>
                       <div class="event-org">
                         <UsergroupIcon class="org-icon" />
                         {{ item.organizationName }}

@@ -8,7 +8,7 @@ const bookingSchema = z.object({
     organizationId: z.coerce.number().int().positive('无效的组织ID'),
     date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, '日期格式必须为 YYYY-MM-DD').optional().nullable(),
     timeRange: z.array(z.string().regex(/^\d{2}:\d{2}(:\d{2})?$/)).length(2, '必须提供开始和结束时间'),
-    purpose: z.string().min(2, '用途描述太短').max(200, '用途描述太长'),
+    title: z.string().min(2, '活动标题太短').max(200, '活动标题太长'),
     remark: z.string().max(500, '备注太长').optional().nullable(),
     recurringBooking: z.object({
         enabled: z.boolean().default(false),
@@ -82,7 +82,7 @@ export default defineEventHandler(async (event) => {
         const body = await readBody(event)
 
         const validatedData = bookingSchema.parse(body)
-        const { roomId, organizationId, date, timeRange, purpose, remark, recurringBooking } = validatedData
+        const { roomId, organizationId, date, timeRange, title, remark, recurringBooking } = validatedData
 
         const isAdmin = ['super_admin', 'admin'].includes(user.role)
         if (!isAdmin && !isUserInOrganization(user, organizationId)) {
@@ -219,7 +219,7 @@ export default defineEventHandler(async (event) => {
                         userId: user.id,
                         startTime: slot.startTime,
                         endTime: slot.endTime,
-                        purpose,
+                        title,
                         remark: autoRemark,
                         status: finalStatus
                     },
@@ -243,7 +243,7 @@ export default defineEventHandler(async (event) => {
                 organizationName: single.organization.name,
                 startTime: single.startTime,
                 endTime: single.endTime,
-                purpose: single.purpose,
+                title: single.title,
                 status: single.status,
                 remark: single.remark,
                 createTime: single.createTime,

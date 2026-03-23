@@ -31,8 +31,8 @@
               </div>
               <t-divider dashed />
               <div class="booking-purpose">
-                <span class="label">用途：</span>
-                <span class="value ellipsis">{{ latestBooking.purpose }}</span>
+                <span class="label">活动标题：</span>
+                <span class="value ellipsis">{{ latestBooking.title }}</span>
               </div>
             </div>
             <div v-else class="empty-state">
