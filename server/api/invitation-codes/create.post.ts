@@ -32,8 +32,13 @@ export default defineEventHandler(async (event) => {
         }
 
         const generatedCodes = []
-        for (let i = 0; i < count; i++) {
-            const code = randomBytes(8).toString('hex').toUpperCase()
+        const generatedCodeSet = new Set<string>()
+        while (generatedCodes.length < count) {
+            const code = randomBytes(3).toString('hex').toUpperCase()
+            if (code.length !== 6 || generatedCodeSet.has(code)) {
+                continue
+            }
+            generatedCodeSet.add(code)
             generatedCodes.push({
                 code,
                 role: role || 'user',

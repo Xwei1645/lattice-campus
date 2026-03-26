@@ -1,9 +1,12 @@
 import { db } from '../../utils/prisma'
 import bcrypt from 'bcryptjs'
 
+const INVITATION_CODE_LENGTH = 6
+
 export default defineEventHandler(async (event) => {
     const body = await readBody(event)
     const { account, password, name, invitationCode } = body
+    const normalizedInvitationCode = String(invitationCode || '').trim().toUpperCase()
 
     if (!account || !password || !name || !invitationCode) {
         throw createError({
@@ -12,9 +15,16 @@ export default defineEventHandler(async (event) => {
         })
     }
 
+    if (normalizedInvitationCode.length !== INVITATION_CODE_LENGTH) {
+        throw createError({
+            statusCode: 400,
+            statusMessage: '邀请码必须为 6 位'
+        })
+    }
+
     try {
         const codeData = await db.invitationCode.findUnique({
-            where: { code: invitationCode },
+            where: { code: normalizedInvitationCode },
             include: { organization: true }
         })
 

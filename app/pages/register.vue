@@ -56,9 +56,10 @@
         <t-form-item name="invitationCode">
           <t-input
             v-model="formData.invitationCode"
-            placeholder="请输入邀请码"
+            placeholder="请输入6位邀请码"
             size="large"
             variant="filled"
+            :maxlength="6"
           >
             <template #prefix-icon>
               <RootListIcon />
@@ -120,7 +121,10 @@ const rules: FormRules = {
     { required: true, message: '密码必填', trigger: 'blur' },
     { min: 6, message: '密码长度至少为 6 位', trigger: 'blur' },
   ],
-  invitationCode: [{ required: true, message: '邀请码必填', trigger: 'blur' }],
+  invitationCode: [
+    { required: true, message: '邀请码必填', trigger: 'blur' },
+    { len: 6, message: '邀请码必须为 6 位', trigger: 'blur' },
+  ],
 };
 
 const onSubmit = async ({ validateResult, firstError }: SubmitContext) => {
@@ -133,7 +137,10 @@ const onSubmit = async ({ validateResult, firstError }: SubmitContext) => {
   try {
     const res = await $fetch('/api/auth/register', {
       method: 'POST',
-      body: formData,
+      body: {
+        ...formData,
+        invitationCode: formData.invitationCode.trim().toUpperCase(),
+      },
     });
     
     MessagePlugin.success('注册成功，请登录');

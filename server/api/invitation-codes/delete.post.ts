@@ -2,13 +2,6 @@ import { db } from '../../utils/prisma'
 import { requireAuth } from '../../utils/auth'
 import { logAudit } from '../../utils/audit'
 
-function maskCode(code: string): string {
-    if (!code || code.length < 8) {
-        return '***'
-    }
-    return `${code.slice(0, 4)}***${code.slice(-4)}`
-}
-
 export default defineEventHandler(async (event) => {
     let invitationId: number | null = null
 
@@ -53,7 +46,7 @@ export default defineEventHandler(async (event) => {
             resourceId: invitationId,
             result: 'success',
             before: {
-                code: maskCode(oldInvitation.code),
+                code: oldInvitation.code,
                 role: oldInvitation.role,
                 organizationId: oldInvitation.organizationId,
                 maxUses: oldInvitation.maxUses,
