@@ -16,6 +16,21 @@
     </div>
 
     <t-card :bordered="false" class="content-card">
+      <div v-if="selectedUserIds.length" class="batch-action-bar">
+        <span class="batch-action-text">已选择 {{ selectedUserIds.length }} 位用户</span>
+        <t-space>
+          <t-button theme="warning" variant="outline" @click="openBatchResetPassword">
+            批量重置密码
+          </t-button>
+          <t-button theme="primary" variant="outline" @click="openBatchUpdateOrganizations">
+            批量修改所属组织
+          </t-button>
+          <t-button theme="default" variant="text" @click="clearSelectedUsers">
+            取消选择
+          </t-button>
+        </t-space>
+      </div>
+
       <t-skeleton :loading="loading" :row-col="tableSkeleton" animation="gradient">
         <t-table
           row-key="id"
@@ -27,6 +42,12 @@
         >
         <template #createTime="{ row }">
           {{ formatDateTime(row.createTime) }}
+        </template>
+        <template #select="{ row }">
+          <t-checkbox
+            :checked="selectedUserIds.includes(row.id)"
+            @change="(checked: any) => handleRowSelectChange(row.id, checked)"
+          />
         </template>
         <template #role="{ row }">
           <t-tag :theme="getRoleTheme(row.role)" variant="light">
@@ -131,6 +152,44 @@
       <t-form ref="resetFormRef" :data="resetData" :rules="resetRules" label-align="top" @submit="onResetSubmit">
         <t-form-item label="新密码" name="newPassword">
           <t-input v-model="resetData.newPassword" type="password" placeholder="请输入新密码" variant="filled" />
+        </t-form-item>
+      </t-form>
+    </t-dialog>
+
+    <!-- 批量重置密码对话框 -->
+    <t-dialog
+      v-model:visible="batchResetVisible"
+      header="批量重置密码"
+      :confirm-btn="{ content: '确认重置', loading: batchResetLoading }"
+      width="min(420px, 95%)"
+      @confirm="() => batchResetFormRef?.submit()"
+    >
+      <t-form
+        ref="batchResetFormRef"
+        :data="batchResetData"
+        :rules="batchResetRules"
+        label-align="top"
+        @submit="onBatchResetSubmit"
+      >
+        <t-form-item label="新密码" name="newPassword">
+          <t-input v-model="batchResetData.newPassword" type="password" placeholder="请输入统一新密码" variant="filled" />
+        </t-form-item>
+      </t-form>
+    </t-dialog>
+
+    <!-- 批量修改组织对话框 -->
+    <t-dialog
+      v-model:visible="batchOrgVisible"
+      header="批量修改所属组织"
+      :confirm-btn="{ content: '确认修改', loading: batchOrgLoading }"
+      width="min(500px, 95%)"
+      @confirm="onBatchOrgSubmit"
+    >
+      <t-form :data="batchOrgData" label-align="top">
+        <t-form-item label="所属组织">
+          <t-select v-model="batchOrgData.organizationIds" multiple placeholder="请选择组织" variant="filled">
+            <t-option v-for="org in organizations" :key="org.id" :label="org.name" :value="org.id" />
+          </t-select>
         </t-form-item>
       </t-form>
     </t-dialog>
@@ -245,7 +304,10 @@ const filteredUserData = computed(() => {
   );
 });
 
+const selectedUserIds = ref<number[]>([]);
+
 const columns: PrimaryTableCol[] = [
+  { colKey: 'select', title: '选择', width: 72, cell: 'select' },
   { colKey: 'id', title: 'ID', width: 80 },
   { colKey: 'account', title: '用户名' },
   { colKey: 'name', title: '姓名' },
@@ -326,6 +388,22 @@ const resetData = reactive({
 const resetRules: FormRules = {
   newPassword: [{ required: true, message: '新密码不能为空', trigger: 'blur' }],
 };
+
+const batchResetVisible = ref(false);
+const batchResetLoading = ref(false);
+const batchResetFormRef = ref<any>(null);
+const batchResetData = reactive({
+  newPassword: '',
+});
+const batchResetRules: FormRules = {
+  newPassword: [{ required: true, message: '新密码不能为空', trigger: 'blur' }],
+};
+
+const batchOrgVisible = ref(false);
+const batchOrgLoading = ref(false);
+const batchOrgData = reactive({
+  organizationIds: [] as number[],
+});
 
 // 绑定钉钉逻辑
 const bindDingtalkVisible = ref(false);
@@ -429,6 +507,129 @@ const onResetSubmit = async ({ validateResult, firstError }: any) => {
     }
   } else {
     MessagePlugin.error(firstError);
+  }
+};
+
+const clearSelectedUsers = () => {
+  selectedUserIds.value = [];
+};
+
+const handleRowSelectChange = (userId: number, checked: any) => {
+  const isChecked = typeof checked === 'boolean' ? checked : !!checked?.checked;
+  if (isChecked) {
+    if (!selectedUserIds.value.includes(userId)) {
+      selectedUserIds.value = [...selectedUserIds.value, userId];
+    }
+    return;
+  }
+
+  selectedUserIds.value = selectedUserIds.value.filter((id) => id !== userId);
+};
+
+const getBatchOperableUserIds = () => {
+  return selectedUserIds.value.filter((id) => {
+    if (!currentUser.value) return id !== 1;
+    return id !== 1 && id !== currentUser.value.id;
+  });
+};
+
+const openBatchResetPassword = () => {
+  if (!selectedUserIds.value.length) {
+    MessagePlugin.warning('请先选择用户');
+    return;
+  }
+  batchResetData.newPassword = '';
+  batchResetVisible.value = true;
+};
+
+const onBatchResetSubmit = async ({ validateResult, firstError }: any) => {
+  if (validateResult !== true) {
+    MessagePlugin.error(firstError);
+    return;
+  }
+
+  const operableIds = getBatchOperableUserIds();
+  if (!operableIds.length) {
+    MessagePlugin.warning('所选用户均不可操作');
+    return;
+  }
+
+  batchResetLoading.value = true;
+  try {
+    const results = await Promise.allSettled(
+      operableIds.map((id) =>
+        $fetch(`/api/users/${id}/reset-password`, {
+          method: 'POST',
+          body: { password: batchResetData.newPassword }
+        })
+      )
+    );
+
+    const successCount = results.filter((item) => item.status === 'fulfilled').length;
+    const failCount = results.length - successCount;
+
+    if (failCount > 0) {
+      MessagePlugin.warning(`批量重置完成：成功 ${successCount}，失败 ${failCount}`);
+    } else {
+      MessagePlugin.success(`批量重置成功，共 ${successCount} 人`);
+    }
+
+    batchResetVisible.value = false;
+    clearSelectedUsers();
+    await refresh();
+  } catch {
+    MessagePlugin.error('批量重置失败');
+  } finally {
+    batchResetLoading.value = false;
+  }
+};
+
+const openBatchUpdateOrganizations = () => {
+  if (!selectedUserIds.value.length) {
+    MessagePlugin.warning('请先选择用户');
+    return;
+  }
+  batchOrgData.organizationIds = [];
+  batchOrgVisible.value = true;
+};
+
+const onBatchOrgSubmit = async () => {
+  const operableIds = getBatchOperableUserIds();
+  if (!operableIds.length) {
+    MessagePlugin.warning('所选用户均不可操作');
+    return;
+  }
+
+  batchOrgLoading.value = true;
+  try {
+    const results = await Promise.allSettled(
+      operableIds.map((id) =>
+        $fetch('/api/users/update', {
+          method: 'POST',
+          body: {
+            id,
+            organizationIds: batchOrgData.organizationIds
+          }
+        })
+      )
+    );
+
+    const successCount = results.filter((item) => item.status === 'fulfilled').length;
+    const failCount = results.length - successCount;
+
+    if (failCount > 0) {
+      MessagePlugin.warning(`批量修改完成：成功 ${successCount}，失败 ${failCount}`);
+    } else {
+      MessagePlugin.success(`批量修改成功，共 ${successCount} 人`);
+    }
+
+    batchOrgVisible.value = false;
+    clearSelectedUsers();
+    await refresh();
+  } catch {
+    MessagePlugin.error('批量修改所属组织失败');
+  } finally {
+    batchOrgLoading.value = false;
   }
 };
 
@@ -570,6 +771,11 @@ const handleDelete = async (row: User) => {
     },
   });
 };
+
+watch(userData, (latestUsers) => {
+  const validIds = new Set((latestUsers || []).map((item: User) => item.id));
+  selectedUserIds.value = selectedUserIds.value.filter((id) => validIds.has(id));
+});
 </script>
 
 <style scoped>
@@ -577,6 +783,22 @@ const handleDelete = async (row: User) => {
   display: flex;
   gap: 16px;
   flex-wrap: wrap;
+}
+
+.batch-action-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  background: var(--td-bg-color-container-hover);
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.batch-action-text {
+  color: var(--td-text-color-secondary);
 }
 
 .bind-dingtalk-content {

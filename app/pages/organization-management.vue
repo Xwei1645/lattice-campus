@@ -64,16 +64,6 @@
         <t-form-item label="描述" name="description">
           <t-textarea v-model="formData.description" placeholder="请输入组织描述" variant="filled" />
         </t-form-item>
-        <t-form-item label="组织成员" name="userIds">
-          <t-select
-            v-model="formData.userIds"
-            multiple
-            placeholder="请选择组织成员"
-            :options="userOptions"
-            filterable
-            variant="filled"
-          />
-        </t-form-item>
       </t-form>
     </t-dialog>
   </div>
@@ -115,11 +105,8 @@ const filteredOrganizations = computed(() => {
 const formData = reactive({
   id: null as number | null,
   name: '',
-  description: '',
-  userIds: [] as number[]
+  description: ''
 })
-
-const userOptions = ref<any[]>([])
 
 const rules: FormRules = {
   name: [{ required: true, message: '请输入组织名称', trigger: 'blur' }]
@@ -156,15 +143,8 @@ const dialogTitle = computed(() => isEdit.value ? '编辑组织' : '新增组织
 const fetchOrganizations = async () => {
   loading.value = true
   try {
-    const [orgRes, userRes] = await Promise.all([
-      $fetch<any>('/api/organizations'),
-      $fetch<any>('/api/users')
-    ])
+    const orgRes = await $fetch<any>('/api/organizations')
     organizations.value = orgRes.data
-    userOptions.value = userRes.data?.map((u: any) => ({
-      label: `${u.name} (${u.account})`,
-      value: u.id
-    })) || []
   } catch (error) {
     MessagePlugin.error('获取数据失败')
   } finally {
@@ -183,7 +163,6 @@ const handleAdd = () => {
   formData.id = null
   formData.name = ''
   formData.description = ''
-  formData.userIds = []
   dialogVisible.value = true
 }
 
@@ -192,7 +171,6 @@ const handleEdit = (row: any) => {
   formData.id = row.id
   formData.name = row.name
   formData.description = row.description
-  formData.userIds = row.users?.map((u: any) => u.id) || []
   dialogVisible.value = true
 }
 
