@@ -4,7 +4,7 @@ import pkg from './package.json';
 
 const getGitHash = () => {
   if (process.env.GIT_HASH) {
-    return process.env.GIT_HASH;
+    return process.env.GIT_HASH.substring(0, 7);
   }
   try {
     return execSync('git rev-parse --short HEAD', {
